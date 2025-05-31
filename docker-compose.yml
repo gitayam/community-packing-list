@@ -3,10 +3,7 @@ version: '3.8'
 services:
   web:
     build: .
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py createsuperuser --noinput --username ${DJANGO_SUPERUSER_USERNAME} --email ${DJANGO_SUPERUSER_EMAIL} --password ${DJANGO_SUPERUSER_PASSWORD} || true &&
-             gunicorn military_packing_list.wsgi:application --bind 0.0.0.0:8000"
+    command: gunicorn military_packing_list.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - .:/app
     ports:
@@ -20,15 +17,12 @@ services:
       - DB_HOST=${DB_HOST:-db}
       - DB_PORT=${DB_PORT:-5432}
       - ALLOWED_HOSTS_PROD=${ALLOWED_HOSTS_PROD:-localhost,127.0.0.1,web} # Default for when DEBUG=0
-      - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME:-admin}
-      - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-adminpassword}
-      - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-admin@example.com}
     depends_on:
       - db
     # env_file: .env # Docker Compose automatically looks for a file named .env in the project directory
 
   db:
-    image: postgres:15-alpine
+    image: postgres:13-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
