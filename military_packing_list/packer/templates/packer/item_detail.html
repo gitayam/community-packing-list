@@ -1,0 +1,31 @@
+{% extends "packer/base.html" %}
+
+{% block content %}
+    <h2>{{ item.name }}</h2>
+    {% if item.description %}
+        <p>{{ item.description }}</p>
+    {% endif %}
+
+    <h3>Prices</h3>
+    {% if prices %}
+        <ul>
+            {% for price in prices %}
+            <li class="price-entry">
+                <strong>${{ price.price|floatformat:2 }}</strong> at {{ price.store_name }}
+                <br>
+                <span class="price-details">
+                    Submitted by: {{ price.submitted_by_name }}
+                    on {{ price.submitted_at|date:"Y-m-d H:i" }}
+                </span>
+                <br>
+                <button class="vote-btn" data-price-id="{{ price.id }}" data-vote-type="upvote">Upvote</button> (<span id="upvotes-{{ price.id }}">{{ price.upvotes }}</span>)
+                <button class="vote-btn" data-price-id="{{ price.id }}" data-vote-type="downvote">Downvote</button> (<span id="downvotes-{{ price.id }}">{{ price.downvotes }}</span>)
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No prices submitted for this item yet.</p>
+    {% endif %}
+    <br>
+    <a href="{% url 'packer:add_price' item.id %}" class="button">Add Price for this Item</a>
+{% endblock %}

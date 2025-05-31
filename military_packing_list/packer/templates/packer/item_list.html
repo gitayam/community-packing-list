@@ -1,0 +1,17 @@
+{% extends "packer/base.html" %}
+
+{% block content %}
+    <h2>All Packing List Items</h2>
+    {% if items %}
+        <ul>
+            {% for item in items %}
+            <li class="item-entry">
+                <a href="{% url 'packer:item_detail' item.id %}">{{ item.name }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No items found.</p>
+    {% endif %}
+    {# <a href="#">Add New Item (Not Implemented Yet)</a> #} {# Placeholder - can add if 'add item' is a future step outside this subtask #}
+{% endblock %}
