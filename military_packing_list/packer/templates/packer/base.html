@@ -3,81 +3,77 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Military Gear Pricer</title>
     <link rel="stylesheet" type="text/css" href="{% static 'packer/css/style.css' %}">
 </head>
 <body>
-    <nav>
-        <a href="{% url 'packer:item_list' %}">All Items</a>
-        <!-- Add other global navigation if any -->
+    <nav class="main-nav">
+        <div class="nav-container"> <!-- For centering content within the nav bar -->
+            <a href="{% url 'packer:item_list' %}" class="nav-brand">GearPricer</a>
+            <ul>
+                <li><a href="{% url 'packer:item_list' %}">Home</a></li>
+                <li><a href="{% url 'packer:about' %}">About</a></li>
+                <!-- Example: Link to admin for adding items if no frontend form exists yet -->
+                {% if user.is_staff %} <!-- Show admin link only to staff users -->
+                <li><a href="{% url 'admin:index' %}">Admin</a></li>
+                {% endif %}
+            </ul>
+        </div>
     </nav>
+
     <div class="container">
-        <h1 class="page-title">Military Gear Pricer</h1> <!-- Moved H1 inside container and gave it a class -->
-        <hr> <!-- Moved HR inside container -->
+        <h1>{% block page_title %}Military Gear Pricer{% endblock %}</h1> <!-- Page specific title block -->
         {% block content %}
         {% endblock %}
     </div>
 
-    <div style="display:none;">{% csrf_token %}</div> {# For JS to access CSRF token #}
-
+    <div style="display:none;">{% csrf_token %}</div>
     <script>
+    // JS code for voting from previous implementation
     document.addEventListener('DOMContentLoaded', () => {
         const voteButtons = document.querySelectorAll('.vote-btn');
-        // Function to get CSRF token from the hidden input field
-        const getCsrfToken = () => {
-            const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
-            return csrfInput ? csrfInput.value : null;
-        };
+        // Ensure CSRF token can be found. If the hidden div is the only source:
+        const csrfTokenInput = document.querySelector('div[style="display:none;"] input[name="csrfmiddlewaretoken"]');
+        const getCsrfToken = () => csrfTokenInput ? csrfTokenInput.value : '';
 
         voteButtons.forEach(button => {
             button.addEventListener('click', async () => {
                 const priceId = button.dataset.priceId;
                 const voteType = button.dataset.voteType;
-                const csrfToken = getCsrfToken();
+                const url = `/packer/price/${priceId}/vote/${voteType}/`;
+                const token = getCsrfToken();
 
-                if (!csrfToken) {
+                if (!token) {
                     console.error('CSRF token not found.');
-                    alert('Could not process vote: CSRF token missing. Please reload the page.');
+                    alert('Error: CSRF token not found. Please refresh the page.');
                     return;
                 }
-
-                // Construct the URL carefully based on your Django URL configuration
-                // This assumes your app is mounted at /packer/
-                const url = `/packer/price/${priceId}/vote/${voteType}/`;
 
                 try {
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
+                            'X-CSRFToken': token
                         },
-                        // body: JSON.stringify({}) // No body needed if data is in URL parameters for this specific view
                     });
-
                     if (!response.ok) {
                         const errorData = await response.json().catch(() => ({ message: response.statusText })); // Try to parse JSON, fallback to statusText
                         console.error('Vote failed server-side:', errorData.message || response.statusText);
                         alert('Vote failed: ' + (errorData.message || 'Server error. Please try again.'));
                         return;
                     }
-
                     const data = await response.json();
-
                     if (data.status === 'success') {
-                        const upvotesEl = document.getElementById(`upvotes-${priceId}`);
-                        const downvotesEl = document.getElementById(`downvotes-${priceId}`);
-                        if (upvotesEl) upvotesEl.textContent = data.upvotes;
-                        if (downvotesEl) downvotesEl.textContent = data.downvotes;
-
-                        // Optional: Update reputation score if you have a place to display it
-                        // console.log("New reputation score:", data.reputation_score);
+                        document.getElementById(`upvotes-${priceId}`).textContent = data.upvotes;
+                        document.getElementById(`downvotes-${priceId}`).textContent = data.downvotes;
                     } else {
-                        console.error('Vote submission failed:', data.message);
-                        alert('Vote submission failed: ' + data.message);
+                        console.error('Vote failed:', data.message);
+                        alert('Vote failed: ' + data.message);
                     }
                 } catch (error) {
-                    console.error('Error submitting vote (network or JS error):', error);
+                    console.error('Error submitting vote:', error);
                     alert('Error submitting vote: ' + error.message);
                 }
             });

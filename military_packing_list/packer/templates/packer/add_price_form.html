@@ -1,11 +1,14 @@
 {% extends "packer/base.html" %}
 
+{% block page_title %}Add Price for {{ item.name }}{% endblock %}
+
 {% block content %}
-    <h2>Add Price for {{ item.name }}</h2>
+    {# The H2 is removed as its content is now in page_title #}
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">Submit Price</button>
+        <button type="submit" class="button">Submit Price</button>
+        <a href="{% url 'packer:item_detail' item.id %}" class="button button-secondary" style="margin-left: 10px;">Cancel</a>
     </form>
-    <p><a href="{% url 'packer:item_detail' item.id %}">Cancel</a></p>
+    {# Removed the <p> wrapper for cancel link as it's now a button next to submit #}
 {% endblock %}

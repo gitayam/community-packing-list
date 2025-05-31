@@ -1,164 +1,300 @@
-/* military_packing_list/packer/static/packer/css/style.css */
-body {
-    font-family: sans-serif;
+/* packer/static/packer/css/style.css */
+
+/* Reset and Base Styles */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     line-height: 1.6;
-    margin: 0; /* Changed from 20px to 0 for full-width nav */
-    background-color: #f4f4f4;
-    color: #333;
+    background-color: #f8f9fa; /* Lighter body background */
+    color: #212529; /* Darker default text for better contrast */
 }
 
-.container {
-    width: 80%;
-    margin: 20px auto; /* Added top/bottom margin */
-    overflow: hidden;
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 500; /* Slightly lighter than bold for a modern feel */
+    line-height: 1.2;
+    color: #343a40; /* Dark grey for headings */
+    margin-top: 1.5em;
+    margin-bottom: 0.8em;
 }
-
-h1, h2, h3 {
-    color: #333;
-    margin-bottom: 0.7em;
-}
-
-h1.page-title { /* Class for main page title if needed, or style h1 in .container */
+.container h1 { /* Already styled, but ensure consistency */
+    font-size: 2.2em;
     text-align: center;
+    color: #0056b3; /* Example: Primary color for main titles */
+}
+h2 { font-size: 1.8em; }
+h3 { font-size: 1.5em; }
+
+p {
     margin-bottom: 1em;
 }
 
-nav {
-    background: #333;
-    color: #fff;
-    padding: 10px 0;
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-nav a {
-    color: #fff;
-    text-decoration: none;
-    padding: 10px 15px; /* Increased padding */
-    margin: 0 5px; /* Added margin between links */
-}
-
-nav a:hover {
-    background: #555;
-    border-radius: 4px; /* Added hover effect */
-}
-
-ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-li.item-entry,
-div.price-entry, /* Using class for div wrapper too */
-.price-entry { /* General class for price entries if used on li */
-    background: #f9f9f9; /* Slightly different background for entries */
-    border: 1px solid #ddd;
-    padding: 15px; /* Increased padding */
-    margin-bottom: 10px;
-    border-radius: 5px;
-}
-
-form {
-    margin-top: 20px;
-    background: #fff; /* Form background */
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 0 5px rgba(0,0,0,0.05);
-}
-
-form input[type="text"],
-form input[type="number"],
-form input[type="email"], /* Added email for completeness */
-form select, /* Added select for completeness */
-form textarea {
-    width: calc(100% - 22px); /* Account for padding and border */
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box; /* Important for width calculation */
-}
-
-/* General button styling */
-button,
-input[type="submit"],
-a.button { /* Class for links styled as buttons */
-    display: inline-block; /* For <a> tags */
-    background-color: #5cb85c;
-    color: white !important; /* Ensure text is white */
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1em;
-    text-decoration: none; /* For <a> tags */
-    text-align: center;
-}
-
-button:hover,
-input[type="submit"]:hover,
-a.button:hover {
-    background-color: #4cae4c;
-    text-decoration: none; /* For <a> tags */
-}
-
-.vote-btn {
-    background-color: #007bff;
-    margin-left: 5px;
-    padding: 5px 10px;
-    font-size: 0.9em;
-}
-.vote-btn:hover {
-    background-color: #0056b3;
-}
-
 a {
-    color: #007bff;
+    color: #007bff; /* Primary link color */
     text-decoration: none;
 }
 a:hover {
+    color: #0056b3; /* Darker shade on hover */
     text-decoration: underline;
 }
 
-.price-details {
-  font-size: 0.9em;
-  color: #555;
-  margin-top: 5px; /* Added margin for spacing */
-  display: block; /* Ensure it takes its own line if needed */
+/* Navigation Menu Refinements */
+.main-nav {
+    background-color: #0056b3; /* Example: Primary color for nav */
+    color: #fff;
+    padding: 0.8em 0; /* Adjusted padding */
+    margin-bottom: 30px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+.main-nav .nav-container {
+    width: 90%;
+    max-width: 1100px; /* Slightly adjusted max-width */
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.main-nav .nav-brand {
+    color: #fff;
+    font-size: 1.7em;
+    font-weight: bold;
+    text-decoration: none;
+}
+.main-nav .nav-brand:hover {
+    color: #e9ecef; /* Lighter shade on hover for brand */
+    text-decoration: none;
+}
+.main-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex; /* Align links in a row */
+}
+.main-nav ul li {
+    margin-left: 20px; /* Space between links */
+}
+.main-nav ul li a {
+    color: #fff;
+    padding: 0.6em 1em; /* Adjusted padding */
+    font-weight: 500;
+    text-decoration: none;
+    display: block; /* Ensure padding contributes to clickable area */
+}
+.main-nav ul li a:hover,
+.main-nav ul li a.active { /* Style for active link (JS/template logic needed for .active) */
+    background-color: #004085; /* Darker shade for hover/active */
+    border-radius: 4px;
 }
 
-/* Add styles for messages if using Django's messages framework */
+/* Content Container */
+.container {
+    width: 90%;
+    max-width: 1100px;
+    margin: 30px auto; /* Consistent margin */
+    background-color: #ffffff;
+    padding: 25px 30px; /* Adjusted padding */
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08); /* Softer shadow */
+}
+
+/* List Item Styling (for item-list and price-list) */
+.item-entry, .price-entry {
+    background: #fff;
+    border: 1px solid #e9ecef; /* Lighter border */
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+    transition: box-shadow 0.2s ease-in-out;
+}
+.item-entry:hover, .price-entry:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Subtle hover effect */
+}
+.price-entry strong {
+    font-size: 1.2em;
+    color: #28a745; /* Green for price, example */
+}
+.price-details {
+  font-size: 0.9em;
+  color: #6c757d; /* Subtler text color */
+  margin-top: 5px;
+  display: block;
+}
+/* Ensure general ul styling doesn't override nav */
+ul:not(.main-nav ul) {
+    list-style-type: none;
+    padding: 0;
+}
+/* General li styling - ensure it doesn't override nav or specific lists */
+li:not(.main-nav ul li):not(.about-section ul li):not(.errorlist li) {
+   /* This could be too broad, consider if specific list item classes are better */
+   /* For now, item-entry and price-entry cover the main lists */
+}
+
+
+/* Form Styling */
+form {
+    margin-top: 20px;
+}
+form input[type="text"],
+form input[type="number"],
+form input[type="email"], /* If email fields are used */
+form input[type="password"], /* If password fields are used */
+form textarea,
+form select { /* Added select for completeness */
+    width: 100%; /* Changed to 100% and rely on box-sizing */
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ced4da; /* Standard border color */
+    border-radius: 4px;
+    font-size: 1em;
+    box-sizing: border-box; /* Important for width calculation */
+}
+form input[type="text"]:focus,
+form input[type="number"]:focus,
+form input[type="email"]:focus,
+form input[type="password"]:focus,
+form textarea:focus,
+form select:focus {
+    border-color: #80bdff; /* Highlight on focus */
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+/* Button Styling */
+.button, button, input[type="submit"] {
+    display: inline-block;
+    font-weight: 400;
+    color: #fff;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    user-select: none;
+    background-color: #007bff; /* Primary button color */
+    border: 1px solid #007bff;
+    padding: 0.5rem 1rem; /* Adjusted padding */
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: 0.25rem; /* Standard border radius */
+    text-decoration: none; /* For <a> tags styled as buttons */
+    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+.button:hover, button:hover, input[type="submit"]:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    color: #fff;
+    text-decoration: none;
+}
+.button:focus, button:focus, input[type="submit"]:focus {
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.5);
+}
+
+/* Vote Buttons (Secondary style) */
+.vote-btn {
+    background-color: #6c757d; /* Grey for secondary actions */
+    border-color: #6c757d;
+    padding: 0.25rem 0.5rem; /* Smaller padding */
+    font-size: 0.875rem; /* Smaller font */
+    margin-left: 5px;
+}
+.vote-btn:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+.vote-btn:focus {
+    box-shadow: 0 0 0 0.2rem rgba(108,117,125,.5);
+}
+
+/* Secondary Button Style (e.g., for Cancel links) */
+.button-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #fff;
+}
+.button-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    color: #fff;
+}
+.button-secondary:focus {
+    box-shadow: 0 0 0 0.2rem rgba(108,117,125,.5);
+}
+
+/* Styling for Django Form Errors (if using {{ form.errors }} or field.errors) */
+.errorlist {
+    color: #dc3545; /* Red for errors */
+    list-style-type: none;
+    padding: 0;
+    margin: 0.5em 0;
+}
+.errorlist li {
+    padding: 0.25em;
+    /* border-left: 3px solid #dc3545; */ /* Removed border-left for cleaner look with background */
+    margin-bottom: 0.25em;
+    background-color: #f8d7da; /* Light red background */
+    border: 1px solid #f5c6cb; /* Added border for definition */
+    border-radius: 0.2rem;
+    display: block; /* Ensure it takes full width if needed */
+}
+
+/* About Page Specific Styles - ensuring no conflicts */
+.about-section {
+    line-height: 1.8;
+}
+.about-section h2 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.3em;
+}
+.about-section ul {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin-bottom: 1em;
+}
+.about-section ul li {
+    margin-bottom: 0.5em;
+    border: none;
+    padding: 0;
+    background: none;
+    color: #212529;
+    list-style-type: disc; /* Explicitly set for these lis */
+    display: list-item; /* Ensure it behaves as a list item */
+    margin-left:0; /* Reset any inherited nav spacing */
+}
+
+/* Message Styling (from previous steps, ensure consistency) */
 .messages {
     list-style: none;
     padding: 0;
     margin: 0 0 20px 0;
 }
 .messages li {
-    padding: 10px;
+    padding: 10px 15px;
     margin-bottom: 10px;
     border-radius: 4px;
+    border-width: 1px;
+    border-style: solid;
+    display: block; /* Ensure full width */
 }
 .messages li.success {
     background-color: #d4edda;
     color: #155724;
-    border: 1px solid #c3e6cb;
+    border-color: #c3e6cb;
 }
 .messages li.error {
     background-color: #f8d7da;
     color: #721c24;
-    border: 1px solid #f5c6cb;
+    border-color: #f5c6cb;
 }
 .messages li.warning {
     background-color: #fff3cd;
     color: #856404;
-    border: 1px solid #ffeeba;
+    border-color: #ffeeba;
 }
 .messages li.info {
     background-color: #d1ecf1;
     color: #0c5460;
-    border: 1px solid #bee5eb;
+    border-color: #bee5eb;
 }

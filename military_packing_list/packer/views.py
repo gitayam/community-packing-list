@@ -79,3 +79,6 @@ def vote_view(request, price_id, vote_type):
         'downvotes': price.downvotes,
         'reputation_score': user_profile.reputation_score if user_profile else None
     })
+
+def about_view(request):
+    return render(request, 'packer/about.html')

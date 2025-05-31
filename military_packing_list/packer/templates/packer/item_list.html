@@ -1,7 +1,9 @@
 {% extends "packer/base.html" %}
 
+{% block page_title %}All Packing List Items{% endblock %}
+
 {% block content %}
-    <h2>All Packing List Items</h2>
+    {# The H2 "All Packing List Items" is removed as its content is now in page_title #}
     {% if items %}
         <ul>
             {% for item in items %}
@@ -13,5 +15,10 @@
     {% else %}
         <p>No items found.</p>
     {% endif %}
-    {# <a href="#">Add New Item (Not Implemented Yet)</a> #} {# Placeholder - can add if 'add item' is a future step outside this subtask #}
+
+    {% if user.is_staff %}
+    <p style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
+        <a href="{% url 'admin:packer_item_add' %}" class="button">Add New Item (Admin)</a>
+    </p>
+    {% endif %}
 {% endblock %}
