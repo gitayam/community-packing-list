@@ -5,31 +5,32 @@ services:
     build: .
     command: gunicorn military_packing_list.wsgi:application --bind 0.0.0.0:8000
     volumes:
-      - .:/app  # Mount current directory to /app in container for development
+      - .:/app
     ports:
-      - "8000:8000"
+      - "${WEB_APP_HOST_PORT:-8000}:8000" # Use .env variable with default
     environment:
-      - SECRET_KEY=your_very_secret_key_for_development_only_change_in_prod_later
-      - DEBUG=1 # Development setting, set to 0 in production
-      - DB_NAME=packerdb
-      - DB_USER=packeruser
-      - DB_PASSWORD=packerpassword
-      - DB_HOST=db
-      - DB_PORT=5432
+      - SECRET_KEY=${SECRET_KEY:-your_very_secret_key_for_development_only_change_in_prod_later}
+      - DEBUG=${DEBUG:-1}
+      - DB_NAME=${DB_NAME:-packerdb}
+      - DB_USER=${DB_USER:-packeruser}
+      - DB_PASSWORD=${DB_PASSWORD:-packerpassword}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - ALLOWED_HOSTS_PROD=${ALLOWED_HOSTS_PROD:-localhost,127.0.0.1,web} # Default for when DEBUG=0
     depends_on:
       - db
-    # entrypoint: ["/app/docker-entrypoint.sh"] # Example for later if needed
+    # env_file: .env # Docker Compose automatically looks for a file named .env in the project directory
 
   db:
     image: postgres:13-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_DB=packerdb
-      - POSTGRES_USER=packeruser
-      - POSTGRES_PASSWORD=packerpassword
+      - POSTGRES_DB=${DB_NAME:-packerdb} # Use the same DB_NAME from .env or default
+      - POSTGRES_USER=${DB_USER:-packeruser} # Use the same DB_USER
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-packerpassword} # Use the same DB_PASSWORD
     ports:
-      - "5432:5432" # Optional: Expose DB port to host for direct access
+      - "${DB_HOST_PORT:-5432}:5432" # Use .env variable with default, if exposing
 
 volumes:
   postgres_data:

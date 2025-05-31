@@ -27,16 +27,22 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-o%)y7o+^pk&%s@c8d1%8n
 # DEBUG is '1' (True) or '0' (False) as a string from env var
 DEBUG = os.environ.get('DEBUG', '1') == '1'
 
-# Update ALLOWED_HOSTS if DEBUG is False
-# For development with Docker, often good to add 'localhost', '127.0.0.1', and the service name
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web'] # 'web' is the service name in docker-compose
-
-# If DEBUG is True and ALLOWED_HOSTS is empty, Django defaults to ['localhost', '127.0.0.1'].
-# If DEBUG is False, ALLOWED_HOSTS must not be empty.
-# The above covers common Docker development scenarios.
-# For production, this should be more restrictive and usually set via environment variables.
-if not DEBUG and 'ALLOWED_HOSTS_PROD' in os.environ:
-    ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS_PROD').split(',')
+if DEBUG:
+    # For development convenience, especially with Docker, allow more hosts.
+    # '*' can be a security risk even in dev if the container is exposed, but often used.
+    # 'web' is the service name from docker-compose.
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web', '*']
+else:
+    # For production, strictly use the ALLOWED_HOSTS_PROD environment variable.
+    allowed_hosts_prod_env = os.environ.get('ALLOWED_HOSTS_PROD')
+    if allowed_hosts_prod_env:
+        ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_prod_env.split(',')]
+    else:
+        # Fallback if ALLOWED_HOSTS_PROD is not set in production.
+        # This should ideally not happen; production should always define its allowed hosts.
+        # For safety, you might want to make this an empty list or raise an error
+        # if not set, forcing it to be explicitly configured for production.
+        ALLOWED_HOSTS = [] # Or raise ImproperlyConfigured("ALLOWED_HOSTS_PROD not set in production")
 
 
 # Application definition

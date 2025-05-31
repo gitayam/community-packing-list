@@ -18,82 +18,79 @@ The Military Packing List Pricer is a web application designed to help users tra
 -   **Containerization**: Docker, Docker Compose
 
 ## Prerequisites
--   Docker Engine
--   Docker Compose
 
-## Setup and Running the Project (Using Docker)
+-   Docker Engine (e.g., version 20.10 or later)
+-   Docker Compose (e.g., version 1.29 or later, or Docker Compose V2 included with newer Docker Desktop versions)
 
-1.  **Clone the repository**:
+## Installation and Setup
+
+1.  **Clone the Repository**:
     ```bash
-    git clone <repository-url>
-    cd <repository-name>
+    git clone <repository-url> # Replace <repository-url> with the actual URL
+    cd military-packing-list-pricer # Or your project's directory name
     ```
 
-2.  **Environment Variables**:
-    The `docker-compose.yml` file is pre-configured with default environment variables suitable for local development. These include a default `SECRET_KEY`, `DEBUG=1` (on), and database credentials.
+2.  **Configure Environment Variables**:
+    -   This project uses an `.env` file to manage environment-specific settings such as secret keys, database credentials, and port mappings. Docker Compose automatically loads this file if it exists in the project root.
+    -   Copy the provided template to create your own environment file:
+        ```bash
+        cp .env-template .env
+        ```
+    -   Open the `.env` file in a text editor and customize the variables:
+        -   **`SECRET_KEY`**: **Critical!** Change this to a unique, long, and random string. The default value is insecure and for development only.
+        -   **`DB_PASSWORD`**: Set a strong password for the database user (`packeruser`). The default is `supersecretpackerpassword`.
+        -   **`DEBUG`**: Set to `1` for development (enables detailed error pages and auto-reloading). Set to `0` for production.
+        -   **`ALLOWED_HOSTS_PROD`**: If `DEBUG=0`, this **must** be set to the domain(s) your site will be hosted on (e.g., `yourdomain.com,www.yourdomain.com`). For development with `DEBUG=1`, this is less critical as `settings.py` has more permissive defaults.
+        -   **`WEB_APP_HOST_PORT`**: (Optional) The port on your host machine that will map to the application's port 8000 inside the container. Defaults to `8000`.
+        -   **`DB_HOST_PORT`**: (Optional) The port on your host machine that will map to the PostgreSQL database port 5432 inside the container. Defaults to `5432`. This is useful if you need to connect to the database directly from your host machine using a DB client.
+        -   Other variables like `DB_NAME` (`packerdb`), `DB_USER` (`packeruser`), `DB_HOST` (`db` - which is the service name for PostgreSQL in Docker Compose), `DB_PORT` (`5432` - container internal port) can usually be left as their defaults for local Docker development.
 
-    For **production**, these should be managed securely. This typically involves:
-    -   Changing `SECRET_KEY` to a strong, unique value.
-    -   Setting `DEBUG=0`.
-    -   Potentially using a `.env` file (not currently implemented to be read by `docker-compose.yml` but a common pattern) or setting environment variables directly in your deployment environment.
+3.  **Build and Run with Docker Compose**:
+    -   This command will build the Docker images (if they don't exist or if the `Dockerfile`/code has changed) and start the application (`web`) and database (`db`) services in detached mode (`-d`).
+        ```bash
+        docker-compose up --build -d
+        ```
 
-    If you were to use a `.env` file (by modifying `docker-compose.yml` to support it or by your deployment platform), it might look like:
-    ```env
-    SECRET_KEY=your_super_secret_production_key_here
-    DEBUG=0
-    DB_NAME=packerdb
-    DB_USER=packeruser
-    DB_PASSWORD=supersecretprodpassword
-    DB_HOST=db
-    DB_PORT=5432
-    ALLOWED_HOSTS_PROD=yourdomain.com,www.yourdomain.com # Comma-separated hostnames
-    ```
-    The `settings.py` file is configured to use `ALLOWED_HOSTS_PROD` when `DEBUG=0`.
+4.  **Apply Database Migrations**:
+    -   Once the containers are running (especially the `db` service), apply the database migrations to set up the necessary tables:
+        ```bash
+        docker-compose exec web python manage.py migrate
+        ```
 
-3.  **Build and run the containers**:
-    ```bash
-    docker-compose up --build -d
-    ```
-    The `-d` flag runs the containers in detached mode.
+5.  **Create a Superuser (Admin Account)**:
+    -   Create an administrator account to access the Django admin interface. This user will be stored in the PostgreSQL database.
+        ```bash
+        docker-compose exec web python manage.py createsuperuser
+        ```
+    -   Follow the prompts to set a username, email, and password.
 
-4.  **Apply database migrations**:
-    Once the containers are running, particularly the `db` service, apply database migrations:
-    ```bash
-    docker-compose exec web python manage.py migrate
-    ```
-
-5.  **Create a superuser**:
-    To access the Django admin panel, create a superuser (this is for the PostgreSQL database inside Docker):
-    ```bash
-    docker-compose exec web python manage.py createsuperuser
-    ```
-    Follow the prompts to set a username, email, and password.
-
-6.  **Access the application**:
-    The application should now be accessible at `http://localhost:8000`.
+6.  **Access the Application**:
+    -   The web application should now be running. You can access it in your browser at `http://localhost:${WEB_APP_HOST_PORT}` (e.g., `http://localhost:8000` if you used the default port specified in `.env-template` or `docker-compose.yml`).
+    -   The Django admin panel is available at `http://localhost:${WEB_APP_HOST_PORT}/admin/`.
 
 ## Admin Access
--   Admin Panel URL: `http://localhost:8000/admin/`
--   Use the superuser credentials you created in the previous step.
-    *(Note: During earlier non-Docker development with SQLite, a superuser with `admin`/`adminpassword` might have been created. That user will not exist in the new Docker PostgreSQL database unless you recreate it with the same credentials).*
+-   Admin Panel URL: `http://localhost:${WEB_APP_HOST_PORT}/admin/` (e.g. `http://localhost:8000/admin/`)
+-   Use the superuser credentials you created during **Step 5** of the "Installation and Setup" process.
 
 ## Running Tests
+
 To run the unit tests for the `packer` app:
 ```bash
 docker-compose exec web python manage.py test packer
 ```
 
 ## Stopping the Application
-To stop and remove the containers (the database volume `postgres_data` will persist):
-```bash
-docker-compose down
-```
-To stop and remove containers AND the database volume (useful for a complete reset):
-```bash
-docker-compose down -v
-```
+
+-   To stop the services (web and db):
+    ```bash
+    docker-compose down
+    ```
+-   To stop the services AND remove the data volumes (e.g., to completely reset the database):
+    ```bash
+    docker-compose down -v
+    ```
 
 ## Further Development Notes
--   **Live Reloading**: The `web` service in `docker-compose.yml` mounts the local project directory into the container at `/app`. This means changes you make to the code (e.g., Python files, templates) should be automatically reflected by the Django development server (or Gunicorn in development mode with appropriate reload flags, though Gunicorn's primary role here is as a production-ready server). For Django's dev server, `DEBUG=True` handles this well.
--   **SECRET_KEY**: The `SECRET_KEY` set in `docker-compose.yml` or `settings.py` fallback is **for development only**. Always use a unique, secure key for production environments.
--   **Entrypoint Script**: For more automated startup (e.g., waiting for the DB to be ready before starting the web app, or running migrations automatically), an entrypoint script could be added to the `web` service in the `Dockerfile`. This has not been implemented in the current version.
+-   **Live Reloading**: The `web` service in `docker-compose.yml` mounts the local project directory (`.`) into the container at `/app`. When `DEBUG=1`, Django's development server (run by Gunicorn in this setup, but Gunicorn passes through to Django's WSGI app) will automatically reload Python code changes. Template changes are also typically picked up.
+-   **SECRET_KEY Security**: The `SECRET_KEY` in `.env-template` and the fallback in `docker-compose.yml` are placeholders. **Always** use a unique, cryptographically strong secret key for any production or sensitive environment. Do not commit your actual production `.env` file with the real secret key to version control.
+-   **Entrypoint Script**: For more complex startup sequences (e.g., waiting for the database to be fully ready before the web application starts, or automatically running migrations on startup), an entrypoint script can be added to the `web` service's Docker image. This has not been implemented in the current version for simplicity.
