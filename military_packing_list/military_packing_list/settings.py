@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os # Added import
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +21,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-o%)y7o+^pk&%s@c8d1%8n_6^e5=#hwgq#smunob-r(3zyx5r@i'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-o%)y7o+^pk&%s@c8d1%8n_6^e5=#hwgq#smunob-r(3zyx5r@i') # Fallback for local dev if not set
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG is '1' (True) or '0' (False) as a string from env var
+DEBUG = os.environ.get('DEBUG', '1') == '1'
 
-ALLOWED_HOSTS = []
+# Update ALLOWED_HOSTS if DEBUG is False
+# For development with Docker, often good to add 'localhost', '127.0.0.1', and the service name
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web'] # 'web' is the service name in docker-compose
+
+# If DEBUG is True and ALLOWED_HOSTS is empty, Django defaults to ['localhost', '127.0.0.1'].
+# If DEBUG is False, ALLOWED_HOSTS must not be empty.
+# The above covers common Docker development scenarios.
+# For production, this should be more restrictive and usually set via environment variables.
+if not DEBUG and 'ALLOWED_HOSTS_PROD' in os.environ:
+    ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS_PROD').split(',')
 
 
 # Application definition
@@ -75,10 +86,28 @@ WSGI_APPLICATION = 'military_packing_list.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'packerdb_default_local_sqlite'), # Fallback to avoid error if not set
+        'USER': os.environ.get('DB_USER', 'user'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'password'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'), # 'db' is the service name in docker-compose
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
+# If DB_NAME is the fallback, it implies we might want to use SQLite locally if Docker isn't running
+# For true Docker-based dev, the fallback names for user/pass/host/port aren't critical if docker-compose sets them.
+# The DB_NAME fallback is more to prevent Django from erroring if it tries to load settings outside Docker without env vars.
+# A more robust setup might be to check if a specific env var like 'DOCKER_ENV' is set.
+
+# If you want to keep SQLite as a local non-Docker fallback when env vars are NOT set:
+if DATABASES['default']['NAME'] == 'packerdb_default_local_sqlite':
+    DATABASES['default']['ENGINE'] = 'django.db.backends.sqlite3'
+    DATABASES['default']['NAME'] = BASE_DIR / 'db.sqlite3'
+    # Clear other PostgreSQL specific fields if switching to SQLite
+    DATABASES['default'].pop('USER', None)
+    DATABASES['default'].pop('PASSWORD', None)
+    DATABASES['default'].pop('HOST', None)
+    DATABASES['default'].pop('PORT', None)
 
 
 # Password validation

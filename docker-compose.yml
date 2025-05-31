@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: gunicorn military_packing_list.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - .:/app  # Mount current directory to /app in container for development
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=your_very_secret_key_for_development_only_change_in_prod_later
+      - DEBUG=1 # Development setting, set to 0 in production
+      - DB_NAME=packerdb
+      - DB_USER=packeruser
+      - DB_PASSWORD=packerpassword
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      - db
+    # entrypoint: ["/app/docker-entrypoint.sh"] # Example for later if needed
+
+  db:
+    image: postgres:13-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=packerdb
+      - POSTGRES_USER=packeruser
+      - POSTGRES_PASSWORD=packerpassword
+    ports:
+      - "5432:5432" # Optional: Expose DB port to host for direct access
+
+volumes:
+  postgres_data:
