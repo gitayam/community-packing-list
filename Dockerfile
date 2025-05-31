@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.9-slim
+FROM python:3.10-slim
 
 # Set environment variables
 ENV PYTHONUNBUFFERED 1
@@ -20,16 +20,13 @@ RUN mkdir /app && chown appuser:appgroup /app
 WORKDIR /app
 
 # Copy requirements file and install dependencies
-# This step assumes requirements.txt will be in the context root when building
 COPY --chown=appuser:appgroup requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code
-# This assumes the Dockerfile is in the project root, so '.' refers to the project root
 COPY --chown=appuser:appgroup . .
 
 # Ensure the app directory and its contents are owned by appuser
-# This might be redundant if COPY --chown works as expected for all files/dirs
 RUN chown -R appuser:appgroup /app
 
 # Switch to the non-root user
@@ -39,5 +36,6 @@ USER appuser
 EXPOSE 8000
 
 # Default command to run the application using Gunicorn
-# Gunicorn will be installed via requirements.txt
+# Note: We're now in the military_packing_list directory
+WORKDIR /app/military_packing_list
 CMD ["gunicorn", "military_packing_list.wsgi:application", "--bind", "0.0.0.0:8000"]
