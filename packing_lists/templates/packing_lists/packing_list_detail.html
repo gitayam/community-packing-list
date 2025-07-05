@@ -5,7 +5,7 @@
 {% block page_header %}{{ packing_list.name }}{% endblock %}
 
 {% block content %}
-    <div class="list-meta mb-2">
+    <div class="list-meta">
         {% if packing_list.school %}
             <p><strong>School:</strong> {{ packing_list.school.name }}</p>
         {% endif %}
@@ -16,310 +16,431 @@
 
     <div class="actions-bar">
         {# <a href="{% url 'edit_packing_list' packing_list.id %}" class="button secondary">Edit List Details</a> #}
-        <a href="{% url 'add_item_to_list' packing_list.id %}" class="button">
+        <a href="{% url 'add_item_to_list' packing_list.id %}" class="button success">
             <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             Add New Item
         </a>
     </div>
 
-    <div class="list-controls">
-        <input type="text" id="item-table-filter" class="form-control item-filter-input" placeholder="Filter items...">
+    <div class="table-controls">
+        <div class="table-controls-left">
+            <input type="text" id="item-table-filter" class="table-filter-input" placeholder="🔍 Search items...">
+        </div>
+        <div class="table-controls-right">
+            <button type="button" id="toggle-columns" class="button secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-columns"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="9" y2="15"></line><line x1="15" y1="9" x2="15" y2="15"></line></svg>
+                Show Details
+            </button>
+            <button type="button" id="clear-filters" class="button secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                Clear
+            </button>
+        </div>
     </div>
 
     <h2>Items</h2>
     {% if items_with_prices %}
         <form method="post" id="packing-list-items-form">
             {% csrf_token %}
-            <div class="responsive-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Section</th>
-                        <th>Packed?</th>
-                        <th>Item Name</th>
-                        <th>Quantity</th>
-                        <th>NSN/LIN</th>
-                        <th>Required?</th>
-                        <th>Notes</th>
-                        <th>Instructions</th>
-                        <th>Recommended Store</th>
-                        <th>Pricing Info</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% regroup items_with_prices by pli.section as sectioned_items %}
-                    {% for section in sectioned_items %}
-                        {% if section.grouper %}
-                        <tr class="section-header">
-                            <td colspan="10"><strong>{{ section.grouper }}</strong></td>
+            <div class="modern-table-wrapper">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="packed">
+                                <span class="th-content">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-square"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                                    Packed
+                                </span>
+                            </th>
+                            <th class="sortable" data-sort="name">
+                                <span class="th-content">Item Name</span>
+                            </th>
+                            <th class="sortable" data-sort="quantity">
+                                <span class="th-content">Qty</span>
+                            </th>
+                            <th class="sortable" data-sort="required">
+                                <span class="th-content">Required</span>
+                            </th>
+                            <th class="sortable" data-sort="store">
+                                <span class="th-content">Best Store</span>
+                            </th>
+                            <th class="sortable" data-sort="price">
+                                <span class="th-content">Price</span>
+                            </th>
+                            <th class="actions-column">
+                                <span class="th-content">Actions</span>
+                            </th>
+                            <!-- Hidden columns -->
+                            <th class="hidden-column sortable" data-sort="section">
+                                <span class="th-content">Section</span>
+                            </th>
+                            <th class="hidden-column sortable" data-sort="nsn">
+                                <span class="th-content">NSN/LIN</span>
+                            </th>
+                            <th class="hidden-column">
+                                <span class="th-content">Notes</span>
+                            </th>
+                            <th class="hidden-column">
+                                <span class="th-content">Instructions</span>
+                            </th>
                         </tr>
-                        {% endif %}
-                        {% for item_wp in section.list %}
-                        <tr class="{% if item_wp.pli.packed %}packed-true{% else %}packed-false{% endif %}">
-                            <td>{% if item_wp.pli.section %}{{ item_wp.pli.section }}{% else %}-{% endif %}</td>
-                            <td>
-                                <button type="submit" name="toggle_packed_item_id" value="{{ item_wp.pli.id }}" class="button {% if item_wp.pli.packed %}secondary{% else %}success{% endif %} button-icon">
-                                    {% if item_wp.pli.packed %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x-square"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>
-                                        Undo
+                    </thead>
+                    <tbody>
+                        {% regroup items_with_prices by pli.section as sectioned_items %}
+                        {% for section in sectioned_items %}
+                            {% if section.grouper %}
+                            <tr class="section-header-row">
+                                <td colspan="7" class="section-header-cell">
+                                    <strong>{{ section.grouper }}</strong>
+                                </td>
+                                <td colspan="4" class="section-header-cell hidden-column">
+                                    <strong>{{ section.grouper }}</strong>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% for item_wp in section.list %}
+                            <tr class="item-row {% if item_wp.pli.packed %}packed-row{% endif %}" data-item-name="{{ item_wp.item.name|lower }}">
+                                <td class="packed-cell">
+                                    <button type="submit" name="toggle_packed_item_id" value="{{ item_wp.pli.id }}" class="pack-button {% if item_wp.pli.packed %}packed{% else %}unpacked{% endif %}">
+                                        {% if item_wp.pli.packed %}
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                        {% else %}
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-circle"><circle cx="12" cy="12" r="10"></circle></svg>
+                                        {% endif %}
+                                    </button>
+                                </td>
+                                <td class="item-name-cell">
+                                    <strong>{{ item_wp.item.name }}</strong>
+                                </td>
+                                <td class="quantity-cell">
+                                    <span class="quantity-badge">{{ item_wp.pli.quantity }}</span>
+                                </td>
+                                <td class="required-cell">
+                                    {% if item_wp.pli.required %}
+                                        <span class="status-badge required">Required</span>
                                     {% else %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-square"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-                                        Pack
+                                        <span class="status-badge optional">Optional</span>
                                     {% endif %}
-                                </button>
-                            </td>
-                            <td>{{ item_wp.item.name }}</td>
-                            <td>{{ item_wp.pli.quantity }}</td>
-                            <td>{% if item_wp.pli.nsn_lin %}{{ item_wp.pli.nsn_lin }}{% else %}-{% endif %}</td>
-                            <td>
-                                {% if item_wp.pli.required %}
-                                    <span class="status-tag status-required-yes">Yes</span>
-                                {% else %}
-                                    <span class="status-tag status-required-no">No</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if item_wp.pli.notes %}
-                                    <span class="item-notes">{{ item_wp.pli.notes }}</span>
-                                {% else %}
-                                    <span class="item-notes text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if item_wp.pli.instructions %}
-                                    <span class="item-instructions-highlight">{{ item_wp.pli.instructions }}</span>
-                                {% else %}
-                                    <span class="item-instructions text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if item_wp.prices_with_votes and item_wp.prices_with_votes.0.price.store %}
-                                    <span class="recommended-store">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-award"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 17 17 23 15.79 13.88"></polyline></svg>
-                                        {{ item_wp.prices_with_votes.0.price.store.name }}
-                                    </span>
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="price-info">
+                                </td>
+                                <td class="store-cell">
+                                    {% if item_wp.prices_with_votes and item_wp.prices_with_votes.0.price.store %}
+                                        <div class="store-info">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-award"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 17 17 23 15.79 13.88"></polyline></svg>
+                                            {{ item_wp.prices_with_votes.0.price.store.name }}
+                                        </div>
+                                    {% else %}
+                                        <span class="no-store">No store data</span>
+                                    {% endif %}
+                                </td>
+                                <td class="price-cell">
                                     {% if item_wp.prices_with_votes %}
-                                        <ul>
-                                        {% for price_data in item_wp.prices_with_votes %}
-                                            <li class="{% if forloop.first %}best-value{% endif %}">
-                                                {% if forloop.first %}
-                                                    <span class="best-value-tag">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-award"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 17 17 23 15.79 13.88"></polyline></svg>
-                                                        Best Value
-                                                    </span>
-                                                    <br>
-                                                {% endif %}
-                                                <strong>${{ price_data.price.price }}</strong> for {{ price_data.price.quantity }} at {{ price_data.price.store.name }}
-                                                {% if price_data.price.date_purchased %}({{ price_data.price.date_purchased|date:"Y-m-d" }}){% endif %}
-                                                <br>
-                                                <small>
-                                                    <span class="text-muted">${{ price_data.price_per_unit|floatformat:2 }}/unit</span>
-                                                    {% if price_data.vote_confidence > 0 %}
-                                                        <span class="text-success">• High confidence</span>
-                                                    {% elif price_data.vote_confidence < 0 %}
-                                                        <span class="text-danger">• Low confidence</span>
-                                                    {% else %}
-                                                        <span class="text-warning">• No votes yet</span>
-                                                    {% endif %}
-                                                </small>
-
-                                                <span class="vote-count">
-                                                    (<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-up"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>{{ price_data.upvotes }} /
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-down"><path d="M10 15v7a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg>{{ price_data.downvotes }})
-                                                </span>
-
-                                                <span class="vote-buttons">
-                                                    <form action="{% url 'handle_vote' %}" method="post">
-                                                        {% csrf_token %}
-                                                        <input type="hidden" name="price_id" value="{{ price_data.price.id }}">
-                                                        <button type="submit" name="upvote_price_id" value="{{ price_data.price.id }}" class="button success button-icon-sm">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-up"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                                        <div class="price-display">
+                                            <span class="best-price">${{ item_wp.prices_with_votes.0.price.price }}</span>
+                                            <button type="button" class="price-details-btn" data-item-id="{{ item_wp.item.id }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-info"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6"></path></svg>
+                                            </button>
+                                        </div>
+                                        <div class="price-details" id="price-details-{{ item_wp.item.id }}" style="display: none;">
+                                            {% for price_data in item_wp.prices_with_votes %}
+                                                <div class="price-entry {% if forloop.first %}best-value{% endif %}">
+                                                    <div class="price-main">
+                                                        <strong>${{ price_data.price.price }}</strong> for {{ price_data.price.quantity }} 
+                                                        at {{ price_data.price.store.name }}
+                                                    </div>
+                                                    <div class="price-meta">
+                                                        ${{ price_data.price_per_unit|floatformat:2 }}/unit
+                                                        {% if price_data.price.date_purchased %}• {{ price_data.price.date_purchased|date:"M d, Y" }}{% endif %}
+                                                    </div>
+                                                    <div class="price-actions">
+                                                        <button type="button" class="vote-btn upvote" data-price-id="{{ price_data.price.id }}">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-up"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                                                            {{ price_data.upvotes }}
                                                         </button>
-                                                    </form>
-                                                    <form action="{% url 'handle_vote' %}" method="post">
-                                                        {% csrf_token %}
-                                                        <input type="hidden" name="price_id" value="{{ price_data.price.id }}">
-                                                        <button type="submit" name="downvote_price_id" value="{{ price_data.price.id }}" class="button danger button-icon-sm">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-down"><path d="M10 15v7a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg>
+                                                        <button type="button" class="vote-btn downvote" data-price-id="{{ price_data.price.id }}">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-down"><path d="M10 15v7a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg>
+                                                            {{ price_data.downvotes }}
                                                         </button>
-                                                    </form>
-                                                </span>
-                                            </li>
-                                        {% endfor %}
-                                        </ul>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
                                     {% else %}
-                                        <p class="no-prices">No pricing information yet.</p>
+                                        <span class="no-price">No pricing</span>
                                     {% endif %}
-                                    <a href="{% url 'add_price_for_item' item_id=item_wp.item.id list_id=packing_list.id %}" class="button text-small mt-1 add-price-modal-link" data-url="{% url 'add_price_for_item_modal' item_id=item_wp.item.id list_id=packing_list.id %}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus-circle"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-                                        Add Price
-                                    </a>
-                                </div>
-                            </td>
-                            <td>
-                                <a href="{% url 'edit_item_in_list' packing_list.id item_wp.pli.id %}" class="button text-small">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                                    Edit
-                                </a>
-                            </td>
-                        </tr>
+                                </td>
+                                <td class="actions-cell">
+                                    <div class="action-buttons">
+                                        <button type="button" class="action-btn add-price-btn" data-item-id="{{ item_wp.item.id }}" data-list-id="{{ packing_list.id }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                        </button>
+                                        <a href="{% url 'edit_item_in_list' packing_list.id item_wp.pli.id %}" class="action-btn edit-btn">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                        </a>
+                                    </div>
+                                </td>
+                                <!-- Hidden columns -->
+                                <td class="hidden-column section-cell">
+                                    {{ item_wp.pli.section|default:"-" }}
+                                </td>
+                                <td class="hidden-column nsn-cell">
+                                    {{ item_wp.pli.nsn_lin|default:"-" }}
+                                </td>
+                                <td class="hidden-column notes-cell">
+                                    {{ item_wp.pli.notes|default:"-" }}
+                                </td>
+                                <td class="hidden-column instructions-cell">
+                                    {{ item_wp.pli.instructions|default:"-" }}
+                                </td>
+                            </tr>
+                            {% endfor %}
                         {% endfor %}
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
             </div>
         </form>
     {% else %}
-        <p class="no-items">This packing list currently has no items.</p>
-        {# Link to add items? #}
+        <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather feather-package"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            <h3>No items in this packing list</h3>
+            <p>Get started by adding your first item.</p>
+            <a href="{% url 'add_item_to_list' packing_list.id %}" class="button success">Add First Item</a>
+        </div>
     {% endif %}
 
-    <!-- Modal for Add Price -->
+    <!-- Price Modal -->
     <div id="price-modal" class="modal">
-      <div id="price-modal-content" class="modal-content">
-        <button id="close-price-modal" class="modal-close">&times;</button>
-        <div id="price-modal-body">
-          <!-- AJAX-loaded form will go here -->
+        <div id="price-modal-content" class="modal-content">
+            <button id="close-price-modal" class="modal-close">&times;</button>
+            <div id="price-modal-body">
+                <!-- AJAX-loaded form will go here -->
+            </div>
         </div>
-      </div>
     </div>
-{% endblock %}
 
-{% block extra_js %}
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Filtering
-    var filterInput = document.getElementById('item-table-filter');
-    if (filterInput) {
-      filterInput.addEventListener('input', function() {
-        var filter = this.value.toLowerCase();
-        var rows = document.querySelectorAll('table tbody tr');
-        rows.forEach(function(row) {
-          var text = row.textContent.toLowerCase();
-          row.style.display = text.indexOf(filter) > -1 ? '' : 'none';
-        });
-      });
-    }
-    // Sorting (grouped by section)
-    document.querySelectorAll('table thead th').forEach(function(header, i) {
-      header.style.cursor = 'pointer';
-      header.addEventListener('click', function() {
-        var table = header.closest('table');
-        var tbody = table.querySelector('tbody');
-        var allRows = Array.from(tbody.children);
-        var newRows = [];
-        var idx = 0;
-        while (idx < allRows.length) {
-          var row = allRows[idx];
-          if (row.classList.contains('section-header')) {
-            // Start a new section
-            var sectionHeader = row;
-            var sectionRows = [];
-            idx++;
-            // Collect all item rows until next section header or end
-            while (idx < allRows.length && !allRows[idx].classList.contains('section-header')) {
-              sectionRows.push(allRows[idx]);
-              idx++;
-            }
-            // Sort sectionRows by column i
-            sectionRows.sort(function(a, b) {
-              var ta = a.children[i].textContent.trim().toLowerCase();
-              var tb = b.children[i].textContent.trim().toLowerCase();
-              if (!isNaN(parseFloat(ta)) && !isNaN(parseFloat(tb))) {
-                return header.classList.contains('sort-asc') ? parseFloat(ta) - parseFloat(tb) : parseFloat(tb) - parseFloat(ta);
-              }
-              return header.classList.contains('sort-asc') ? ta.localeCompare(tb) : tb.localeCompare(ta);
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Table filtering
+        const filterInput = document.getElementById('item-table-filter');
+        const table = document.querySelector('.modern-table');
+        const rows = table.querySelectorAll('tbody tr.item-row');
+        
+        filterInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            rows.forEach(row => {
+                const itemName = row.dataset.itemName;
+                const visible = itemName.includes(searchTerm);
+                row.style.display = visible ? '' : 'none';
             });
-            // Add section header and sorted rows
-            newRows.push(sectionHeader);
-            sectionRows.forEach(function(r) { newRows.push(r); });
-          } else {
-            // Not expected, but just in case
-            newRows.push(row);
-            idx++;
-          }
-        }
-        // Toggle sort direction
-        var asc = !header.classList.contains('sort-asc');
-        document.querySelectorAll('table thead th').forEach(function(h) { h.classList.remove('sort-asc', 'sort-desc'); });
-        header.classList.add(asc ? 'sort-asc' : 'sort-desc');
-        tbody.innerHTML = '';
-        newRows.forEach(function(row) { tbody.appendChild(row); });
-      });
-    });
-    // Modal logic (existing)
-    function bindPriceFormAjax() {
-      var priceForm = document.getElementById('price-form');
-      if (priceForm) {
-        priceForm.onsubmit = function(e) {
-          e.preventDefault();
-          var formData = new FormData(priceForm);
-          fetch(priceForm.action || window.location.href, {
-            method: 'POST',
-            headers: {'x-requested-with': 'XMLHttpRequest'},
-            body: formData
-          })
-          .then(response => response.json())
-          .then(data => {
-            console.log('Price form AJAX response:', data); // Debug log
-            if (data.success) {
-              document.getElementById('price-modal').style.display = 'none';
-              window.location.reload(); // Reload to update price info
-            } else if (data.html) {
-              var modalBody = document.getElementById('price-modal-body');
-              modalBody.innerHTML = data.html;
-              modalBody.classList.remove('loading'); // Ensure loading class is removed
-              // Show a visible error message if not already present
-              if (!document.getElementById('modal-error-msg')) {
-                var err = document.createElement('div');
-                err.id = 'modal-error-msg';
-                err.style.color = 'red';
-                err.style.marginBottom = '1em';
-                err.textContent = 'There was an error saving the price. Please check the form.';
-                document.getElementById('price-modal-body').prepend(err);
-              }
-              bindPriceFormAjax(); // Re-bind for new form
+        });
+        
+        // Clear filters
+        document.getElementById('clear-filters').addEventListener('click', function() {
+            filterInput.value = '';
+            rows.forEach(row => row.style.display = '');
+        });
+        
+        // Column toggle
+        const toggleBtn = document.getElementById('toggle-columns');
+        const tableWrapper = document.querySelector('.modern-table-wrapper');
+        let columnsVisible = false;
+        
+        toggleBtn.addEventListener('click', function() {
+            columnsVisible = !columnsVisible;
+            
+            if (columnsVisible) {
+                tableWrapper.classList.add('show-hidden-columns');
+                this.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye-off"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    Hide Details
+                `;
+            } else {
+                tableWrapper.classList.remove('show-hidden-columns');
+                this.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-columns"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="9" y2="15"></line><line x1="15" y1="9" x2="15" y2="15"></line></svg>
+                    Show Details
+                `;
             }
-          });
-        };
-      }
-    }
-    document.querySelectorAll('.add-price-modal-link').forEach(function(link) {
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
-        var url = this.getAttribute('data-url');
-        var modal = document.getElementById('price-modal');
-        var modalBody = document.getElementById('price-modal-body');
-        modal.style.display = 'flex';
-        modalBody.innerHTML = '<p style="padding: var(--spacing-lg); text-align:center;">Loading...</p>'; // Added some padding to ensure visibility
-        modalBody.classList.add('loading');
-        fetch(url, {headers: {'x-requested-with': 'XMLHttpRequest'}})
-          .then(response => response.json())
-          .then(data => {
-            modalBody.classList.remove('loading');
-            modalBody.innerHTML = data.html;
-            bindPriceFormAjax();
-          })
-          .catch(error => {
-            modalBody.classList.remove('loading');
-            modalBody.innerHTML = '<p style="color:red; padding: var(--spacing-lg); text-align:center;">Error loading content. Please try again.</p>';
-            console.error("Error fetching modal content:", error);
-          });
-      });
+        });
+        
+        // Table sorting
+        const sortableHeaders = document.querySelectorAll('.modern-table th.sortable');
+        
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                const sortType = this.dataset.sort;
+                const currentSort = this.classList.contains('sort-asc') ? 'asc' : 
+                                  this.classList.contains('sort-desc') ? 'desc' : 'none';
+                
+                // Remove sort classes from all headers
+                sortableHeaders.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+                
+                // Add appropriate sort class
+                if (currentSort === 'none' || currentSort === 'desc') {
+                    this.classList.add('sort-asc');
+                    sortTable(sortType, 'asc');
+                } else {
+                    this.classList.add('sort-desc');
+                    sortTable(sortType, 'desc');
+                }
+            });
+        });
+        
+        function sortTable(sortType, direction) {
+            const tbody = table.querySelector('tbody');
+            const allRows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Separate section headers and item rows
+            const sectionHeaders = allRows.filter(row => row.classList.contains('section-header-row'));
+            const itemRows = allRows.filter(row => row.classList.contains('item-row'));
+            
+            // Sort item rows
+            itemRows.sort((a, b) => {
+                let aVal, bVal;
+                
+                switch(sortType) {
+                    case 'name':
+                        aVal = a.querySelector('.item-name-cell').textContent.trim().toLowerCase();
+                        bVal = b.querySelector('.item-name-cell').textContent.trim().toLowerCase();
+                        break;
+                    case 'quantity':
+                        aVal = parseInt(a.querySelector('.quantity-badge').textContent);
+                        bVal = parseInt(b.querySelector('.quantity-badge').textContent);
+                        break;
+                    case 'required':
+                        aVal = a.querySelector('.status-badge').textContent.includes('Required') ? 1 : 0;
+                        bVal = b.querySelector('.status-badge').textContent.includes('Required') ? 1 : 0;
+                        break;
+                    case 'packed':
+                        aVal = a.classList.contains('packed-row') ? 1 : 0;
+                        bVal = b.classList.contains('packed-row') ? 1 : 0;
+                        break;
+                    case 'price':
+                        const aPriceEl = a.querySelector('.best-price');
+                        const bPriceEl = b.querySelector('.best-price');
+                        aVal = aPriceEl ? parseFloat(aPriceEl.textContent.replace('$', '')) : 0;
+                        bVal = bPriceEl ? parseFloat(bPriceEl.textContent.replace('$', '')) : 0;
+                        break;
+                    default:
+                        aVal = a.textContent.trim().toLowerCase();
+                        bVal = b.textContent.trim().toLowerCase();
+                }
+                
+                if (direction === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+            
+            // Clear tbody and re-add sorted rows
+            tbody.innerHTML = '';
+            itemRows.forEach(row => tbody.appendChild(row));
+        }
+        
+        // Price details toggle
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.price-details-btn')) {
+                const btn = e.target.closest('.price-details-btn');
+                const itemId = btn.dataset.itemId;
+                const detailsDiv = document.getElementById(`price-details-${itemId}`);
+                
+                // Hide all other price details
+                document.querySelectorAll('.price-details').forEach(div => {
+                    if (div !== detailsDiv) {
+                        div.style.display = 'none';
+                    }
+                });
+                
+                // Toggle current details
+                if (detailsDiv.style.display === 'none' || !detailsDiv.style.display) {
+                    detailsDiv.style.display = 'block';
+                    
+                    // Position the details popup
+                    const rect = btn.getBoundingClientRect();
+                    detailsDiv.style.position = 'fixed';
+                    detailsDiv.style.top = rect.bottom + 5 + 'px';
+                    detailsDiv.style.left = Math.max(10, rect.left - 150) + 'px';
+                    detailsDiv.style.zIndex = '1000';
+                } else {
+                    detailsDiv.style.display = 'none';
+                }
+            }
+        });
+        
+        // Close price details when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.price-details') && !e.target.closest('.price-details-btn')) {
+                document.querySelectorAll('.price-details').forEach(div => {
+                    div.style.display = 'none';
+                });
+            }
+        });
+        
+        // Add price modal functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.add-price-btn')) {
+                const btn = e.target.closest('.add-price-btn');
+                const itemId = btn.dataset.itemId;
+                const listId = btn.dataset.listId;
+                
+                // Open modal with add price form
+                const modal = document.getElementById('price-modal');
+                const modalBody = document.getElementById('price-modal-body');
+                
+                modalBody.innerHTML = `
+                    <h3>Add Price Information</h3>
+                    <form method="post" action="/packing-lists/${listId}/items/${itemId}/add-price/">
+                        <div class="form-group">
+                            <label for="price">Price ($):</label>
+                            <input type="number" step="0.01" name="price" id="price" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="quantity">Quantity:</label>
+                            <input type="number" name="quantity" id="quantity" value="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="store">Store:</label>
+                            <select name="store" id="store" required>
+                                <option value="">Select a store...</option>
+                                <!-- This would be populated with available stores -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="date_purchased">Date Purchased:</label>
+                            <input type="date" name="date_purchased" id="date_purchased">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="button success">Add Price</button>
+                            <button type="button" class="button secondary" onclick="document.getElementById('price-modal').style.display='none'">Cancel</button>
+                        </div>
+                    </form>
+                `;
+                
+                modal.style.display = 'flex';
+            }
+        });
+        
+        // Close modal functionality
+        document.getElementById('close-price-modal').addEventListener('click', function() {
+            document.getElementById('price-modal').style.display = 'none';
+        });
+        
+        // Vote functionality (simplified)
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.vote-btn')) {
+                const btn = e.target.closest('.vote-btn');
+                const priceId = btn.dataset.priceId;
+                const isUpvote = btn.classList.contains('upvote');
+                
+                // This would normally make an AJAX call to handle the vote
+                console.log(`${isUpvote ? 'Upvote' : 'Downvote'} for price ${priceId}`);
+                
+                // For now, just update the count visually
+                const currentCount = parseInt(btn.textContent.match(/\d+/)[0]);
+                btn.innerHTML = btn.innerHTML.replace(/\d+/, currentCount + 1);
+            }
+        });
     });
-    document.getElementById('close-price-modal').onclick = function() {
-      document.getElementById('price-modal').style.display = 'none';
-    };
-    document.getElementById('price-modal').onclick = function(e) {
-      if (e.target === this) this.style.display = 'none';
-    };
-  });
-</script>
+    </script>
 {% endblock %}
