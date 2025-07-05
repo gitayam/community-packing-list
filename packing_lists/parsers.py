@@ -138,34 +138,29 @@ def parse_pdf(file_obj):
         # If file_obj is not a real PDF, skip test gracefully
         if not hasattr(file_obj, 'read'):
             return [], "Error parsing PDF file: Not a file object"
+        
+        # Reset file pointer to beginning
+        file_obj.seek(0)
+        
         reader = PdfReader(file_obj)
         text_content = ""
         for page in reader.pages:
             page_text = page.extract_text()
             if page_text:
                 text_content += page_text + "\n"
+        
         if not text_content.strip():
             return [], "No text could be extracted from the PDF."
-        for line in text_content.splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            item_name = line
-            quantity = 1
-            notes = ""
-            items.append({
-                'item_name': item_name.strip(),
-                'quantity': quantity,
-                'notes': notes.strip()
-            })
+        
+        # Parse the extracted text using the text parser
+        return parse_text(text_content)
+        
     except Exception as e:
-        # For test environments, skip if not a real PDF
-        if 'EOF marker not found' in str(e) or 'Cannot read an empty file' in str(e):
-            return [], None
-        return [], f"Error parsing PDF file: {str(e)}"
-    if not items:
-        return [], "No items could be parsed from the PDF content."
-    return items, None
+        # For test environments, handle various PDF parsing errors
+        error_msg = str(e)
+        if any(keyword in error_msg.lower() for keyword in ['eof', 'empty file', 'cannot read', 'invalid']):
+            return [], "Error parsing PDF file: Invalid or empty PDF"
+        return [], f"Error parsing PDF file: {error_msg}"
 
 def parse_text(text_content):
     """
