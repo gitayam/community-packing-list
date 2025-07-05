@@ -137,30 +137,4 @@
     </form>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Toggle new store form based on dropdown
-    const addStoreDiv = document.getElementById('inline-add-store');
-    const storeSelect = document.getElementById('id_store');
-    const storeNameInput = document.getElementById('id_store_name');
-
-    function toggleAddStoreSection() {
-        if (storeSelect && storeSelect.value === '__add_new__') {
-            addStoreDiv.style.display = 'block';
-            if (storeNameInput) storeNameInput.required = true;
-        } else {
-            addStoreDiv.style.display = 'none';
-            if (storeNameInput) {
-                storeNameInput.required = false;
-                storeNameInput.value = '';
-            }
-        }
-    }
-
-    if (storeSelect && addStoreDiv) {
-        storeSelect.addEventListener('change', toggleAddStoreSection);
-        // Initial state
-        toggleAddStoreSection();
-    }
-});
-</script> 
+<script src="{% static 'packing_lists/js/price-form-modal.js' %}"></script> 

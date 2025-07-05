@@ -1,4 +1,5 @@
 {% extends "packing_lists/base.html" %}
+{% load static %}
 
 {% block title %}{{ title }} - Packing Lists{% endblock %}
 
@@ -100,91 +101,5 @@
         <button type="submit" class="button success">Save</button>
         <a href="{% if packing_list %}{% url 'view_packing_list' packing_list.id %}{% else %}{% url 'home' %}{% endif %}" class="button secondary">Cancel</a>
     </form>
-    <script type="module">
-        // Store all options for each type in data attributes on page load
-        function getOptions(select) {
-            return Array.from(select.options).map(opt => ({value: opt.value, text: opt.text, orig: opt}));
-        }
-        function setOptions(select, options, selectedValue) {
-            select.innerHTML = '';
-            options.forEach(opt => {
-                const o = document.createElement('option');
-                o.value = opt.value;
-                o.text = opt.text;
-                if (opt.value === selectedValue) o.selected = true;
-                select.appendChild(o);
-            });
-        }
-        // On DOMContentLoaded, cache all options
-        document.addEventListener('DOMContentLoaded', function() {
-            const branchField = document.querySelector('[name="branch"]');
-            const schoolTypeField = document.querySelector('[name="school_type"]');
-            const assessmentTypeField = document.querySelector('[name="assessment_type"]');
-            const trainingTypeField = document.querySelector('[name="training_type"]');
-            // Save all options for each select
-            const allSchoolOptions = getOptions(schoolTypeField);
-            const allAssessmentOptions = getOptions(assessmentTypeField);
-            const allTrainingOptions = getOptions(trainingTypeField);
-            // Mapping from value to allowed branches (must match Python)
-            const schoolBranches = {
-                airborne: ["army", "all"],
-                air_assault: ["army", "all"],
-                jumpmaster: ["army", "all"],
-                ranger_school: ["army", "all"],
-                pathfinder: ["army", "all"],
-                sniper: ["army", "marines", "all"],
-                mountain: ["army", "all"],
-                sapper: ["army", "all"],
-                cdqc: ["army", "all"],
-                sfqc: ["army", "all"],
-                buds: ["navy", "all"],
-                sere: ["army", "navy", "marines", "air_force", "all"],
-                other: ["all", "army", "navy", "marines", "air_force"]
-            };
-            const assessmentBranches = {
-                sfas: ["army", "all"],
-                poas: ["army", "all"],
-                caas: ["army", "all"],
-                rasp: ["army", "all"],
-                ocs: ["army", "navy", "marines", "air_force", "all"],
-                wocs: ["army", "all"],
-                seal_pst: ["navy", "all"],
-                recon: ["marines", "all"],
-                pj_indoc: ["air_force", "all"],
-                marsoc_as: ["marines", "all"],
-                cct_selection: ["air_force", "all"],
-                other: ["all", "army", "navy", "marines", "air_force"]
-            };
-            const trainingBranches = {
-                bct: ["army", "all"],
-                ait: ["army", "all"],
-                osut: ["army", "all"],
-                pre_ranger: ["army", "all"],
-                pre_sapper: ["army", "all"],
-                pre_airborne: ["army", "all"],
-                pre_seal: ["navy", "all"],
-                tactical_fitness: ["all", "army", "navy", "marines", "air_force"],
-                never_quit: ["all", "army", "navy", "marines", "air_force"],
-                other: ["all", "army", "navy", "marines", "air_force"]
-            };
-            function filterOptions(select, allOptions, branch, mapping) {
-                const filtered = allOptions.filter(opt => {
-                    if (!opt.value) return true; // Keep blank
-                    const allowed = mapping[opt.value];
-                    return allowed && (allowed.includes(branch) || branch === 'all');
-                });
-                setOptions(select, filtered, select.value);
-            }
-            function updateTypeOptions() {
-                const branch = branchField.value;
-                filterOptions(schoolTypeField, allSchoolOptions, branch, schoolBranches);
-                filterOptions(assessmentTypeField, allAssessmentOptions, branch, assessmentBranches);
-                filterOptions(trainingTypeField, allTrainingOptions, branch, trainingBranches);
-            }
-            if (branchField) {
-                branchField.addEventListener('change', updateTypeOptions);
-                updateTypeOptions();
-            }
-        });
-    </script>
+    <script src="{% static 'packing_lists/js/packing-list-form.js' %}"></script>
 {% endblock %}
