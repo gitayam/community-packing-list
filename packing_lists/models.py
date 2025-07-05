@@ -21,6 +21,7 @@ class Store(models.Model):
     zip_code = models.CharField(max_length=20, blank=True, null=True)
     country = models.CharField(max_length=100, blank=True, null=True, default="USA") # Default country if applicable
     full_address_legacy = models.TextField(blank=True, null=True, help_text="For unstructured or imported addresses.")
+    url = models.URLField(blank=True, null=True, help_text="Store website URL")
 
     # GIS fields for future use (GeoDjango)
     # from django.contrib.gis.db import models as gis_models
@@ -43,6 +44,20 @@ class Store(models.Model):
             return self.full_address_legacy
         else:
             return "No address provided"
+
+    def google_maps_link(self):
+        if self.formatted_address:
+            import urllib.parse
+            q = urllib.parse.quote(self.formatted_address)
+            return f"https://www.google.com/maps/search/?api=1&query={q}"
+        return None
+
+    def apple_maps_link(self):
+        if self.formatted_address:
+            import urllib.parse
+            q = urllib.parse.quote(self.formatted_address)
+            return f"https://maps.apple.com/?q={q}"
+        return None
 
 class Base(models.Model):
     name = models.CharField(max_length=200)

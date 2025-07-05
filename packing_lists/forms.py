@@ -205,6 +205,7 @@ class StoreForm(forms.ModelForm):
         model = Store
         fields = [
             'name', 'address_line1', 'address_line2', 'city', 'state', 'zip_code', 'country',
+            'url',
             'is_online', 'is_in_person'
         ]
         widgets = {
