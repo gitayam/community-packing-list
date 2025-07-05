@@ -114,7 +114,7 @@
                                     {% else %}
                                         <p class="no-prices">No pricing information yet.</p>
                                     {% endif %}
-                                    <a href="{% url 'add_price_for_item' item_id=item_wp.item.id list_id=packing_list.id %}" class="button text-small mt-1">Add Price for {{ item_wp.item.name }}</a>
+                                    <a href="{% url 'add_price_for_item' item_id=item_wp.item.id list_id=packing_list.id %}" class="button text-small mt-1 add-price-modal-link" data-url="{% url 'add_price_for_item_modal' item_id=item_wp.item.id list_id=packing_list.id %}">Add Price for {{ item_wp.item.name }}</a>
                                 </div>
                             </td>
                             <td>
@@ -130,4 +130,67 @@
         <p class="no-items">This packing list currently has no items.</p>
         {# Link to add items? #}
     {% endif %}
+
+    <!-- Modal for Add Price -->
+    <div id="price-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
+      <div id="price-modal-content" style="background:#fff; padding:2em; border-radius:8px; max-width:500px; margin:40px auto; position:relative;">
+        <button id="close-price-modal" style="position:absolute; top:10px; right:10px; font-size:1.2em;">&times;</button>
+        <div id="price-modal-body">
+          <!-- AJAX-loaded form will go here -->
+        </div>
+      </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    function bindPriceFormAjax() {
+      var priceForm = document.getElementById('price-form');
+      if (priceForm) {
+        priceForm.onsubmit = function(e) {
+          e.preventDefault();
+          var formData = new FormData(priceForm);
+          fetch(priceForm.action || window.location.href, {
+            method: 'POST',
+            headers: {'x-requested-with': 'XMLHttpRequest'},
+            body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              document.getElementById('price-modal').style.display = 'none';
+              window.location.reload(); // Reload to update price info
+            } else if (data.html) {
+              document.getElementById('price-modal-body').innerHTML = data.html;
+              bindPriceFormAjax(); // Re-bind for new form
+            }
+          });
+        };
+      }
+    }
+    document.querySelectorAll('.add-price-modal-link').forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        var url = this.getAttribute('data-url');
+        var modal = document.getElementById('price-modal');
+        var modalBody = document.getElementById('price-modal-body');
+        modal.style.display = 'flex';
+        modalBody.innerHTML = '<p>Loading...</p>';
+        fetch(url, {headers: {'x-requested-with': 'XMLHttpRequest'}})
+          .then(response => response.json())
+          .then(data => {
+            modalBody.innerHTML = data.html;
+            bindPriceFormAjax();
+          });
+      });
+    });
+    document.getElementById('close-price-modal').onclick = function() {
+      document.getElementById('price-modal').style.display = 'none';
+    };
+    document.getElementById('price-modal').onclick = function(e) {
+      if (e.target === this) this.style.display = 'none';
+    };
+  });
+</script>
 {% endblock %}
