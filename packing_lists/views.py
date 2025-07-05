@@ -281,9 +281,25 @@ def add_price_for_item(request, item_id, list_id=None): # list_id is for redirec
                     'title': f"Add Price for {item.name}"
                 }
                 return render(request, 'packing_lists/price_form.html', context)
-            # Create or get the new store
-            store, _ = Store.objects.get_or_create(name=store_name)
-            post_data = post_data.copy()
+            # Gather all store fields
+            store_data = {
+                'name': store_name,
+                'address_line1': post_data.get('store_address_line1', '').strip(),
+                'address_line2': post_data.get('store_address_line2', '').strip(),
+                'city': post_data.get('store_city', '').strip(),
+                'state': post_data.get('store_state', '').strip(),
+                'zip_code': post_data.get('store_zip_code', '').strip(),
+                'country': post_data.get('store_country', '').strip() or 'USA',
+                'url': post_data.get('store_url', '').strip(),
+                'is_online': bool(post_data.get('store_is_online')),
+                'is_in_person': bool(post_data.get('store_is_in_person', '1')),
+            }
+            store, _ = Store.objects.get_or_create(name=store_name, defaults=store_data)
+            # If store already exists, update its fields with new data
+            if not _:
+                for k, v in store_data.items():
+                    setattr(store, k, v)
+                store.save()
             post_data['store'] = store.id
         form = PriceForm(post_data)
         if form.is_valid():
