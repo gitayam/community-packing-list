@@ -3,11 +3,11 @@ from django.urls import reverse
 from django.contrib import messages # For feedback to the user
 from django.db import IntegrityError
 from .models import PackingList, Item, PackingListItem, School, Price, Vote, Store
-from .forms import PackingListForm, UploadFileForm, PriceForm, VoteForm, ConfigureUploadListForm
+from .forms import PackingListForm, UploadFileForm, PriceForm, VoteForm, ConfigureUploadListForm, PackingListItemForm
 from .parsers import parse_csv, parse_excel, parse_pdf, parse_text
 import io
 import uuid # For unique session keys
-from django.http import Http404
+from django.http import Http404, JsonResponse
 
 # Requires login for actions that modify data if user accounts are active
 # from django.contrib.auth.decorators import login_required
@@ -443,3 +443,76 @@ def store_list(request):
         'title': 'Find Stores'
     }
     return render(request, 'packing_lists/store_list.html', context)
+
+def add_store_ajax(request):
+    if request.method == 'POST':
+        import json
+        try:
+            if request.content_type == 'application/json':
+                data = json.loads(request.body.decode('utf-8'))
+                name = data.get('name', '').strip()
+                address = data.get('address', '').strip()
+            else:
+                name = request.POST.get('new_store_name', '').strip()
+                address = request.POST.get('new_store_address', '').strip()
+        except Exception:
+            return JsonResponse({'success': False, 'error': 'Invalid data.'}, status=400)
+
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Store name is required.'}, status=400)
+        store, created = Store.objects.get_or_create(name=name, defaults={'address_line1': address})
+        if request.content_type == 'application/json':
+            return JsonResponse({'success': True, 'store_id': store.id, 'store_name': store.name})
+        else:
+            # Fallback: redirect to the referring page (should reload with new store in dropdown)
+            from django.shortcuts import redirect
+            return redirect(request.META.get('HTTP_REFERER', '/'))
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
+
+def add_item_to_list(request, list_id):
+    """
+    View to add a new PackingListItem to a PackingList.
+    """
+    packing_list = get_object_or_404(PackingList, id=list_id)
+    if request.method == 'POST':
+        form = PackingListItemForm(request.POST)
+        if form.is_valid():
+            pli = form.save(commit=False)
+            pli.packing_list = packing_list
+            try:
+                pli.save()
+                messages.success(request, f"Item '{pli.item.name}' added to packing list '{packing_list.name}'.")
+                return redirect(reverse('view_packing_list', args=[packing_list.id]))
+            except IntegrityError:
+                form.add_error('item', 'This item is already in the list.')
+    else:
+        form = PackingListItemForm()
+    context = {
+        'form': form,
+        'packing_list': packing_list,
+        'title': f"Add Item to {packing_list.name}",
+    }
+    return render(request, 'packing_lists/packing_listitem_form.html', context)
+
+
+def edit_item_in_list(request, list_id, pli_id):
+    """
+    View to edit an existing PackingListItem in a PackingList.
+    """
+    packing_list = get_object_or_404(PackingList, id=list_id)
+    pli = get_object_or_404(PackingListItem, id=pli_id, packing_list=packing_list)
+    if request.method == 'POST':
+        form = PackingListItemForm(request.POST, instance=pli)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Item '{pli.item.name}' updated in packing list '{packing_list.name}'.")
+            return redirect(reverse('view_packing_list', args=[packing_list.id]))
+    else:
+        form = PackingListItemForm(instance=pli)
+    context = {
+        'form': form,
+        'packing_list': packing_list,
+        'pli': pli,
+        'title': f"Edit Item in {packing_list.name}",
+    }
+    return render(request, 'packing_lists/packing_listitem_form.html', context)
