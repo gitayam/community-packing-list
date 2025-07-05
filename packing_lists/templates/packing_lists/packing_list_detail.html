@@ -22,6 +22,60 @@
         </a>
     </div>
 
+    <div class="base-filter-section">
+        <div class="filter-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-map-pin"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <h3>Base Location Filter</h3>
+            <p>Select your base to show nearby stores and relevant pricing</p>
+        </div>
+        
+        <form method="get" class="base-filter-form" id="base-filter-form">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="base-select">Military Base:</label>
+                    <select id="base-select" name="base_filter" class="base-select">
+                        <option value="">All Locations</option>
+                        {% for base in available_bases %}
+                            <option value="{{ base.id }}" {% if selected_base and selected_base.id == base.id %}selected{% endif %}>
+                                {{ base.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="radius-select">Search Radius:</label>
+                    <select id="radius-select" name="radius" class="radius-select">
+                        <option value="25" {% if selected_radius == 25 %}selected{% endif %}>25 miles</option>
+                        <option value="50" {% if selected_radius == 50 %}selected{% endif %}>50 miles</option>
+                        <option value="100" {% if selected_radius == 100 %}selected{% endif %}>100 miles</option>
+                        <option value="200" {% if selected_radius == 200 %}selected{% endif %}>200 miles</option>
+                    </select>
+                </div>
+                
+                <div class="filter-actions">
+                    <button type="submit" class="button secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+                        Filter Stores
+                    </button>
+                    <button type="button" id="clear-base-filter" class="button secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        Clear
+                    </button>
+                </div>
+            </div>
+            
+            {% if base_filter_active %}
+            <div class="filter-status" id="filter-status">
+                <div class="status-content">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-info"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6"></path></svg>
+                    <span id="filter-status-text">Showing stores within {{ selected_radius }} miles of {{ selected_base.name }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
     <div class="table-controls">
         <div class="table-controls-left">
             <input type="text" id="item-table-filter" class="table-filter-input" placeholder="🔍 Search items...">
@@ -126,7 +180,12 @@
                                     {% if item_wp.prices_with_votes and item_wp.prices_with_votes.0.price.store %}
                                         <div class="store-info">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-award"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 17 17 23 15.79 13.88"></polyline></svg>
-                                            {{ item_wp.prices_with_votes.0.price.store.name }}
+                                            <div class="store-details">
+                                                <span class="store-name">{{ item_wp.prices_with_votes.0.price.store.name }}</span>
+                                                {% if base_filter_active and item_wp.prices_with_votes.0.distance_from_base %}
+                                                    <span class="store-distance">{{ item_wp.prices_with_votes.0.distance_from_base|floatformat:1 }} mi</span>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     {% else %}
                                         <span class="no-store">No store data</span>
@@ -219,11 +278,20 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Table filtering
+        // Check if table exists before setting up functionality
         const filterInput = document.getElementById('item-table-filter');
         const table = document.querySelector('.modern-table');
+        const toggleBtn = document.getElementById('toggle-columns');
+        const tableWrapper = document.querySelector('.modern-table-wrapper');
+        
+        if (!table || !filterInput || !toggleBtn || !tableWrapper) {
+            console.log('Table elements not found, skipping table functionality');
+            return;
+        }
+        
         const rows = table.querySelectorAll('tbody tr.item-row');
         
+        // Table filtering
         filterInput.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
             
@@ -241,8 +309,6 @@
         });
         
         // Column toggle
-        const toggleBtn = document.getElementById('toggle-columns');
-        const tableWrapper = document.querySelector('.modern-table-wrapper');
         let columnsVisible = false;
         
         toggleBtn.addEventListener('click', function() {
@@ -384,40 +450,58 @@
                 const itemId = btn.dataset.itemId;
                 const listId = btn.dataset.listId;
                 
-                // Open modal with add price form
-                const modal = document.getElementById('price-modal');
-                const modalBody = document.getElementById('price-modal-body');
-                
-                modalBody.innerHTML = `
-                    <h3>Add Price Information</h3>
-                    <form method="post" action="/packing-lists/${listId}/items/${itemId}/add-price/">
-                        <div class="form-group">
-                            <label for="price">Price ($):</label>
-                            <input type="number" step="0.01" name="price" id="price" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="quantity">Quantity:</label>
-                            <input type="number" name="quantity" id="quantity" value="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="store">Store:</label>
-                            <select name="store" id="store" required>
-                                <option value="">Select a store...</option>
-                                <!-- This would be populated with available stores -->
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="date_purchased">Date Purchased:</label>
-                            <input type="date" name="date_purchased" id="date_purchased">
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="button success">Add Price</button>
-                            <button type="button" class="button secondary" onclick="document.getElementById('price-modal').style.display='none'">Cancel</button>
-                        </div>
-                    </form>
-                `;
-                
-                modal.style.display = 'flex';
+                // Load the price form via AJAX
+                fetch(`/packing-lists/item/${itemId}/add_price_modal/to_list/${listId}/`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.html) {
+                        const modal = document.getElementById('price-modal');
+                        const modalBody = document.getElementById('price-modal-body');
+                        modalBody.innerHTML = data.html;
+                        modal.style.display = 'flex';
+                        
+                        // Handle form submission
+                        const form = modalBody.querySelector('form');
+                        if (form) {
+                            form.addEventListener('submit', function(e) {
+                                e.preventDefault();
+                                
+                                const formData = new FormData(form);
+                                
+                                fetch(form.action, {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                    },
+                                    body: formData
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        modal.style.display = 'none';
+                                        location.reload(); // Refresh to show new price
+                                    } else if (data.html) {
+                                        modalBody.innerHTML = data.html;
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    alert('Error adding price. Please try again.');
+                                });
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading price form:', error);
+                    alert('Error loading price form. Please try again.');
+                });
             }
         });
         
@@ -441,6 +525,43 @@
                 btn.innerHTML = btn.innerHTML.replace(/\d+/, currentCount + 1);
             }
         });
+        
+        // Base filter functionality
+        const baseFilterForm = document.getElementById('base-filter-form');
+        const clearBaseFilterBtn = document.getElementById('clear-base-filter');
+        
+        if (clearBaseFilterBtn) {
+            clearBaseFilterBtn.addEventListener('click', function() {
+                // Clear the form and redirect without filter parameters
+                const url = new URL(window.location);
+                url.searchParams.delete('base_filter');
+                url.searchParams.delete('radius');
+                window.location.href = url.toString();
+            });
+        }
+        
+        // Auto-submit form when base or radius changes
+        if (baseFilterForm) {
+            const baseSelect = document.getElementById('base-select');
+            const radiusSelect = document.getElementById('radius-select');
+            
+            if (baseSelect) {
+                baseSelect.addEventListener('change', function() {
+                    if (this.value) {
+                        baseFilterForm.submit();
+                    }
+                });
+            }
+            
+            if (radiusSelect) {
+                radiusSelect.addEventListener('change', function() {
+                    const baseValue = baseSelect ? baseSelect.value : '';
+                    if (baseValue) {
+                        baseFilterForm.submit();
+                    }
+                });
+            }
+        }
     });
     </script>
 {% endblock %}
