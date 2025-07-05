@@ -14,17 +14,16 @@ from . import views
 urlpatterns = [
     path('', views.home, name='home'),
     path('packer/', views.home, name='packer_home'),  # Alternative URL for home page
+    path('lists/', views.lists_page, name='lists'),
+    path('items/', views.items_page, name='items'),
     path('list/create/', views.create_packing_list, name='create_packing_list'),
-    path('list/upload/', views.upload_packing_list, name='upload_packing_list'),
     path('list/<int:list_id>/', views.packing_list_detail, name='view_packing_list'),
+    path('list/<int:list_id>/edit/', views.edit_packing_list, name='edit_packing_list'),
 
     # URLs for managing prices
     path('item/<int:item_id>/add_price/', views.add_price_for_item, name='add_price_for_item_no_list'), # For adding price without list context
     path('item/<int:item_id>/add_price/to_list/<int:list_id>/', views.add_price_for_item, name='add_price_for_item'),
     path('vote/', views.handle_vote, name='handle_vote'),
-
-    # URL for configuring uploaded list
-    path('list/upload/configure/<str:session_key_items>/', views.configure_uploaded_list, name='configure_uploaded_list'),
 
     # URL for listing stores
     path('stores/', views.store_list, name='store_list'),
