@@ -5,11 +5,11 @@
 {% block page_header %}Welcome to Community Packing Lists!{% endblock %}
 
 {% block content %}
-    <p>Here you can find existing packing lists, create your own, or upload one to share.</p>
+    <p class="text-muted mb-2">Find, create, or upload packing lists for your next military school, assessment, or deployment.</p>
 
     <div class="actions-bar">
-        <a href="{% url 'create_packing_list' %}" class="button">Create New Packing List</a>
-        <a href="{% url 'upload_packing_list' %}" class="button secondary">Upload Packing List</a>
+        <a href="{% url 'create_packing_list' %}" class="button success">➕ Create New Packing List</a>
+        <a href="{% url 'upload_packing_list' %}" class="button secondary">⬆️ Upload Packing List</a>
     </div>
 
     <h2>Existing Packing Lists</h2>
@@ -17,12 +17,17 @@
         <ul class="packing-lists-ul">
             {% for plist in packing_lists %}
                 <li>
-                    <h3><a href="{% url 'view_packing_list' plist.id %}">{{ plist.name }}</a></h3>
-                    {% if plist.school %}
-                        <p class="text-muted text-small">School: {{ plist.school.name }}</p>
-                    {% endif %}
+                    <div style="display:flex;align-items:center;gap:1rem;">
+                        <div style="flex:1;">
+                            <h3 style="margin-bottom:0.25em;"><a href="{% url 'view_packing_list' plist.id %}">🎒 {{ plist.name }}</a></h3>
+                            {% if plist.school %}
+                                <span class="status-optional" style="background:#C3B09122;padding:0.2em 0.7em;border-radius:12px;font-size:0.95em;">🏫 {{ plist.school.name }}</span>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'view_packing_list' plist.id %}" class="button text-small">View</a>
+                    </div>
                     {% if plist.description %}
-                        <p>{{ plist.description|truncatewords:30 }}</p>
+                        <p class="item-notes mt-1">{{ plist.description|truncatewords:30 }}</p>
                     {% else %}
                         <p class="text-muted">No description provided.</p>
                     {% endif %}
