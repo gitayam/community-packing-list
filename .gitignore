@@ -84,3 +84,4 @@ docker-compose.override.yml
 .DS_Store
 Thumbs.db
 .env
+db.sqlite3
