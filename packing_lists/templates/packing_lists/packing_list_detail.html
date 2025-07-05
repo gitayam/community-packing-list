@@ -30,6 +30,7 @@
     {% if items_with_prices %}
         <form method="post" id="packing-list-items-form">
             {% csrf_token %}
+            <div class="responsive-table">
             <table>
                 <thead>
                     <tr>
@@ -173,6 +174,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </form>
     {% else %}
         <p class="no-items">This packing list currently has no items.</p>
