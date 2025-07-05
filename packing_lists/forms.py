@@ -215,4 +215,5 @@ class StoreForm(forms.ModelForm):
             'state': forms.TextInput(attrs={'placeholder': 'State'}),
             'zip_code': forms.TextInput(attrs={'placeholder': 'ZIP code'}),
             'country': forms.TextInput(attrs={'placeholder': 'Country'}),
+            'url': forms.URLInput(attrs={'placeholder': 'Store website (https://...)', 'class': 'input-url'}),
         }
