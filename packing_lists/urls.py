@@ -34,4 +34,6 @@ urlpatterns = [
     path('stores/<int:store_id>/edit/', views.store_edit, name='edit_store'),
 
     path('item/<int:item_id>/add_price_modal/to_list/<int:list_id>/', views.price_form_partial, name='add_price_for_item_modal'),
+
+    path('stores/add/modal/', views.add_store_modal, name='add_store_modal'),
 ]

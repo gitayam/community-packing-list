@@ -9,6 +9,7 @@ import io
 import uuid # For unique session keys
 from django.http import Http404, JsonResponse
 from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
 
 # Requires login for actions that modify data if user accounts are active
 # from django.contrib.auth.decorators import login_required
@@ -557,6 +558,7 @@ def price_form_partial(request, item_id, list_id=None):
             price.save()
             return JsonResponse({'success': True})
         else:
+            print('DEBUG: PriceForm errors:', form.errors.as_json())  # Log form errors
             context = {
                 'form': form,
                 'item': item,
@@ -579,3 +581,17 @@ def price_form_partial(request, item_id, list_id=None):
             html = render_to_string('packing_lists/price_form.html', context, request=request)
             return JsonResponse({'html': html})
         return render(request, 'packing_lists/price_form.html', context)
+
+def add_store_modal(request):
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        form = StoreForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'success': True})
+        else:
+            html = render_to_string('packing_lists/store_form.html', {'form': form, 'title': 'Add Store', 'is_modal': True}, request=request)
+            return JsonResponse({'success': False, 'html': html})
+    else:
+        form = StoreForm()
+        html = render_to_string('packing_lists/store_form.html', {'form': form, 'title': 'Add Store', 'is_modal': True}, request=request)
+        return JsonResponse({'html': html})
