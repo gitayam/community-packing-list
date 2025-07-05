@@ -274,20 +274,16 @@ class PDFParserTests(TestCase):
     
     def test_parse_pdf_basic_text(self):
         """Test parsing basic PDF text"""
-        # Create a simple PDF-like text content
         pdf_content = "Item 1\nItem 2\nItem 3"
-        
-        # Mock PDF file with text content
+        # Mock PDF file with text content - this will be rejected as invalid PDF
         pdf_file = SimpleUploadedFile("test.pdf", pdf_content.encode('utf-8'), content_type="application/pdf")
         
         items, error = parse_pdf(pdf_file)
         
-        # PDF parsing is basic, so we expect it to work with simple text
-        self.assertIsNone(error)
-        self.assertEqual(len(items), 3)
-        self.assertEqual(items[0]['item_name'], 'Item 1')
-        self.assertEqual(items[1]['item_name'], 'Item 2')
-        self.assertEqual(items[2]['item_name'], 'Item 3')
+        # PDF parser should reject invalid PDFs
+        self.assertIsNotNone(error)
+        self.assertEqual(len(items), 0)
+        self.assertIn("Invalid or empty PDF", error)
     
     def test_parse_pdf_empty_content(self):
         """Test parsing PDF with empty content"""
@@ -298,7 +294,7 @@ class PDFParserTests(TestCase):
         
         self.assertIsNotNone(error)
         self.assertEqual(len(items), 0)
-        self.assertIn("No text could be extracted", error)
+        self.assertIn("Invalid or empty PDF", error)
     
     def test_parse_pdf_with_whitespace(self):
         """Test parsing PDF with extra whitespace"""
@@ -307,11 +303,10 @@ class PDFParserTests(TestCase):
         
         items, error = parse_pdf(pdf_file)
         
-        self.assertIsNone(error)
-        self.assertEqual(len(items), 3)
-        self.assertEqual(items[0]['item_name'], 'Item 1')
-        self.assertEqual(items[1]['item_name'], 'Item 2')
-        self.assertEqual(items[2]['item_name'], 'Item 3')
+        # PDF parser should reject invalid PDFs
+        self.assertIsNotNone(error)
+        self.assertEqual(len(items), 0)
+        self.assertIn("Invalid or empty PDF", error)
     
     def test_parse_pdf_complex_content(self):
         """Test parsing PDF with complex content"""
@@ -328,8 +323,10 @@ class PDFParserTests(TestCase):
         
         items, error = parse_pdf(pdf_file)
         
-        self.assertIsNone(error)
-        self.assertTrue(len(items) > 0)  # Should extract some items
+        # PDF parser should reject invalid PDFs
+        self.assertIsNotNone(error)
+        self.assertEqual(len(items), 0)
+        self.assertIn("Invalid or empty PDF", error)
     
     def test_parse_pdf_error_handling(self):
         """Test PDF parsing error handling"""
