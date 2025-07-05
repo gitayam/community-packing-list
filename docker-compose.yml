@@ -17,7 +17,9 @@ services:
       retries: 5
 
   web:
-    build: .
+    build: 
+      context: .
+      target: ${BUILD_TARGET:-production} # Use 'typescript-builder' for development builds
     container_name: packing_list_web
     command: gunicorn community_packing_list.wsgi:application --bind 0.0.0.0:8000 --workers 4 --log-level info
     # For development, you might use:

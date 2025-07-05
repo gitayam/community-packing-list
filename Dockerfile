@@ -1,4 +1,21 @@
-# Use an official Python runtime as a parent image
+# Multi-stage build for TypeScript compilation and Python runtime
+FROM node:18-alpine AS typescript-builder
+
+# Set work directory for TypeScript build
+WORKDIR /app
+
+# Copy package files and install Node.js dependencies
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy TypeScript source files
+COPY tsconfig.json webpack.config.js .eslintrc.js ./
+COPY src/ ./src/
+
+# Build TypeScript files
+RUN npm run build
+
+# Python runtime stage
 FROM python:3.12-slim
 
 # Set environment variables
@@ -15,12 +32,15 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
+# Install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project code into the container
 COPY . /app/
+
+# Copy compiled TypeScript files from builder stage
+COPY --from=typescript-builder /app/packing_lists/static/packing_lists/js/ /app/packing_lists/static/packing_lists/js/
 
 # Expose port (Gunicorn default, or Django dev server)
 EXPOSE 8000
