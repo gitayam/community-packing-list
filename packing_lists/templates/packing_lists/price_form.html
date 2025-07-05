@@ -45,14 +45,13 @@
         <div id="inline-add-store" style="display:none; margin-bottom:1em;">
             <fieldset style="border:1px solid #ccc; padding:1em;">
                 <legend>Add New Store</legend>
-                <form method="post" id="add-store-form" action="">
-                    {% csrf_token %}
+                <div id="add-store-form">
                     <label for="new_store_name">Store Name:</label>
                     <input type="text" name="new_store_name" id="new_store_name" required><br>
                     <label for="new_store_address">Address:</label>
                     <input type="text" name="new_store_address" id="new_store_address"><br>
-                    <button type="submit">Add Store</button>
-                </form>
+                    <button type="button" disabled>Add Store (modal only, not implemented)</button>
+                </div>
                 <noscript>
                     <p>Submit this form to add a new store. The page will reload and the new store will appear in the dropdown.</p>
                 </noscript>
