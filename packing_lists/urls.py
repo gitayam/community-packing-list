@@ -13,6 +13,7 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('packer/', views.home, name='packer_home'),  # Alternative URL for home page
     path('list/create/', views.create_packing_list, name='create_packing_list'),
     path('list/upload/', views.upload_packing_list, name='upload_packing_list'),
     path('list/<int:list_id>/', views.packing_list_detail, name='view_packing_list'),
