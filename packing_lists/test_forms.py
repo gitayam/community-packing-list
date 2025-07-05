@@ -3,7 +3,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 
-from .models import School, Store, Item
+from .models import School, Store, Item, PackingList
 from .forms import PackingListForm, UploadFileForm, PriceForm, ConfigureUploadListForm
 
 

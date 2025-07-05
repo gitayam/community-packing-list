@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from decimal import Decimal, ROUND_DOWN
 # from django.contrib.auth.models import User # Import User if you implement user accounts
 
 class School(models.Model):
@@ -19,7 +20,6 @@ class Store(models.Model):
     state = models.CharField(max_length=100, blank=True, null=True) # Or use choices for states/provinces
     zip_code = models.CharField(max_length=20, blank=True, null=True)
     country = models.CharField(max_length=100, blank=True, null=True, default="USA") # Default country if applicable
-
     full_address_legacy = models.TextField(blank=True, null=True, help_text="For unstructured or imported addresses.")
 
     # GIS fields for future use (GeoDjango)
@@ -28,18 +28,22 @@ class Store(models.Model):
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
 
-
     def __str__(self):
         return self.name
 
     @property
     def formatted_address(self):
-        parts = [self.address_line1, self.address_line2, self.city, self.state, self.zip_code, self.country]
-        return ", ".join(filter(None, parts)) if any(parts) else self.full_address_legacy or "No address provided"
+        parts = [self.address_line1, self.address_line2, self.city, self.state, self.zip_code]
+        if any(parts) and any(p for p in parts if p):
+            return ", ".join(filter(None, parts + [self.country]))
+        elif self.full_address_legacy:
+            return self.full_address_legacy
+        else:
+            return "No address provided"
 
 class PackingList(models.Model):
     name = models.CharField(max_length=200)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True, default="")
     school = models.ForeignKey(School, on_delete=models.SET_NULL, null=True, blank=True, related_name='packing_lists')
     # user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True) # If user-specific lists
 
@@ -48,7 +52,7 @@ class PackingList(models.Model):
 
 class Item(models.Model):
     name = models.CharField(max_length=200, unique=True) # Ensure item names are unique
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True, default="")
 
     def __str__(self):
         return self.name
@@ -57,7 +61,7 @@ class PackingListItem(models.Model):
     packing_list = models.ForeignKey(PackingList, on_delete=models.CASCADE, related_name='items')
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='packing_list_items')
     quantity = models.PositiveIntegerField(default=1)
-    notes = models.TextField(blank=True, null=True)
+    notes = models.TextField(blank=True, null=True, default="")
     packed = models.BooleanField(default=False) # For users to check off items
 
     class Meta:
@@ -77,6 +81,11 @@ class Price(models.Model):
     def __str__(self):
         return f"{self.item.name} at {self.store.name}: {self.price} for {self.quantity}"
 
+    def save(self, *args, **kwargs):
+        if self.price is not None:
+            self.price = Decimal(self.price).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
+        super().save(*args, **kwargs)
+
 class Vote(models.Model):
     price = models.ForeignKey(Price, on_delete=models.CASCADE, related_name='votes')
     # user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) # User who voted, set to SET_NULL if user deleted
@@ -89,5 +98,5 @@ class Vote(models.Model):
     #     # Or: unique_together = ('price', 'ip_address') # if anonymous but one vote per IP
 
     def __str__(self):
-        user_info = f"by User {self.user_id}" if self.user_id else f"by IP {self.ip_address}"
+        user_info = f"by IP {self.ip_address}" if self.ip_address else "by anonymous"
         return f"{'Upvote' if self.is_correct_price else 'Downvote'} for {self.price_id} {user_info}"
