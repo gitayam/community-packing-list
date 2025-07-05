@@ -1,0 +1,107 @@
+{% extends "packing_lists/base.html" %}
+
+{% block title %}{{ title }} - Community Packing Lists{% endblock %}
+
+{% block page_header %}{{ title }}{% endblock %}
+
+{% block content %}
+    <div class="filter-form">
+        <form method="get" action="{% url 'store_list' %}">
+            <div>
+                <label for="city">City:</label>
+                <input type="text" name="city" id="city" value="{{ current_filters.city }}">
+            </div>
+            <div>
+                <label for="state">State:</label>
+                <input type="text" name="state" id="state" value="{{ current_filters.state }}">
+            </div>
+            <div>
+                <label for="zip_code">Zip Code:</label>
+                <input type="text" name="zip_code" id="zip_code" value="{{ current_filters.zip_code }}">
+            </div>
+            <hr class="my-2"> {# Assuming a margin utility class or add one #}
+            <div>
+                <label for="school_id">Near Base/School:</label>
+                <select name="school_id" id="school_id">
+                    <option value="">-- Select a Base/School --</option>
+                    {% for school in schools %}
+                        <option value="{{ school.id }}" {% if current_filters.school_id == school.id|stringformat:"s" %}selected{% endif %}>
+                            {{ school.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <hr class="my-2">
+            <div class="actions-row">
+                <button type="submit" class="button">Apply Filters</button>
+                <button type="button" id="find-near-me" class="button gps-button">Find Stores Near Me (GPS)</button>
+                <a href="{% url 'store_list' %}" class="button secondary">Clear Filters</a>
+            </div>
+            {# Hidden fields for GPS coordinates, populated by JS #}
+            <input type="hidden" name="user_lat" id="user_lat" value="{{ current_filters.user_lat }}">
+            <input type="hidden" name="user_lon" id="user_lon" value="{{ current_filters.user_lon }}">
+        </form>
+    </div>
+
+    <h2>{{ filter_description }}</h2>
+    {% if stores %}
+        <ul class="store-list">
+            {% for item_data in stores %} {# item_data is a dict {'store': store_obj, 'distance': num_or_None} #}
+                <li class="store-item">
+                    <h3>{{ item_data.store.name }}</h3>
+                    <p>{{ item_data.store.formatted_address }}</p>
+                    {% if item_data.store.latitude and item_data.store.longitude %}
+                    <p class="text-small text-muted">Lat: {{ item_data.store.latitude|floatformat:4 }}, Lon: {{ item_data.store.longitude|floatformat:4 }}</p>
+                    {% endif %}
+                    {% if item_data.distance is not None %}
+                        <p class="distance"><strong>Distance:</strong> {{ item_data.distance|floatformat:2 }} km</p>
+                    {% endif %}
+                    {# Maybe link to store detail or prices from this store in future #}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="no-stores">No stores found matching your criteria.</p>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const findNearMeButton = document.getElementById('find-near-me');
+        if (findNearMeButton) {
+            findNearMeButton.addEventListener('click', function() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        document.getElementById('user_lat').value = position.coords.latitude;
+                        document.getElementById('user_lon').value = position.coords.longitude;
+                        // Clear other location-based filters if user clicks "near me"
+                        document.getElementById('school_id').value = '';
+                        // Submit the form
+                        document.querySelector('.filter-form form').submit();
+                    }, function(error) {
+                        let userMessage = 'Error getting location: ';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                userMessage += "User denied the request for Geolocation.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                userMessage += "Location information is unavailable.";
+                                break;
+                            case error.TIMEOUT:
+                                userMessage += "The request to get user location timed out.";
+                                break;
+                            case error.UNKNOWN_ERROR:
+                                userMessage += "An unknown error occurred.";
+                                break;
+                        }
+                        alert(userMessage);
+                    });
+                } else {
+                    alert('Geolocation is not supported by your browser.');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

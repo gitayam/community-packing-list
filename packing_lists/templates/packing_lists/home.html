@@ -1,0 +1,35 @@
+{% extends "packing_lists/base.html" %}
+
+{% block title %}Home - Community Packing Lists{% endblock %}
+
+{% block page_header %}Welcome to Community Packing Lists!{% endblock %}
+
+{% block content %}
+    <p>Here you can find existing packing lists, create your own, or upload one to share.</p>
+
+    <div class="actions-bar">
+        <a href="{% url 'create_packing_list' %}" class="button">Create New Packing List</a>
+        <a href="{% url 'upload_packing_list' %}" class="button secondary">Upload Packing List</a>
+    </div>
+
+    <h2>Existing Packing Lists</h2>
+    {% if packing_lists %}
+        <ul class="packing-lists-ul">
+            {% for plist in packing_lists %}
+                <li>
+                    <h3><a href="{% url 'view_packing_list' plist.id %}">{{ plist.name }}</a></h3>
+                    {% if plist.school %}
+                        <p class="text-muted text-small">School: {{ plist.school.name }}</p>
+                    {% endif %}
+                    {% if plist.description %}
+                        <p>{{ plist.description|truncatewords:30 }}</p>
+                    {% else %}
+                        <p class="text-muted">No description provided.</p>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="no-lists">No packing lists found. Why not create or upload one?</p>
+    {% endif %}
+{% endblock %}

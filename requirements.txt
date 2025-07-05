@@ -1,0 +1,12 @@
+Django~=5.2.4
+psycopg2-binary~=2.9.10
+pandas~=2.2.0 # Loosening from 2.3.0 as it's very new, 2.2 is safer for wider compatibility
+openpyxl~=3.1.2
+PyPDF2~=3.0.1
+pdfplumber~=0.11.0
+gunicorn~=22.0.0 # Added gunicorn
+python-dotenv~=1.0.0 # For managing environment variables locally, useful with Docker
+pillow~=10.2.0 # pdfplumber dependency, good to make explicit
+numpy~=1.26.4 # pandas dependency
+# Ensure other transitive dependencies like pytz, sqlparse, etc., are covered or add if needed.
+# For now, relying on pip to resolve them based on the above.
