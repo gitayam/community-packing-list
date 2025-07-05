@@ -44,12 +44,29 @@
     </div>
 
     <h2>{{ filter_description }}</h2>
+    <button id="add-store-btn" class="button" style="margin-bottom:1em;">Add Store</button>
+    <div id="store-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
+      <div id="store-modal-content" style="background:#fff; padding:2em; border-radius:8px; max-width:500px; margin:40px auto; position:relative;">
+        <button id="close-store-modal" style="position:absolute; top:10px; right:10px; font-size:1.2em;">&times;</button>
+        <div id="store-modal-body">
+          <!-- AJAX-loaded form will go here -->
+        </div>
+      </div>
+    </div>
     {% if stores %}
         <ul class="store-list">
             {% for item_data in stores %} {# item_data is a dict {'store': store_obj, 'distance': num_or_None} #}
                 <li class="store-item">
                     <h3>{{ item_data.store.name }}</h3>
                     <p>{{ item_data.store.formatted_address }}</p>
+                    {% if item_data.store.url %}
+                    <p><a href="{{ item_data.store.url }}" target="_blank">Website</a></p>
+                    {% endif %}
+                    {% if item_data.store.address_line1 and item_data.store.city and item_data.store.state %}
+                        {% if item_data.store.google_maps_link %}
+                            <p><a href="{{ item_data.store.google_maps_link }}" target="_blank">Google Maps</a> | <a href="{{ item_data.store.apple_maps_link }}" target="_blank">Apple Maps</a></p>
+                        {% endif %}
+                    {% endif %}
                     <p class="text-small">
                         {% if item_data.store.is_online and item_data.store.is_in_person %}
                             <span style="color:#007bff;">Online</span> &amp; <span style="color:#28a745;">In Person</span>
@@ -110,6 +127,49 @@
                     alert('Geolocation is not supported by your browser.');
                 }
             });
+        }
+        // Add Store modal logic
+        document.getElementById('add-store-btn').onclick = function() {
+            var modal = document.getElementById('store-modal');
+            var modalBody = document.getElementById('store-modal-body');
+            modal.style.display = 'flex';
+            modalBody.innerHTML = '<p>Loading...</p>';
+            fetch('{% url 'add_store_modal' %}', {headers: {'x-requested-with': 'XMLHttpRequest'}})
+                .then(response => response.json())
+                .then(data => {
+                    modalBody.innerHTML = data.html;
+                    bindStoreFormAjax();
+                });
+        };
+        document.getElementById('close-store-modal').onclick = function() {
+            document.getElementById('store-modal').style.display = 'none';
+        };
+        document.getElementById('store-modal').onclick = function(e) {
+            if (e.target === this) this.style.display = 'none';
+        };
+        function bindStoreFormAjax() {
+            var storeForm = document.getElementById('store-form');
+            if (storeForm) {
+                storeForm.onsubmit = function(e) {
+                    e.preventDefault();
+                    var formData = new FormData(storeForm);
+                    fetch(storeForm.action || window.location.href, {
+                        method: 'POST',
+                        headers: {'x-requested-with': 'XMLHttpRequest'},
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById('store-modal').style.display = 'none';
+                            window.location.reload();
+                        } else if (data.html) {
+                            document.getElementById('store-modal-body').innerHTML = data.html;
+                            bindStoreFormAjax();
+                        }
+                    });
+                };
+            }
         }
     });
 </script>
