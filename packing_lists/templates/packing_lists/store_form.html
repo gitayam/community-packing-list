@@ -6,11 +6,15 @@
 
 {% block content %}
   <div class="form-container">
-    <form method="post">
+    <form method="post" id="store-form">
       {% csrf_token %}
       {{ form.as_p }}
+      {{ form.url.label_tag }}
+      {{ form.url|add_class:'input-url'|attr:'placeholder:Store website (https://...)' }}
       <button type="submit" class="button success">Save Store</button>
+      {% if not is_modal %}
       <a href="{% url 'store_list' %}" class="button secondary">Cancel</a>
+      {% endif %}
     </form>
   </div>
 {% endblock %} 
