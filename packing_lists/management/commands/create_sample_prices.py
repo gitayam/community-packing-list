@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from packing_lists.models import Item, Store, Price, Vote
+from packing_lists.models import Item, Store, Price, Vote, Base
 
 
 class Command(BaseCommand):
@@ -8,17 +8,70 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         with transaction.atomic():
-            # Get or create some stores
+            # Create sample bases first
+            sample_bases = [
+                # (name, latitude, longitude)
+                ('Fort Liberty (Bragg), NC', 35.1426, -79.0060),
+                ('Fort Campbell, KY', 36.6584, -87.4617),
+                ('Fort Benning, GA', 32.3668, -84.9497),
+                ('Fort Carson, CO', 38.7434, -104.7859),
+                ('Joint Base Lewis-McChord, WA', 47.0379, -122.5651),
+                ('Fort Hood, TX', 31.1349, -97.7780),
+                ('Fort Stewart, GA', 31.8746, -81.6081),
+                ('Fort Polk, LA', 31.0493, -93.2077),
+                ('Fort Drum, NY', 44.0559, -75.7570),
+                ('Fort Bliss, TX', 31.8484, -106.4270),
+            ]
+            
+            bases_created = 0
+            for name, lat, lon in sample_bases:
+                base, created = Base.objects.get_or_create(
+                    name=name,
+                    defaults={
+                        'latitude': lat,
+                        'longitude': lon,
+                        'address': f'{name} Military Installation'
+                    }
+                )
+                if created:
+                    self.stdout.write(f"Created base: {name}")
+                    bases_created += 1
+            
+            if bases_created > 0:
+                self.stdout.write(self.style.SUCCESS(f'Created {bases_created} military bases'))
+
+            # Create sample stores with coordinates
+            sample_stores = [
+                # (name, city, state, latitude, longitude)
+                ('Walmart', 'Fayetteville', 'NC', 35.0527, -78.8784),  # Near Fort Liberty
+                ('Target', 'Fayetteville', 'NC', 35.0626, -78.9336),
+                ('Military Exchange', 'Fort Liberty', 'NC', 35.1426, -79.0060),
+                ('Local Army Surplus', 'Fayetteville', 'NC', 35.0577, -78.8969),
+                ('Amazon', 'Fayetteville', 'NC', 35.0528, -78.8785),  # Warehouse/distribution
+            ]
+
             stores = []
-            store_names = ['Walmart', 'Target', 'Amazon', 'Local Army Surplus', 'Military Exchange']
-            for name in store_names:
+            stores_created = 0
+            for name, city, state, lat, lon in sample_stores:
                 store, created = Store.objects.get_or_create(
                     name=name,
-                    defaults={'address_line1': f'{name} Store Address'}
+                    defaults={
+                        'city': city,
+                        'state': state,
+                        'latitude': lat,
+                        'longitude': lon,
+                        'address_line1': f'123 Main St',
+                        'zip_code': '28301',
+                        'country': 'USA'
+                    }
                 )
                 stores.append(store)
                 if created:
-                    self.stdout.write(f"Created store: {store.name}")
+                    self.stdout.write(f"Created store: {name} in {city}, {state}")
+                    stores_created += 1
+
+            if stores_created > 0:
+                self.stdout.write(self.style.SUCCESS(f'Created {stores_created} stores with coordinates'))
 
             # Get some items to add prices to
             items = Item.objects.all()[:5]  # Get first 5 items

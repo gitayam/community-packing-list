@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib import messages # For feedback to the user
 from django.db import IntegrityError
-from .models import PackingList, Item, PackingListItem, School, Price, Vote, Store
+from .models import PackingList, Item, PackingListItem, School, Price, Vote, Store, Base
 from .forms import PackingListForm, UploadFileForm, PriceForm, VoteForm, ConfigureUploadListForm, PackingListItemForm, StoreForm
 from .parsers import parse_csv, parse_excel, parse_pdf, parse_text
 import io
@@ -118,13 +118,23 @@ def packing_list_detail(request, list_id):
     Also shows current pricing information (voting/adding prices will be separate).
     """
     packing_list = get_object_or_404(PackingList, id=list_id)
+    
+    # Get base filter parameters
+    base_filter_id = request.GET.get('base_filter')
+    radius = int(request.GET.get('radius', 50))  # Default 50 miles
+    
+    # Get all available bases for the dropdown
+    available_bases = Base.objects.all().order_by('name')
+    selected_base = None
+    if base_filter_id:
+        try:
+            selected_base = Base.objects.get(id=base_filter_id)
+        except Base.DoesNotExist:
+            pass
+    
     # Get all items for this list, ordered perhaps by 'id' or 'item__name'
     # .select_related('item') helps optimize by fetching related Item objects in the same query
     list_items = packing_list.items.select_related('item').order_by('item__name')
-
-    # For each item, we might want to fetch its prices.
-    # This can be done efficiently or less so. For now, let's prepare data for the template.
-    # A more complex query or template tags might be needed for optimal price display.
 
     # Handle toggling the 'packed' status of an item
     if request.method == 'POST':
@@ -145,7 +155,25 @@ def packing_list_detail(request, list_id):
     items_with_prices = []
     for pli in list_items:
         # Fetch all prices for the item
-        prices = pli.item.prices.select_related('store').all()
+        prices_query = pli.item.prices.select_related('store').all()
+        
+        # Filter prices by base proximity if base filter is active
+        if selected_base and selected_base.latitude and selected_base.longitude:
+            # Filter stores within radius (simplified - in production would use proper geo queries)
+            filtered_prices = []
+            for price in prices_query:
+                if price.store.latitude and price.store.longitude:
+                    # Calculate distance using Haversine formula (simplified)
+                    distance = calculate_distance(
+                        selected_base.latitude, selected_base.longitude,
+                        price.store.latitude, price.store.longitude
+                    )
+                    if distance <= radius:
+                        price.distance_from_base = distance
+                        filtered_prices.append(price)
+            prices = filtered_prices
+        else:
+            prices = list(prices_query)
         
         # Calculate vote counts and smart score for each price
         prices_with_votes = []
@@ -163,13 +191,22 @@ def packing_list_detail(request, list_id):
             # Smart scoring algorithm:
             # - Lower price gets higher score (inverted)
             # - Higher vote confidence gets higher score
-            # - Balance: 70% price, 30% vote confidence
-            # - Use a base price for normalization (median price or $50 default)
+            # - Proximity bonus if base filtering is active
+            # - Balance: 60% price, 25% vote confidence, 15% proximity
             base_price = 50.0  # Default normalization price
             price_score = 1.0 - (price_per_unit / base_price)  # Lower price = higher score
             vote_score = (vote_confidence + 1) / 2  # Convert from [-1,1] to [0,1]
             
-            smart_score = (0.7 * price_score) + (0.3 * vote_score)
+            # Proximity bonus (closer stores get higher scores)
+            proximity_score = 0.5  # Default neutral score
+            if selected_base and hasattr(price, 'distance_from_base'):
+                # Closer = higher score (max distance in radius gets 0, min gets 1)
+                proximity_score = max(0, 1 - (price.distance_from_base / radius))
+            
+            if selected_base:
+                smart_score = (0.6 * price_score) + (0.25 * vote_score) + (0.15 * proximity_score)
+            else:
+                smart_score = (0.7 * price_score) + (0.3 * vote_score)
             
             prices_with_votes.append({
                 'price': price,
@@ -177,7 +214,8 @@ def packing_list_detail(request, list_id):
                 'downvotes': downvotes,
                 'vote_confidence': vote_confidence,
                 'price_per_unit': price_per_unit,
-                'smart_score': smart_score
+                'smart_score': smart_score,
+                'distance_from_base': getattr(price, 'distance_from_base', None)
             })
         
         # Sort prices by smart score (highest first = best value)
@@ -193,8 +231,35 @@ def packing_list_detail(request, list_id):
         'packing_list': packing_list,
         'items_with_prices': items_with_prices, # Use this in the template
         'title': packing_list.name,
+        'available_bases': available_bases,
+        'selected_base': selected_base,
+        'selected_radius': radius,
+        'base_filter_active': bool(selected_base),
     }
     return render(request, 'packing_lists/packing_list_detail.html', context)
+
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great circle distance between two points 
+    on the earth (specified in decimal degrees) using Haversine formula.
+    Returns distance in miles.
+    """
+    import math
+    
+    # Convert decimal degrees to radians
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    
+    # Haversine formula
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    
+    # Radius of earth in miles
+    r = 3956
+    
+    return c * r
 
 # @login_required (if user accounts are implemented)
 def add_price_for_item(request, item_id, list_id=None): # list_id is for redirecting back
@@ -246,6 +311,9 @@ def add_price_for_item(request, item_id, list_id=None): # list_id is for redirec
 # @login_required (if user accounts are implemented)
 def handle_vote(request):
     if request.method == 'POST':
+        # Support both AJAX and form submissions
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        
         # Determine if it's an upvote or downvote based on the button name/value
         vote_type = None
         price_id = None
@@ -256,7 +324,13 @@ def handle_vote(request):
         elif 'downvote_price_id' in request.POST:
             vote_type = 'down'
             price_id = request.POST.get('downvote_price_id')
+        elif 'price_id' in request.POST and 'vote_type' in request.POST:
+            # AJAX format
+            price_id = request.POST.get('price_id')
+            vote_type = request.POST.get('vote_type')
         else:
+            if is_ajax:
+                return JsonResponse({'success': False, 'message': 'Invalid vote submission.'})
             messages.error(request, "Invalid vote submission.")
             return redirect(request.META.get('HTTP_REFERER', reverse('home')))
 
@@ -275,6 +349,8 @@ def handle_vote(request):
             try:
                 price_instance = Price.objects.get(id=price_id)
             except Price.DoesNotExist:
+                if is_ajax:
+                    return JsonResponse({'success': False, 'message': 'Price not found.'})
                 messages.error(request, "Price not found.")
                 return redirect(request.META.get('HTTP_REFERER', reverse('home')))
 
@@ -284,12 +360,30 @@ def handle_vote(request):
                 is_correct_price=is_correct,
                 ip_address=ip_address
             )
-            if is_correct:
-                messages.success(request, f"Upvoted price for '{price_instance.item.name}' (from IP: {ip_address}).")
+            
+            if is_ajax:
+                # Return updated vote counts
+                upvotes = price_instance.votes.filter(is_correct_price=True).count()
+                downvotes = price_instance.votes.filter(is_correct_price=False).count()
+                return JsonResponse({
+                    'success': True,
+                    'message': f"{'Upvoted' if is_correct else 'Downvoted'} price for '{price_instance.item.name}'",
+                    'upvotes': upvotes,
+                    'downvotes': downvotes
+                })
             else:
-                messages.success(request, f"Downvoted price for '{price_instance.item.name}'.")
+                if is_correct:
+                    messages.success(request, f"Upvoted price for '{price_instance.item.name}' (from IP: {ip_address}).")
+                else:
+                    messages.success(request, f"Downvoted price for '{price_instance.item.name}'.")
         else:
+            if is_ajax:
+                return JsonResponse({'success': False, 'message': 'Invalid vote data.'})
             messages.error(request, "Invalid vote data.")
+        
+        if is_ajax:
+            return JsonResponse({'success': False, 'message': 'Unknown error occurred.'})
+        
         redirect_url = request.META.get('HTTP_REFERER', reverse('home'))
         return redirect(redirect_url)
     return redirect(reverse('home'))
@@ -566,7 +660,7 @@ def price_form_partial(request, item_id, list_id=None):
                 'title': f"Add Price for {item.name}",
                 'is_modal': True,
             }
-            html = render_to_string('packing_lists/price_form.html', context, request=request)
+            html = render_to_string('packing_lists/price_form_modal.html', context, request=request)
             return JsonResponse({'success': False, 'html': html})
     else:
         form = PriceForm()
@@ -578,9 +672,9 @@ def price_form_partial(request, item_id, list_id=None):
             'is_modal': True,
         }
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            html = render_to_string('packing_lists/price_form.html', context, request=request)
+            html = render_to_string('packing_lists/price_form_modal.html', context, request=request)
             return JsonResponse({'html': html})
-        return render(request, 'packing_lists/price_form.html', context)
+        return render(request, 'packing_lists/price_form_modal.html', context)
 
 def add_store_modal(request):
     if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -595,3 +689,40 @@ def add_store_modal(request):
         form = StoreForm()
         html = render_to_string('packing_lists/store_form.html', {'form': form, 'title': 'Add Store', 'is_modal': True}, request=request)
         return JsonResponse({'html': html})
+
+def edit_item_modal(request, list_id, pli_id):
+    """
+    Modal-based view for editing PackingListItem.
+    """
+    packing_list = get_object_or_404(PackingList, id=list_id)
+    pli = get_object_or_404(PackingListItem, id=pli_id, packing_list=packing_list)
+    
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        form = PackingListItemForm(request.POST, instance=pli)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'success': True})
+        else:
+            print('DEBUG: PackingListItemForm errors:', form.errors.as_json())  # Log form errors
+            context = {
+                'form': form,
+                'packing_list': packing_list,
+                'pli': pli,
+                'title': f"Edit {pli.item.name}",
+                'is_modal': True,
+            }
+            html = render_to_string('packing_lists/packing_listitem_form_modal.html', context, request=request)
+            return JsonResponse({'success': False, 'html': html})
+    else:
+        form = PackingListItemForm(instance=pli)
+        context = {
+            'form': form,
+            'packing_list': packing_list,
+            'pli': pli,
+            'title': f"Edit {pli.item.name}",
+            'is_modal': True,
+        }
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            html = render_to_string('packing_lists/packing_listitem_form_modal.html', context, request=request)
+            return JsonResponse({'html': html})
+        return render(request, 'packing_lists/packing_listitem_form_modal.html', context)
