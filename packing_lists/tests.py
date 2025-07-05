@@ -166,7 +166,7 @@ class ModelCreationTests(TestCase):
         price = Price.objects.create(item=self.item1, store=self.store1, price="19.99", quantity=1)
         self.assertEqual(price.item, self.item1)
         self.assertEqual(price.store, self.store1)
-        self.assertEqual(price.price, 19.99)
+        self.assertEqual(str(price.price), "19.99")
 
     def test_vote_creation(self):
         price = Price.objects.create(item=self.item1, store=self.store1, price="10.00")
@@ -257,7 +257,7 @@ class UploadProcessTests(TestCase):
         response = self.client.post(reverse('upload_packing_list'), {'file': csv_file})
 
         self.assertEqual(response.status_code, 302) # Should redirect
-        self.assertIn('configure_uploaded_list', response.url)
+        self.assertIn('/list/upload/configure/', response.url)
         session_key_items = response.url.split('/')[-2] # Extract session key from redirect URL
 
         # Check session data
@@ -276,7 +276,7 @@ class UploadProcessTests(TestCase):
         response = self.client.get(reverse('configure_uploaded_list', args=[session_key]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'packing_lists/configure_upload_form.html')
-        self.assertContains(response, 'Test Item from Session') # Check if it shows num_items or similar
+        self.assertContains(response, '1 item(s)') # Check if it shows the correct item count
 
     def test_configure_uploaded_list_post_creates_list_and_items(self):
         # Simulate session data
