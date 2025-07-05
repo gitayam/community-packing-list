@@ -265,34 +265,39 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 def add_price_for_item(request, item_id, list_id=None): # list_id is for redirecting back
     item = get_object_or_404(Item, id=item_id)
 
-    # Handle store creation first
-    if request.method == 'POST' and 'new_store_name' in request.POST:
-        store_name = request.POST.get('new_store_name', '').strip()
-        store_address = request.POST.get('new_store_address', '').strip()
-        
-        if store_name:
-            store, created = Store.objects.get_or_create(name=store_name, defaults={'address_line1': store_address})
-            if created:
-                messages.success(request, f"Store '{store.name}' created successfully.")
-            # Redirect back to the same page to show the new store in the dropdown
-            return redirect(request.path)
-
     if request.method == 'POST':
-        form = PriceForm(request.POST)
+        post_data = request.POST.copy()
+        store_value = post_data.get('store')
+        store_name = post_data.get('store_name', '').strip()
+        # If user selected 'Add new store...'
+        if store_value == '__add_new__':
+            if not store_name:
+                messages.error(request, "Please provide a name for the new store.")
+                form = PriceForm(post_data)
+                context = {
+                    'form': form,
+                    'item': item,
+                    'list_id': list_id,
+                    'title': f"Add Price for {item.name}"
+                }
+                return render(request, 'packing_lists/price_form.html', context)
+            # Create or get the new store
+            store, _ = Store.objects.get_or_create(name=store_name)
+            post_data = post_data.copy()
+            post_data['store'] = store.id
+        form = PriceForm(post_data)
         if form.is_valid():
             try:
                 price = form.save(commit=False, item_instance=item)
-                # If user accounts: price.user = request.user
                 price.save()
                 messages.success(request, f"Price for '{item.name}' at '{price.store.name}' added successfully.")
                 if list_id:
                     return redirect(reverse('view_packing_list', args=[list_id]))
                 else:
-                    # Fallback if no list_id, maybe to an item detail page or home
                     return redirect(reverse('home'))
-            except ValueError as e: # Catch missing item instance from form.save
+            except ValueError as e:
                 messages.error(request, str(e))
-            except IntegrityError: # Catch other DB issues, e.g. if a unique constraint fails
+            except IntegrityError:
                 messages.error(request, "There was an error saving the price. It might already exist or there's a data conflict.")
         else:
             messages.error(request, "Please correct the errors below.")

@@ -1,5 +1,6 @@
 from django import forms
 from .models import PackingList, School, Price, Store, Item, PackingListItem
+from datetime import date
 
 class PackingListForm(forms.ModelForm):
     """
@@ -72,6 +73,14 @@ class PriceForm(forms.ModelForm):
                                  help_text="If the store isn't listed, enter its name here to create it.")
     # The 'item' field will be set in the view, not by the user directly in this form.
     # So we might exclude it here, or make it a HiddenInput if needed for some reason.
+
+    date_purchased = forms.DateField(
+        required=False,
+        label="Date of Price Confirmation",
+        help_text="The date you confirmed this price (for comparing prices between stores)",
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        initial=date.today
+    )
 
     class Meta:
         model = Price
