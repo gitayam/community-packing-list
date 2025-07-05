@@ -1774,13 +1774,85 @@ a:focus {
   border: 2px solid var(--military-olive);
   border-radius: var(--border-radius-md);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
-  padding: var(--spacing-md);
+  padding: 0;
   z-index: 9999;
   min-width: 300px;
   max-width: 400px;
   max-height: 80vh;
+  overflow: hidden;
+  animation: priceDetailsSlideIn 0.2s ease-out;
+}
+
+.price-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: linear-gradient(135deg, var(--military-olive) 0%, var(--military-navy) 100%);
+  color: var(--text-light);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.price-details-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.price-details-close {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+.price-details-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.price-details-body {
+  padding: var(--spacing-md);
+  max-height: calc(80vh - 60px);
   overflow-y: auto;
-  backdrop-filter: blur(2px);
+}
+
+@keyframes priceDetailsSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Price Details Backdrop */
+.price-details-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 9998;
+  opacity: 0;
+  animation: fadeInBackdrop 0.2s ease-out forwards;
+}
+
+@keyframes fadeInBackdrop {
+  to {
+    opacity: 1;
+  }
 }
 
 .price-entry {
@@ -1982,12 +2054,13 @@ a:focus {
   }
 
   .price-details {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90vw;
-    max-width: 350px;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90vw !important;
+    max-width: 350px !important;
+    max-height: 85vh !important;
   }
 }
 
