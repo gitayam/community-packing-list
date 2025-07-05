@@ -7,7 +7,7 @@
 {% block content %}
     <p class="mb-2">Adding price for item: <strong>{{ item.name }}</strong></p>
 
-    <form method="post">
+    <form method="post" id="price-form">
         {% csrf_token %}
 
         {% if form.non_field_errors %}
@@ -18,7 +18,9 @@
             </ul>
         {% endif %}
 
+        {# Render all fields except store_name #}
         {% for field in form %}
+            {% if field.name != 'store_name' %}
             <p>
                 {{ field.label_tag }}
                 {{ field }}
@@ -33,13 +35,90 @@
                     </ul>
                 {% endif %}
             </p>
+            {% endif %}
         {% endfor %}
+
+        <p>
+            <a href="#" id="show-add-store" onclick="document.getElementById('inline-add-store').style.display='block'; return false;">Add new store</a>
+        </p>
+
+        <div id="inline-add-store" style="display:none; margin-bottom:1em;">
+            <fieldset style="border:1px solid #ccc; padding:1em;">
+                <legend>Add New Store</legend>
+                <form method="post" id="add-store-form" action="">
+                    {% csrf_token %}
+                    <label for="new_store_name">Store Name:</label>
+                    <input type="text" name="new_store_name" id="new_store_name" required><br>
+                    <label for="new_store_address">Address:</label>
+                    <input type="text" name="new_store_address" id="new_store_address"><br>
+                    <button type="submit">Add Store</button>
+                </form>
+                <noscript>
+                    <p>Submit this form to add a new store. The page will reload and the new store will appear in the dropdown.</p>
+                </noscript>
+            </fieldset>
+        </div>
+
+        {# store_name field for fallback/manual entry #}
+        <p>
+            {{ form.store_name.label_tag }}
+            {{ form.store_name }}
+            {% if form.store_name.help_text %}
+                <span class="helptext">{{ form.store_name.help_text|safe }}</span>
+            {% endif %}
+            {% if form.store_name.errors %}
+                <ul class="form-field-errors">
+                    {% for error in form.store_name.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </p>
+
         <button type="submit" class="button success">Save Price</button>
         {% if list_id %}
             <a href="{% url 'view_packing_list' list_id %}" class="button secondary">Cancel</a>
         {% else %}
-             {# If item has a detail page, link there, otherwise fallback or just don't show cancel for no list_id #}
             <a href="{% url 'home' %}" class="button secondary">Cancel</a>
         {% endif %}
     </form>
+
+    <script>
+    // Minimal JS for inline add store (AJAX)
+    document.addEventListener('DOMContentLoaded', function() {
+        var addStoreForm = document.getElementById('add-store-form');
+        if (addStoreForm) {
+            addStoreForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var name = document.getElementById('new_store_name').value;
+                var address = document.getElementById('new_store_address').value;
+                var csrf = addStoreForm.querySelector('input[name=csrfmiddlewaretoken]').value;
+                fetch('/add-store-ajax/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrf
+                    },
+                    body: JSON.stringify({name: name, address: address})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Add new store to dropdown
+                        var storeSelect = document.getElementById('id_store');
+                        var option = document.createElement('option');
+                        option.value = data.store_id;
+                        option.text = data.store_name;
+                        option.selected = true;
+                        storeSelect.appendChild(option);
+                        // Hide the inline form
+                        document.getElementById('inline-add-store').style.display = 'none';
+                    } else {
+                        alert(data.error || 'Error adding store');
+                    }
+                });
+            });
+        }
+    });
+    </script>
 {% endblock %}
