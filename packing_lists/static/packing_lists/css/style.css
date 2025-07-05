@@ -1767,11 +1767,9 @@ a:focus {
 
 /* Price Details */
 .price-details {
-  position: fixed;
-  background: var(--background-white);
-  border: 2px solid var(--military-olive);
-  border-radius: var(--border-radius-md);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
+  background: #fff !important;
+  border: 3px solid var(--military-navy, #1B365D) !important;
+  box-shadow: 0 8px 32px rgba(27,54,93,0.18), 0 4px 10px rgba(44,83,32,0.10);
   padding: 0;
   z-index: 9999;
   min-width: 300px;
@@ -1782,13 +1780,9 @@ a:focus {
 }
 
 .price-details-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: linear-gradient(135deg, var(--military-olive) 0%, var(--military-navy) 100%);
-  color: var(--text-light);
-  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--military-navy) 0%, var(--military-olive) 100%) !important;
+  color: #fff !important;
+  border-bottom: 2px solid var(--military-navy);
 }
 
 .price-details-title {
@@ -1853,82 +1847,93 @@ a:focus {
   }
 }
 
-.price-entry {
-  padding: var(--spacing-md);
-  border-radius: var(--border-radius-sm);
-  margin-bottom: var(--spacing-sm);
-  border: 1px solid var(--border-color);
-  background: var(--background-light);
-  transition: all 0.2s ease;
+.price-entry, .price-entry.best-value {
+  /* Remove transform and box-shadow on hover for stability */
+  transition: border-color 0.2s, background 0.2s;
 }
 
-.price-entry:hover {
-  border-color: var(--military-olive);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.price-entry.best-value {
-  background: linear-gradient(135deg, rgba(40, 167, 69, 0.15) 0%, rgba(40, 167, 69, 0.05) 100%);
-  border: 2px solid var(--status-complete);
-  position: relative;
-}
-
-.price-entry.best-value::before {
-  content: "BEST VALUE";
-  position: absolute;
-  top: -8px;
-  right: var(--spacing-sm);
-  background: var(--status-complete);
-  color: white;
-  font-size: 0.7rem;
-  font-weight: bold;
-  padding: 2px 6px;
-  border-radius: 10px;
-  letter-spacing: 0.5px;
+.price-entry:hover, .price-entry.best-value:hover {
+  border-color: var(--military-olive, #4B5320);
+  background: inherit;
+  box-shadow: none;
+  transform: none;
 }
 
 .price-main {
-  font-weight: 600;
-  margin-bottom: var(--spacing-xs);
+  color: #1B365D !important;
+  font-size: 1.2em;
+  font-weight: 700;
+  background: #fff;
+  padding: 0.2em 0.5em;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
 }
 
-.price-meta {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin-bottom: var(--spacing-xs);
+.price-entry.best-value .price-main {
+  color: #218838 !important;
+  background: #e6f9e6;
 }
 
 .price-actions {
   display: flex;
   gap: var(--spacing-xs);
+  margin-top: 0.5em;
 }
 
 .vote-btn {
-  background: none;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  padding: var(--spacing-xs) var(--spacing-sm);
+  background: #f4f4f4;
+  border: 2px solid #bdbdbd;
+  color: #1B365D;
+  font-weight: 600;
+  border-radius: 6px;
+  min-width: 44px;
+  min-height: 36px;
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  cursor: pointer;
-  font-size: 0.75rem;
-  transition: all 0.2s ease;
+  justify-content: center;
+  gap: 0.3em;
+  font-size: 1em;
+  transition: background 0.2s, border 0.2s, color 0.2s;
+}
+.vote-btn svg {
+  color: #1B365D;
+  stroke: #1B365D;
+  fill: none;
+  width: 18px;
+  height: 18px;
+}
+.vote-btn.upvote {
+  border-color: #28A745;
+}
+.vote-btn.downvote {
+  border-color: #dc3545;
+}
+.vote-btn.upvote svg {
+  color: #28A745;
+  stroke: #28A745;
+}
+.vote-btn.downvote svg {
+  color: #dc3545;
+  stroke: #dc3545;
+}
+.vote-btn:hover, .vote-btn:focus {
+  background: #e6f9e6;
+  color: #218838;
+  border-color: #218838;
+}
+.vote-btn.downvote:hover, .vote-btn.downvote:focus {
+  background: #ffe6e6;
+  color: #dc3545;
+  border-color: #dc3545;
 }
 
-.vote-btn:hover {
-  background: var(--background-light);
-}
-
-.vote-btn.upvote:hover {
-  border-color: var(--status-complete);
-  color: var(--status-complete);
-}
-
-.vote-btn.downvote:hover {
-  border-color: var(--status-required);
-  color: var(--status-required);
+.price-meta {
+  color: #1B365D !important;
+  font-weight: 500;
+  background: #f9fafb;
+  border-radius: 3px;
+  padding: 0.1em 0.4em;
+  margin-bottom: var(--spacing-xs);
 }
 
 /* Action Buttons */
