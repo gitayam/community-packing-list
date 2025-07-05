@@ -78,9 +78,21 @@
                                     {% if item_wp.prices_with_votes %}
                                         <ul>
                                         {% for price_data in item_wp.prices_with_votes %}
-                                            <li>
-                                                ${{ price_data.price.price }} for {{ price_data.price.quantity }} at {{ price_data.price.store.name }}
+                                            <li class="{% if forloop.first %}best-value{% endif %}">
+                                                {% if forloop.first %}<strong>🏆 Best Value</strong><br>{% endif %}
+                                                <strong>${{ price_data.price.price }}</strong> for {{ price_data.price.quantity }} at {{ price_data.price.store.name }}
                                                 {% if price_data.price.date_purchased %}({{ price_data.price.date_purchased|date:"Y-m-d" }}){% endif %}
+                                                <br>
+                                                <small>
+                                                    <span style="color: #666;">${{ price_data.price_per_unit|floatformat:2 }}/unit</span>
+                                                    {% if price_data.vote_confidence > 0 %}
+                                                        <span style="color: #28a745;">• High confidence</span>
+                                                    {% elif price_data.vote_confidence < 0 %}
+                                                        <span style="color: #dc3545;">• Low confidence</span>
+                                                    {% else %}
+                                                        <span style="color: #ffc107;">• No votes yet</span>
+                                                    {% endif %}
+                                                </small>
 
                                                 <span class="vote-count">(👍{{ price_data.upvotes }} / 👎{{ price_data.downvotes }})</span>
 

@@ -140,29 +140,51 @@ def packing_list_detail(request, list_id):
 
     # Prepare items with their prices for the template
     # For each PackingListItem, we want to find prices for its Item.
-    # This is a simplified way; more advanced prefetching might be used for many items/prices.
     items_with_prices = []
     for pli in list_items:
-        # Fetch prices for the item, ordered by date or store, etc.
-        # For now, let's just get a few, e.g., latest or highest voted.
-        # This part will be expanded in the "manage prices" step.
-        prices = pli.item.prices.select_related('store').order_by('-date_purchased')[:5] # Example: latest 5
+        # Fetch all prices for the item
+        prices = pli.item.prices.select_related('store').all()
         
-        # Calculate vote counts for each price
+        # Calculate vote counts and smart score for each price
         prices_with_votes = []
         for price in prices:
             upvotes = price.votes.filter(is_correct_price=True).count()
             downvotes = price.votes.filter(is_correct_price=False).count()
+            
+            # Calculate vote confidence (net votes / total votes)
+            total_votes = upvotes + downvotes
+            vote_confidence = (upvotes - downvotes) / max(total_votes, 1)  # Avoid division by zero
+            
+            # Calculate price per unit
+            price_per_unit = float(price.price) / max(price.quantity, 1)
+            
+            # Smart scoring algorithm:
+            # - Lower price gets higher score (inverted)
+            # - Higher vote confidence gets higher score
+            # - Balance: 70% price, 30% vote confidence
+            # - Use a base price for normalization (median price or $50 default)
+            base_price = 50.0  # Default normalization price
+            price_score = 1.0 - (price_per_unit / base_price)  # Lower price = higher score
+            vote_score = (vote_confidence + 1) / 2  # Convert from [-1,1] to [0,1]
+            
+            smart_score = (0.7 * price_score) + (0.3 * vote_score)
+            
             prices_with_votes.append({
                 'price': price,
                 'upvotes': upvotes,
-                'downvotes': downvotes
+                'downvotes': downvotes,
+                'vote_confidence': vote_confidence,
+                'price_per_unit': price_per_unit,
+                'smart_score': smart_score
             })
+        
+        # Sort prices by smart score (highest first = best value)
+        prices_with_votes.sort(key=lambda x: x['smart_score'], reverse=True)
         
         items_with_prices.append({
             'pli': pli, # The PackingListItem object (contains quantity, notes, packed status)
             'item': pli.item, # The Item object (name, description)
-            'prices_with_votes': prices_with_votes # List of price dicts with vote counts
+            'prices_with_votes': prices_with_votes # List of price dicts with vote counts, sorted by smart score
         })
 
     context = {

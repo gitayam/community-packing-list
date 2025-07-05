@@ -251,6 +251,15 @@ tr.packed-true { background-color: #e6ffe6; } /* Light green for packed rows */
 .price-info li { margin-bottom: 8px; padding: 5px; border-bottom: 1px dotted #eee; }
 .price-info li:last-child { border-bottom: none; }
 
+/* Best value styling */
+.price-info li.best-value {
+    border: 2px solid #28a745;
+    padding: 8px;
+    margin: 4px 0;
+    background-color: #f8fff9;
+    border-radius: 4px;
+}
+
 .vote-buttons form { display: inline; margin-left: 5px; }
 .vote-buttons button {
     font-size: 0.8em !important;
