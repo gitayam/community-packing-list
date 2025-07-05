@@ -3,23 +3,20 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-# Wait for the database to be ready (optional, but good practice)
-# This requires netcat (nc) or pg_isready.
-# If using PostgreSQL, you might add a loop here to wait for it.
-# Example for PostgreSQL (requires pg_isready, part of postgresql-client):
-# echo "Waiting for postgres..."
-# while ! pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER -q -d $DB_NAME; do
-#   sleep 1
-# done
-# echo "PostgreSQL started"
+# Wait for the database to be ready
+echo "Waiting for postgres..."
+while ! pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER -q -d $DB_NAME; do
+  sleep 1
+done
+echo "PostgreSQL started"
 
 # Apply database migrations
 echo "Applying database migrations..."
 python manage.py migrate --noinput
 
-# Collect static files (optional, depends on how static files are served in prod)
-# echo "Collecting static files..."
-# python manage.py collectstatic --noinput --clear
+# Collect static files
+echo "Collecting static files..."
+python manage.py collectstatic --noinput --clear
 
 # Start server
 # The CMD in Dockerfile or command in docker-compose.yml will be executed after this script.

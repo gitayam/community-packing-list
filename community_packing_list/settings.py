@@ -121,8 +121,18 @@ else:
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATICFILES_DIRS = [
+    BASE_DIR / "packing_lists" / "static",
+]
 # For Docker/production, you'll typically use collectstatic.
-# STATIC_ROOT = BASE_DIR / "staticfiles" # Uncomment if you use collectstatic
+STATIC_ROOT = BASE_DIR / "staticfiles" # Uncomment if you use collectstatic
+
+# Serve static files in development
+if DEBUG:
+    STATICFILES_FINDERS = [
+        'django.contrib.staticfiles.finders.FileSystemFinder',
+        'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    ]
 
 
 # Password validation

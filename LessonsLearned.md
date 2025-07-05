@@ -72,6 +72,18 @@ This document captures key lessons learned during the development and debugging 
 - Commit `801eb2e`: Implement base location filter and enhance price form functionality
 - Commit `d6e7676`: Implement smart price sorting with vote confidence and visual best value indicators
 
+## Git Workflow and Commit Practices
+
+### 1. **Auto Staging and Committing After Testing**
+- Always stage and commit your changes after you have tested them locally, but do **not** push immediately. This allows for local version control and easy rollback if needed, while preventing unreviewed code from reaching shared branches.
+
+### 2. **Descriptive, Searchable Commit Messages**
+- Use brief but descriptive commit messages that summarize the change and its purpose. Good commit messages make it easier to search and understand the project history in the future.
+- Example: `fix: correct helmet item quantity in Ranger packing list migration`
+
+### 3. **Never Commit Sensitive Files**
+- Never commit your `.env` file or any other file containing secrets or environment-specific configuration. Use `.env-example` for structure and documentation, and add `.env` to `.gitignore` to prevent accidental commits.
+
 ## Key Takeaways
 
 1. **Server-side operations are crucial** - Don't send more data than necessary to the frontend
