@@ -12,9 +12,7 @@ class Command(BaseCommand):
             school, created = School.objects.get_or_create(
                 name="Ranger School",
                 defaults={
-                    'city': 'Fort Benning',
-                    'state': 'GA',
-                    'zip_code': '31905',
+                    'address': 'Fort Benning, GA 31905',
                     'latitude': 32.3676,
                     'longitude': -84.9547
                 }
@@ -25,9 +23,7 @@ class Command(BaseCommand):
             base, created = Base.objects.get_or_create(
                 name="Fort Benning",
                 defaults={
-                    'city': 'Columbus',
-                    'state': 'GA',
-                    'zip_code': '31905',
+                    'address': 'Columbus, GA 31905',
                     'latitude': 32.3676,
                     'longitude': -84.9547
                 }
