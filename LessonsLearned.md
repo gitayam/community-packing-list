@@ -72,6 +72,12 @@ This document captures key lessons learned during the development and debugging 
 - Commit `801eb2e`: Implement base location filter and enhance price form functionality
 - Commit `d6e7676`: Implement smart price sorting with vote confidence and visual best value indicators
 
+### 11. **Template URL Cleanup After Feature Removal**
+**Problem**: Removing URL patterns and views without updating all template references
+**Solution**: Always search for and update all template references when removing functionality
+**Example**: When removing upload functionality, forgot to update home.html template that still referenced `upload_packing_list` URL, causing NoReverseMatch errors
+**Best Practice**: Use grep search to find all references to removed URLs across all template files before deploying changes
+
 ## Git Workflow and Commit Practices
 
 ### 1. **Auto Staging and Committing After Testing**
@@ -96,6 +102,7 @@ This document captures key lessons learned during the development and debugging 
 8. **Performance considerations** - Implement filtering and pagination early
 9. **Documentation** - Keep README and code comments up to date
 10. **Migration management** - Always create and test database migrations
+11. **Thorough cleanup** - When removing features, search and update all template references to prevent broken URLs
 
 ## Development Patterns
 
