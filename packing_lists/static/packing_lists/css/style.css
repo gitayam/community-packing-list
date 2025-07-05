@@ -1769,26 +1769,53 @@ a:focus {
 
 /* Price Details */
 .price-details {
-  position: absolute;
+  position: fixed;
   background: var(--background-white);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--military-olive);
   border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
   padding: var(--spacing-md);
-  z-index: 100;
+  z-index: 9999;
   min-width: 300px;
   max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+  backdrop-filter: blur(2px);
 }
 
 .price-entry {
-  padding: var(--spacing-sm);
+  padding: var(--spacing-md);
   border-radius: var(--border-radius-sm);
   margin-bottom: var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  background: var(--background-light);
+  transition: all 0.2s ease;
+}
+
+.price-entry:hover {
+  border-color: var(--military-olive);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .price-entry.best-value {
-  background: rgba(40, 167, 69, 0.1);
-  border: 1px solid rgba(40, 167, 69, 0.2);
+  background: linear-gradient(135deg, rgba(40, 167, 69, 0.15) 0%, rgba(40, 167, 69, 0.05) 100%);
+  border: 2px solid var(--status-complete);
+  position: relative;
+}
+
+.price-entry.best-value::before {
+  content: "BEST VALUE";
+  position: absolute;
+  top: -8px;
+  right: var(--spacing-sm);
+  background: var(--status-complete);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  letter-spacing: 0.5px;
 }
 
 .price-main {
