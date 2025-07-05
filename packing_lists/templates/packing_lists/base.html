@@ -1,0 +1,48 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Community Packing List{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'packing_lists/css/style.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header class="main-header">
+        <h1>{% block page_header %}Community Packing List App{% endblock %}</h1>
+    </header>
+
+    <nav class="main-nav">
+        <ul>
+            <li><a href="{% url 'home' %}" {% if request.resolver_match.url_name == 'home' %}class="active"{% endif %}>Home</a></li>
+            <li><a href="{% url 'store_list' %}" {% if request.resolver_match.url_name == 'store_list' %}class="active"{% endif %}>Stores</a></li>
+            <li><a href="{% url 'create_packing_list' %}" {% if request.resolver_match.url_name == 'create_packing_list' %}class="active"{% endif %}>Create List</a></li>
+            <li><a href="{% url 'upload_packing_list' %}" {% if request.resolver_match.url_name == 'upload_packing_list' %}class="active"{% endif %}>Upload List</a></li>
+            {# Add more common navigation links here, e.g., Admin, Login/Logout when implemented #}
+            {# Example for admin if needed: #}
+            {# {% if user.is_staff %}<li><a href="{% url 'admin:index' %}">Admin</a></li>{% endif %} #}
+        </ul>
+    </nav>
+
+    <div class="container">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% block content %}
+        <p>Welcome to the Community Packing List application!</p>
+        {% endblock %}
+    </div>
+
+    <footer class="main-footer">
+        <p>&copy; {% now "Y" %} Community Packing List App. All rights reserved (not really).</p>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

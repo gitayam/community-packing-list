@@ -1,0 +1,38 @@
+{% extends "packing_lists/base.html" %}
+
+{% block title %}{{ title }} - Packing Lists{% endblock %}
+
+{% block page_header %}{{ title }}{% endblock %}
+
+{% block content %}
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <ul class="form-field-errors">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% for field in form %}
+            <p>
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <span class="helptext">{{ field.help_text|safe }}</span>
+                {% endif %}
+                {% if field.errors %}
+                    <ul class="form-field-errors">
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </p>
+        {% endfor %}
+        <button type="submit" class="button success">Save</button>
+        <a href="{% if packing_list %}{% url 'view_packing_list' packing_list.id %}{% else %}{% url 'home' %}{% endif %}" class="button secondary">Cancel</a>
+    </form>
+{% endblock %}

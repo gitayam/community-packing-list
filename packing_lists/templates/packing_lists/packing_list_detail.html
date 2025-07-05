@@ -1,0 +1,97 @@
+{% extends "packing_lists/base.html" %}
+
+{% block title %}{{ packing_list.name }} - Packing List{% endblock %}
+
+{% block page_header %}{{ packing_list.name }}{% endblock %}
+
+{% block content %}
+    <div class="list-meta mb-2">
+        {% if packing_list.school %}
+            <p><strong>School:</strong> {{ packing_list.school.name }}</p>
+        {% endif %}
+        {% if packing_list.description %}
+            <p><em>{{ packing_list.description }}</em></p>
+        {% endif %}
+    </div>
+
+    <div class="actions-bar">
+        {# Add links to edit list details or add more items later if needed #}
+        {# <a href="{% url 'edit_packing_list' packing_list.id %}" class="button secondary">Edit List Details</a> #}
+        {# <a href="{% url 'add_item_to_list' packing_list.id %}" class="button">Add New Item to this List</a> #}
+    </div>
+
+    <h2>Items</h2>
+    {% if items_with_prices %}
+        <form method="post" id="packing-list-items-form">
+            {% csrf_token %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Packed?</th>
+                        <th>Item Name</th>
+                        <th>Quantity</th>
+                        <th>Notes</th>
+                        <th>Pricing Info</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item_wp in items_with_prices %}
+                        <tr class="{% if item_wp.pli.packed %}packed-true{% else %}packed-false{% endif %}">
+                            <td>
+                                <button type="submit" name="toggle_packed_item_id" value="{{ item_wp.pli.id }}" class="button {% if item_wp.pli.packed %}secondary{% else %}success{% endif %}">
+                                    {% if item_wp.pli.packed %}Undo{% else %}Pack{% endif %}
+                                </button>
+                            </td>
+                            <td>{{ item_wp.item.name }}</td>
+                            <td>{{ item_wp.pli.quantity }}</td>
+                            <td>
+                                {% if item_wp.pli.notes %}
+                                    <span class="item-notes">{{ item_wp.pli.notes }}</span>
+                                {% else %}
+                                    <span class="item-notes text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="price-info">
+                                    {% if item_wp.prices %}
+                                        <ul>
+                                        {% for price in item_wp.prices %}
+                                            <li>
+                                                ${{ price.price }} for {{ price.quantity }} at {{ price.store.name }}
+                                                {% if price.date_purchased %}({{ price.date_purchased|date:"Y-m-d" }}){% endif %}
+
+                                                {% with upvotes=price.votes.filter(is_correct_price=True).count downvotes=price.votes.filter(is_correct_price=False).count %}
+                                                    <span class="vote-count">(👍{{ upvotes }} / 👎{{ downvotes }})</span>
+                                                {% endwith %}
+
+                                                <span class="vote-buttons">
+                                                    <form action="{% url 'handle_vote' %}" method="post">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="price_id" value="{{ price.id }}">
+                                                        <button type="submit" name="upvote_price_id" value="{{ price.id }}" class="button success">👍</button>
+                                                    </form>
+                                                    <form action="{% url 'handle_vote' %}" method="post">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="price_id" value="{{ price.id }}">
+                                                        <button type="submit" name="downvote_price_id" value="{{ price.id }}" class="button danger">👎</button>
+                                                    </form>
+                                                </span>
+                                            </li>
+                                        {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p class="no-prices">No pricing information yet.</p>
+                                    {% endif %}
+                                    <a href="{% url 'add_price_for_item' item_id=item_wp.item.id list_id=packing_list.id %}" class="button text-small mt-1">Add Price for {{ item_wp.item.name }}</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
+    {% else %}
+        <p class="no-items">This packing list currently has no items.</p>
+        {# Link to add items? #}
+    {% endif %}
+{% endblock %}
