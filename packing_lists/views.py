@@ -7,6 +7,7 @@ from .forms import PackingListForm, UploadFileForm, PriceForm, VoteForm, Configu
 from .parsers import parse_csv, parse_excel, parse_pdf, parse_text
 import io
 import uuid # For unique session keys
+from django.http import Http404
 
 # Requires login for actions that modify data if user accounts are active
 # from django.contrib.auth.decorators import login_required
@@ -51,13 +52,13 @@ def upload_packing_list(request):
     Step 1: Parses the file/text.
     Step 2: Stores parsed items in session and redirects to configuration step.
     """
+    error_message = None
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             file = form.cleaned_data.get('file')
             text_content = form.cleaned_data.get('text_content')
             parsed_items = []
-            error_message = None
             original_filename = None
 
             if file:
@@ -85,11 +86,9 @@ def upload_packing_list(request):
             elif not parsed_items:
                 messages.warning(request, "No items were found in the provided data.")
             else:
-                # Store parsed items and original filename in session
                 session_key_items = f"parsed_items_{uuid.uuid4().hex}"
                 request.session[session_key_items] = parsed_items
-                request.session['original_filename'] = original_filename # For pre-filling name
-
+                request.session['original_filename'] = original_filename
                 messages.info(request, f"Successfully parsed {len(parsed_items)} items. Please configure the new list.")
                 return redirect(reverse('configure_uploaded_list', args=[session_key_items]))
     else:
@@ -97,7 +96,8 @@ def upload_packing_list(request):
 
     context = {
         'form': form,
-        'title': 'Upload Packing List'
+        'title': 'Upload Packing List',
+        'error_message': error_message
     }
     return render(request, 'packing_lists/upload_form.html', context)
 
@@ -139,10 +139,22 @@ def packing_list_detail(request, list_id):
         # For now, let's just get a few, e.g., latest or highest voted.
         # This part will be expanded in the "manage prices" step.
         prices = pli.item.prices.select_related('store').order_by('-date_purchased')[:5] # Example: latest 5
+        
+        # Calculate vote counts for each price
+        prices_with_votes = []
+        for price in prices:
+            upvotes = price.votes.filter(is_correct_price=True).count()
+            downvotes = price.votes.filter(is_correct_price=False).count()
+            prices_with_votes.append({
+                'price': price,
+                'upvotes': upvotes,
+                'downvotes': downvotes
+            })
+        
         items_with_prices.append({
             'pli': pli, # The PackingListItem object (contains quantity, notes, packed status)
             'item': pli.item, # The Item object (name, description)
-            'prices': prices # QuerySet of Price objects for this item
+            'prices_with_votes': prices_with_votes # List of price dicts with vote counts
         })
 
     context = {
@@ -200,7 +212,6 @@ def handle_vote(request):
             price_id = request.POST.get('downvote_price_id')
         else:
             messages.error(request, "Invalid vote submission.")
-            # Try to redirect back to where the user was. HTTP_REFERER can be unreliable.
             return redirect(request.META.get('HTTP_REFERER', reverse('home')))
 
         form = VoteForm(request.POST, vote_type=vote_type)
@@ -209,56 +220,25 @@ def handle_vote(request):
             price_id = form.cleaned_data.get('price_id')
             is_correct = form.cleaned_data.get('is_correct_price')
 
-            price_instance = get_object_or_404(Price, id=price_id)
+            try:
+                price_instance = Price.objects.get(id=price_id)
+            except Price.DoesNotExist:
+                raise Http404("Price not found.")
 
-            # If using user accounts, check for existing vote by this user for this price
-            # vote, created = Vote.objects.update_or_create(
-            #    price=price_instance,
-            #    user=request.user, # Assumes user is logged in
-            #    defaults={'is_correct_price': is_correct}
-            # )
-
-            # Without user accounts, anyone can vote, potentially multiple times.
-            # This is a simplified version. A real app would tie votes to users.
-            # Get user's IP address
-            ip_address = request.META.get('REMOTE_ADDR') # Standard way, but might need X-Forwarded-For if behind proxy
-
-            # If using user accounts and user is authenticated, user=request.user, ip_address=None (or still log for audit)
-            # For now, all votes are anonymous (no user FK) and rely on IP.
-            # A more robust solution for anonymous voting might involve checking if this IP already voted recently for this price.
-
+            ip_address = request.META.get('REMOTE_ADDR')
             Vote.objects.create(
                 price=price_instance,
                 is_correct_price=is_correct,
                 ip_address=ip_address
-                # user = request.user if request.user.is_authenticated else None # Add this when User model is active
             )
-
             if is_correct:
                 messages.success(request, f"Upvoted price for '{price_instance.item.name}' (from IP: {ip_address}).")
             else:
                 messages.success(request, f"Downvoted price for '{price_instance.item.name}'.")
         else:
-            # This path should ideally not be hit if the form is simple and data comes from buttons
             messages.error(request, "Invalid vote data.")
-
-        # Redirect back to the packing list detail page if possible, or home
-        # The packing list ID might need to be passed along or fetched differently
-        # For simplicity, let's assume the price object can link back to a list if needed
-        # or we rely on HTTP_REFERER (which is not always reliable)
-        # A better way would be to pass list_id in the vote form if always voting from a list context
-
-        # Try to get list_id from the price, assuming item is on at least one list,
-        # and we want to go back to *a* list. This is not robust.
-        # A hidden field in the vote form on packing_list_detail.html with list_id would be better.
-        # For now:
         redirect_url = request.META.get('HTTP_REFERER', reverse('home'))
-        # If we know the price is related to an item that is part of a specific packing list instance
-        # being viewed, that packing_list.id should be part of the POST data for voting.
-        # For now, this simple redirect will often work.
         return redirect(redirect_url)
-
-    # If not POST, redirect away, as this view is for processing votes.
     return redirect(reverse('home'))
 
 
