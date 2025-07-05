@@ -7,18 +7,36 @@ class PackingListForm(forms.ModelForm):
     Form for creating a Packing List manually.
     """
     school_name = forms.CharField(max_length=200, required=False, help_text="If your school isn't listed, enter its name here to create it.")
+    uploaded_file = forms.FileField(required=False, help_text="Upload CSV, Excel, or PDF file.")
+    last_updated = forms.CharField(max_length=20, required=False, help_text="Last update (YYYY, YYYY-MM, or YYYY-MM-DD)")
+    direct_url = forms.URLField(required=False, help_text="Direct URL to the official or source list")
+    event_type = forms.ChoiceField(choices=[('school', 'School'), ('training', 'Training'), ('deployment', 'Deployment'), ('other', 'Other/Custom')], initial='school', help_text="Type of event this list is for.")
+    custom_event_type = forms.CharField(max_length=100, required=False, help_text="If 'Other/Custom', specify type")
 
     class Meta:
         model = PackingList
-        fields = ['name', 'description', 'school']
+        fields = ['name', 'description', 'school', 'event_type', 'custom_event_type', 'last_updated', 'direct_url', 'uploaded_file']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
+            'name': forms.TextInput(attrs={'placeholder': 'Packing List Name'}),
+        }
+        labels = {
+            'name': 'Packing List Name',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['school'].queryset = School.objects.all().order_by('name')
         self.fields['school'].required = False # Allow creating a list without initially assigning a school
+        self.fields['custom_event_type'].widget.attrs['placeholder'] = 'Specify event type if Other/Custom'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        event_type = cleaned_data.get('event_type')
+        custom_event_type = cleaned_data.get('custom_event_type')
+        if event_type == 'other' and not custom_event_type:
+            self.add_error('custom_event_type', "Please specify the event type if 'Other/Custom' is selected.")
+        return cleaned_data
 
     def save(self, commit=True):
         # Handle creation of new school if school_name is provided
@@ -27,6 +45,10 @@ class PackingListForm(forms.ModelForm):
         if school_name and not school:
             school, created = School.objects.get_or_create(name=school_name.strip())
             self.instance.school = school
+        # Handle file upload
+        uploaded_file = self.cleaned_data.get('uploaded_file')
+        if uploaded_file:
+            self.instance.uploaded_file = uploaded_file
         return super().save(commit=commit)
 
 
@@ -156,10 +178,7 @@ class VoteForm(forms.Form):
 
 class ConfigureUploadListForm(forms.Form):
     """
-    Form for configuring a newly uploaded list (name, school).
-    This is similar to PackingListForm but not a ModelForm directly on PackingList
-    initially, as the list itself isn't created until this form is submitted.
-    However, it can reuse much of the logic for school creation.
+    Form for configuring a newly uploaded list (name, school, event type, etc.).
     """
     list_name = forms.CharField(max_length=200, label="Packing List Name",
                                 help_text="Enter a name for this new packing list.")
@@ -167,18 +186,23 @@ class ConfigureUploadListForm(forms.Form):
     school = forms.ModelChoiceField(queryset=School.objects.all().order_by('name'), required=False)
     school_name = forms.CharField(max_length=200, required=False, label="Or New School Name",
                                   help_text="If your school isn't listed, enter its name here to create it.")
+    uploaded_file = forms.FileField(required=False, help_text="Upload CSV, Excel, or PDF file.")
+    last_updated = forms.CharField(max_length=20, required=False, help_text="Last update (YYYY, YYYY-MM, or YYYY-MM-DD)")
+    direct_url = forms.URLField(required=False, help_text="Direct URL to the official or source list")
+    event_type = forms.ChoiceField(choices=[('school', 'School'), ('training', 'Training'), ('deployment', 'Deployment'), ('other', 'Other/Custom')], initial='school', help_text="Type of event this list is for.")
+    custom_event_type = forms.CharField(max_length=100, required=False, help_text="If 'Other/Custom', specify type")
 
     def clean(self):
         cleaned_data = super().clean()
         school = cleaned_data.get('school')
         school_name = cleaned_data.get('school_name')
+        event_type = cleaned_data.get('event_type')
+        custom_event_type = cleaned_data.get('custom_event_type')
 
         if school and school_name:
-            # Potentially confusing for the user; usually one or the other.
-            # Depending on desired behavior, either raise error or prioritize one.
-            # For now, let's say if an existing school is chosen, new school name is ignored.
-            # Or, add a validation error:
             self.add_error('school_name', "Please select an existing school OR enter a new school name, not both.")
+        if event_type == 'other' and not custom_event_type:
+            self.add_error('custom_event_type', "Please specify the event type if 'Other/Custom' is selected.")
 
         # Ensure list_name is unique, or handle it in the view
         list_name = cleaned_data.get('list_name')
@@ -188,10 +212,6 @@ class ConfigureUploadListForm(forms.Form):
         return cleaned_data
 
     def get_school_instance(self):
-        """
-        Helper to get or create the school instance based on form data.
-        Call this after form is validated.
-        """
         school = self.cleaned_data.get('school')
         school_name = self.cleaned_data.get('school_name')
         if school_name and not school:
