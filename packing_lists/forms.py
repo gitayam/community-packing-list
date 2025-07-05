@@ -1,5 +1,5 @@
 from django import forms
-from .models import PackingList, School, Price, Store, Item
+from .models import PackingList, School, Price, Store, Item, PackingListItem
 
 class PackingListForm(forms.ModelForm):
     """
@@ -188,3 +188,30 @@ class ConfigureUploadListForm(forms.Form):
         if school_name and not school:
             school, _ = School.objects.get_or_create(name=school_name.strip())
         return school
+
+class PackingListItemForm(forms.ModelForm):
+    class Meta:
+        model = PackingListItem
+        fields = ['section', 'item', 'quantity', 'nsn_lin', 'required', 'notes', 'instructions']
+        widgets = {
+            'notes': forms.Textarea(attrs={'rows': 2}),
+            'instructions': forms.Textarea(attrs={'rows': 2}),
+            'section': forms.TextInput(attrs={'placeholder': 'Section or category (optional)'}),
+            'nsn_lin': forms.TextInput(attrs={'placeholder': 'NSN/LIN (optional)'}),
+        }
+
+class StoreForm(forms.ModelForm):
+    class Meta:
+        model = Store
+        fields = [
+            'name', 'address_line1', 'address_line2', 'city', 'state', 'zip_code', 'country',
+            'is_online', 'is_in_person'
+        ]
+        widgets = {
+            'address_line1': forms.TextInput(attrs={'placeholder': 'Street address'}),
+            'address_line2': forms.TextInput(attrs={'placeholder': 'Apt, suite, etc. (optional)'}),
+            'city': forms.TextInput(attrs={'placeholder': 'City'}),
+            'state': forms.TextInput(attrs={'placeholder': 'State'}),
+            'zip_code': forms.TextInput(attrs={'placeholder': 'ZIP code'}),
+            'country': forms.TextInput(attrs={'placeholder': 'Country'}),
+        }
