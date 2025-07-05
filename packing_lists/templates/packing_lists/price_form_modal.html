@@ -15,7 +15,12 @@
 
         <div class="form-group">
             <label for="id_store">{{ form.store.label }}:</label>
-            {{ form.store }}
+            <select name="store" id="id_store">
+                {% for option in form.store.field.choices %}
+                    <option value="{{ option.0 }}" {% if option.0 == form.store.value %}selected{% endif %}>{{ option.1 }}</option>
+                {% endfor %}
+                <option value="__add_new__">Add new store...</option>
+            </select>
             {% if form.store.help_text %}
                 <span class="helptext">{{ form.store.help_text|safe }}</span>
             {% endif %}
@@ -73,13 +78,6 @@
             {% endif %}
         </div>
 
-        <div class="form-group">
-            <label>
-                <input type="checkbox" id="show-add-store" style="margin-right: 0.5em;">
-                Or add a new store
-            </label>
-        </div>
-
         <div id="inline-add-store" style="display:none;" class="form-group">
             <div style="border:1px solid var(--border-color); padding: var(--spacing-md); border-radius: var(--border-radius-md); background: var(--background-light);">
                 <h4 style="margin-top: 0;">Add New Store</h4>
@@ -109,27 +107,28 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Toggle new store form
-    const showAddStoreCheckbox = document.getElementById('show-add-store');
+    // Toggle new store form based on dropdown
     const addStoreDiv = document.getElementById('inline-add-store');
     const storeSelect = document.getElementById('id_store');
     const storeNameInput = document.getElementById('id_store_name');
-    
-    if (showAddStoreCheckbox && addStoreDiv) {
-        showAddStoreCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                addStoreDiv.style.display = 'block';
-                if (storeSelect) storeSelect.required = false;
-                if (storeNameInput) storeNameInput.required = true;
-            } else {
-                addStoreDiv.style.display = 'none';
-                if (storeSelect) storeSelect.required = true;
-                if (storeNameInput) {
-                    storeNameInput.required = false;
-                    storeNameInput.value = '';
-                }
+
+    function toggleAddStoreSection() {
+        if (storeSelect && storeSelect.value === '__add_new__') {
+            addStoreDiv.style.display = 'block';
+            if (storeNameInput) storeNameInput.required = true;
+        } else {
+            addStoreDiv.style.display = 'none';
+            if (storeNameInput) {
+                storeNameInput.required = false;
+                storeNameInput.value = '';
             }
-        });
+        }
+    }
+
+    if (storeSelect && addStoreDiv) {
+        storeSelect.addEventListener('change', toggleAddStoreSection);
+        // Initial state
+        toggleAddStoreSection();
     }
 });
 </script> 
