@@ -53,27 +53,25 @@
                             </td>
                             <td>
                                 <div class="price-info">
-                                    {% if item_wp.prices %}
+                                    {% if item_wp.prices_with_votes %}
                                         <ul>
-                                        {% for price in item_wp.prices %}
+                                        {% for price_data in item_wp.prices_with_votes %}
                                             <li>
-                                                ${{ price.price }} for {{ price.quantity }} at {{ price.store.name }}
-                                                {% if price.date_purchased %}({{ price.date_purchased|date:"Y-m-d" }}){% endif %}
+                                                ${{ price_data.price.price }} for {{ price_data.price.quantity }} at {{ price_data.price.store.name }}
+                                                {% if price_data.price.date_purchased %}({{ price_data.price.date_purchased|date:"Y-m-d" }}){% endif %}
 
-                                                {% with upvotes=price.votes.filter(is_correct_price=True).count downvotes=price.votes.filter(is_correct_price=False).count %}
-                                                    <span class="vote-count">(👍{{ upvotes }} / 👎{{ downvotes }})</span>
-                                                {% endwith %}
+                                                <span class="vote-count">(👍{{ price_data.upvotes }} / 👎{{ price_data.downvotes }})</span>
 
                                                 <span class="vote-buttons">
                                                     <form action="{% url 'handle_vote' %}" method="post">
                                                         {% csrf_token %}
-                                                        <input type="hidden" name="price_id" value="{{ price.id }}">
-                                                        <button type="submit" name="upvote_price_id" value="{{ price.id }}" class="button success">👍</button>
+                                                        <input type="hidden" name="price_id" value="{{ price_data.price.id }}">
+                                                        <button type="submit" name="upvote_price_id" value="{{ price_data.price.id }}" class="button success">👍</button>
                                                     </form>
                                                     <form action="{% url 'handle_vote' %}" method="post">
                                                         {% csrf_token %}
-                                                        <input type="hidden" name="price_id" value="{{ price.id }}">
-                                                        <button type="submit" name="downvote_price_id" value="{{ price.id }}" class="button danger">👎</button>
+                                                        <input type="hidden" name="price_id" value="{{ price_data.price.id }}">
+                                                        <button type="submit" name="downvote_price_id" value="{{ price_data.price.id }}" class="button danger">👎</button>
                                                     </form>
                                                 </span>
                                             </li>
