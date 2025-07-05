@@ -200,28 +200,34 @@
                                             </button>
                                         </div>
                                         <div class="price-details" id="price-details-{{ item_wp.item.id }}" style="display: none;">
-                                            {% for price_data in item_wp.prices_with_votes %}
-                                                <div class="price-entry {% if forloop.first %}best-value{% endif %}">
-                                                    <div class="price-main">
-                                                        <strong>${{ price_data.price.price }}</strong> for {{ price_data.price.quantity }} 
-                                                        at {{ price_data.price.store.name }}
+                                            <div class="price-details-header">
+                                                <h4 class="price-details-title">{{ item_wp.item.name }} - Price Options</h4>
+                                                <button type="button" class="price-details-close" onclick="hidePriceDetails()">×</button>
+                                            </div>
+                                            <div class="price-details-body">
+                                                {% for price_data in item_wp.prices_with_votes %}
+                                                    <div class="price-entry {% if forloop.first %}best-value{% endif %}">
+                                                        <div class="price-main">
+                                                            <strong>${{ price_data.price.price }}</strong> for {{ price_data.price.quantity }} 
+                                                            at {{ price_data.price.store.name }}
+                                                        </div>
+                                                        <div class="price-meta">
+                                                            ${{ price_data.price_per_unit|floatformat:2 }}/unit
+                                                            {% if price_data.price.date_purchased %}• {{ price_data.price.date_purchased|date:"M d, Y" }}{% endif %}
+                                                        </div>
+                                                        <div class="price-actions">
+                                                            <button type="button" class="vote-btn upvote" data-price-id="{{ price_data.price.id }}">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-up"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                                                                {{ price_data.upvotes }}
+                                                            </button>
+                                                            <button type="button" class="vote-btn downvote" data-price-id="{{ price_data.price.id }}">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-down"><path d="M10 15v7a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg>
+                                                                {{ price_data.downvotes }}
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                    <div class="price-meta">
-                                                        ${{ price_data.price_per_unit|floatformat:2 }}/unit
-                                                        {% if price_data.price.date_purchased %}• {{ price_data.price.date_purchased|date:"M d, Y" }}{% endif %}
-                                                    </div>
-                                                    <div class="price-actions">
-                                                        <button type="button" class="vote-btn upvote" data-price-id="{{ price_data.price.id }}">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-up"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
-                                                            {{ price_data.upvotes }}
-                                                        </button>
-                                                        <button type="button" class="vote-btn downvote" data-price-id="{{ price_data.price.id }}">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-down"><path d="M10 15v7a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg>
-                                                            {{ price_data.downvotes }}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            {% endfor %}
+                                                {% endfor %}
+                                            </div>
                                         </div>
                                     {% else %}
                                         <span class="no-price">No pricing</span>
@@ -462,35 +468,95 @@
                 const itemId = btn.dataset.itemId;
                 const detailsDiv = document.getElementById(`price-details-${itemId}`);
                 
-                // Hide all other price details
+                // Hide all other price details and remove any existing backdrop
                 document.querySelectorAll('.price-details').forEach(div => {
                     if (div !== detailsDiv) {
                         div.style.display = 'none';
                     }
                 });
+                const existingBackdrop = document.querySelector('.price-details-backdrop');
+                if (existingBackdrop) {
+                    existingBackdrop.remove();
+                }
                 
                 // Toggle current details
                 if (detailsDiv.style.display === 'none' || !detailsDiv.style.display) {
+                    // Create backdrop
+                    const backdrop = document.createElement('div');
+                    backdrop.className = 'price-details-backdrop';
+                    backdrop.onclick = function() {
+                        hidePriceDetails();
+                    };
+                    document.body.appendChild(backdrop);
+                    
                     detailsDiv.style.display = 'block';
                     
-                    // Position the details popup
+                    // Smart positioning to keep popup in viewport
                     const rect = btn.getBoundingClientRect();
-                    detailsDiv.style.position = 'fixed';
-                    detailsDiv.style.top = rect.bottom + 5 + 'px';
-                    detailsDiv.style.left = Math.max(10, rect.left - 150) + 'px';
-                    detailsDiv.style.zIndex = '1000';
+                    const viewport = {
+                        width: window.innerWidth,
+                        height: window.innerHeight
+                    };
+                    
+                    let top, left;
+                    
+                    // Check if we're on mobile (small screen)
+                    if (viewport.width <= 768) {
+                        // Center on mobile - will be handled by CSS media query
+                        // Just ensure it's positioned properly
+                        detailsDiv.style.top = '';
+                        detailsDiv.style.left = '';
+                    } else {
+                        // Desktop positioning
+                        const popupWidth = 350;
+                        const popupHeight = 250; // Estimated height with new header
+                        
+                        // Try to position below the button
+                        top = rect.bottom + 8;
+                        
+                        // If popup would go off bottom of screen, position above
+                        if (top + popupHeight > viewport.height - 20) {
+                            top = rect.top - popupHeight - 8;
+                        }
+                        
+                        // Ensure top doesn't go negative
+                        top = Math.max(20, top);
+                        
+                        // Center horizontally relative to button, but keep in viewport
+                        left = rect.left - (popupWidth / 2) + (rect.width / 2);
+                        left = Math.max(10, Math.min(left, viewport.width - popupWidth - 10));
+                        
+                        detailsDiv.style.top = top + 'px';
+                        detailsDiv.style.left = left + 'px';
+                    }
                 } else {
-                    detailsDiv.style.display = 'none';
+                    hidePriceDetails();
                 }
             }
         });
         
-        // Close price details when clicking outside
+        // Function to hide price details (global scope for onclick)
+        window.hidePriceDetails = function() {
+            document.querySelectorAll('.price-details').forEach(div => {
+                div.style.display = 'none';
+            });
+            const backdrop = document.querySelector('.price-details-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+        };
+        
+        // Close price details when clicking outside (fallback)
         document.addEventListener('click', function(e) {
-            if (!e.target.closest('.price-details') && !e.target.closest('.price-details-btn')) {
-                document.querySelectorAll('.price-details').forEach(div => {
-                    div.style.display = 'none';
-                });
+            if (!e.target.closest('.price-details') && !e.target.closest('.price-details-btn') && !e.target.closest('.price-details-backdrop')) {
+                hidePriceDetails();
+            }
+        });
+        
+        // Close price details with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hidePriceDetails();
             }
         });
         
