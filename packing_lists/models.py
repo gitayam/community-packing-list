@@ -28,6 +28,9 @@ class Store(models.Model):
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
 
+    is_online = models.BooleanField(default=False, help_text="Is this store online?")
+    is_in_person = models.BooleanField(default=True, help_text="Is this store a physical location?")
+
     def __str__(self):
         return self.name
 
@@ -41,10 +44,30 @@ class Store(models.Model):
         else:
             return "No address provided"
 
+class Base(models.Model):
+    name = models.CharField(max_length=200)
+    address = models.TextField(blank=True, null=True)
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+PACKING_LIST_TYPE_CHOICES = [
+    ("course", "Course"),
+    ("selection", "Selection"),
+    ("training", "Training"),
+    ("deployment", "Deployment"),
+    ("other", "Other"),
+]
+
 class PackingList(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True, default="")
     school = models.ForeignKey(School, on_delete=models.SET_NULL, null=True, blank=True, related_name='packing_lists')
+    base = models.ForeignKey('Base', on_delete=models.SET_NULL, null=True, blank=True, related_name='packing_lists')
+    type = models.CharField(max_length=20, choices=PACKING_LIST_TYPE_CHOICES, default="course")
+    custom_type = models.CharField(max_length=100, blank=True, null=True, help_text="If 'Other', specify type")
     # user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True) # If user-specific lists
 
     def __str__(self):
@@ -63,6 +86,11 @@ class PackingListItem(models.Model):
     quantity = models.PositiveIntegerField(default=1)
     notes = models.TextField(blank=True, null=True, default="")
     packed = models.BooleanField(default=False) # For users to check off items
+    # New fields for structured lists:
+    section = models.CharField(max_length=200, blank=True, null=True, help_text="Section or category header")
+    nsn_lin = models.CharField(max_length=100, blank=True, null=True, help_text="NSN/LIN or similar code")
+    required = models.BooleanField(default=True, help_text="Is this item required?")
+    instructions = models.TextField(blank=True, null=True, help_text="Special notes or instructions")
 
     class Meta:
         unique_together = ('packing_list', 'item') # Each item should appear once per list
