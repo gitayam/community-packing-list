@@ -501,6 +501,10 @@
                 const itemId = btn.dataset.itemId;
                 const listId = btn.dataset.listId;
                 
+                // Show loading state
+                btn.classList.add('loading');
+                btn.disabled = true;
+                
                 // Load the price form via AJAX
                 fetch(`/item/${itemId}/add_price_modal/to_list/${listId}/`, {
                     method: 'GET',
@@ -523,6 +527,14 @@
                             form.addEventListener('submit', function(e) {
                                 e.preventDefault();
                                 
+                                // Show loading state on submit button
+                                const submitBtn = form.querySelector('button[type="submit"]');
+                                if (submitBtn) {
+                                    submitBtn.classList.add('loading');
+                                    submitBtn.disabled = true;
+                                    submitBtn.textContent = 'Saving...';
+                                }
+                                
                                 const formData = new FormData(form);
                                 
                                 fetch(form.action, {
@@ -544,6 +556,14 @@
                                 .catch(error => {
                                     console.error('Error:', error);
                                     alert('Error adding price. Please try again.');
+                                })
+                                .finally(() => {
+                                    // Remove loading state
+                                    if (submitBtn) {
+                                        submitBtn.classList.remove('loading');
+                                        submitBtn.disabled = false;
+                                        submitBtn.textContent = 'Save Price';
+                                    }
                                 });
                             });
                         }
@@ -552,6 +572,11 @@
                 .catch(error => {
                     console.error('Error loading price form:', error);
                     alert('Error loading price form. Please try again.');
+                })
+                .finally(() => {
+                    // Remove loading state
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
                 });
             }
         });
@@ -567,6 +592,10 @@
                 const btn = e.target.closest('.edit-item-btn');
                 const listId = btn.dataset.listId;
                 const pliId = btn.dataset.pliId;
+                
+                // Show loading state
+                btn.classList.add('loading');
+                btn.disabled = true;
                 
                 // Load the edit form via AJAX
                 fetch(`/list/${listId}/edit_item_modal/${pliId}/`, {
@@ -584,41 +613,62 @@
                         modalBody.innerHTML = data.html;
                         modal.style.display = 'flex';
                         
-                        // Handle form submission
-                        const form = modalBody.querySelector('form');
-                        if (form) {
-                            form.addEventListener('submit', function(e) {
-                                e.preventDefault();
-                                
-                                const formData = new FormData(form);
-                                
-                                fetch(form.action, {
-                                    method: 'POST',
-                                    headers: {
-                                        'X-Requested-With': 'XMLHttpRequest',
-                                    },
-                                    body: formData
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        modal.style.display = 'none';
-                                        location.reload(); // Refresh to show changes
-                                    } else if (data.html) {
-                                        modalBody.innerHTML = data.html;
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('Error:', error);
-                                    alert('Error updating item. Please try again.');
-                                });
-                            });
-                        }
+                                                 // Handle form submission
+                         const form = modalBody.querySelector('form');
+                         if (form) {
+                             form.addEventListener('submit', function(e) {
+                                 e.preventDefault();
+                                 
+                                 // Show loading state on submit button
+                                 const submitBtn = form.querySelector('button[type="submit"]');
+                                 if (submitBtn) {
+                                     submitBtn.classList.add('loading');
+                                     submitBtn.disabled = true;
+                                     submitBtn.textContent = 'Saving...';
+                                 }
+                                 
+                                 const formData = new FormData(form);
+                                 
+                                 fetch(form.action, {
+                                     method: 'POST',
+                                     headers: {
+                                         'X-Requested-With': 'XMLHttpRequest',
+                                     },
+                                     body: formData
+                                 })
+                                 .then(response => response.json())
+                                 .then(data => {
+                                     if (data.success) {
+                                         modal.style.display = 'none';
+                                         location.reload(); // Refresh to show changes
+                                     } else if (data.html) {
+                                         modalBody.innerHTML = data.html;
+                                     }
+                                 })
+                                 .catch(error => {
+                                     console.error('Error:', error);
+                                     alert('Error updating item. Please try again.');
+                                 })
+                                 .finally(() => {
+                                     // Remove loading state
+                                     if (submitBtn) {
+                                         submitBtn.classList.remove('loading');
+                                         submitBtn.disabled = false;
+                                         submitBtn.textContent = 'Save Changes';
+                                     }
+                                 });
+                             });
+                         }
                     }
                 })
                 .catch(error => {
                     console.error('Error loading edit form:', error);
                     alert('Error loading edit form. Please try again.');
+                })
+                .finally(() => {
+                    // Remove loading state
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
                 });
             }
         });
