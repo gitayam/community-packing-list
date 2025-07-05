@@ -3,13 +3,7 @@ from django.urls import reverse
 from django.contrib import messages # For feedback to the user
 from django.db import IntegrityError
 from .models import PackingList, Item, PackingListItem, School, Price, Vote, Store, Base
-from .forms import PackingListForm, UploadFileForm, PriceForm, VoteForm, ConfigureUploadListForm, PackingListItemForm, StoreForm
-from .parsers import parse_csv, parse_excel, parse_pdf, parse_text
-import io
-import uuid # For unique session keys
-from django.http import Http404, JsonResponse
-from django.template.loader import render_to_string
-from django.views.decorators.csrf import csrf_exempt
+from .forms import PackingListForm, PriceForm, VoteForm, PackingListItemForm, StoreForm
 
 # Requires login for actions that modify data if user accounts are active
 # from django.contrib.auth.decorators import login_required
@@ -46,70 +40,6 @@ def create_packing_list(request):
         'title': 'Create New Packing List'
     }
     return render(request, 'packing_lists/packing_list_form.html', context)
-
-
-def upload_packing_list(request):
-    """
-    View for uploading a packing list file (CSV, Excel, PDF) or pasting text.
-    Step 1: Parses the file/text.
-    Step 2: Stores parsed items in session and redirects to configuration step.
-    """
-    error_message = None
-    if request.method == 'POST':
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            file = form.cleaned_data.get('file')
-            text_content = form.cleaned_data.get('text_content')
-            parsed_items = []
-            original_filename = None
-
-            if file:
-                original_filename = file.name
-                filename_lower = original_filename.lower()
-                try:
-                    if filename_lower.endswith('.csv'):
-                        file_content_string = file.read().decode('utf-8')
-                        parsed_items, error_message = parse_csv(file_content_string)
-                    elif filename_lower.endswith(('.xls', '.xlsx')):
-                        parsed_items, error_message = parse_excel(file)
-                    elif filename_lower.endswith('.pdf'):
-                        parsed_items, error_message = parse_pdf(file)
-                except Exception as e:
-                    error_message = f"Error processing file: {str(e)}"
-            elif text_content:
-                original_filename = "Pasted Text"
-                try:
-                    parsed_items, error_message = parse_text(text_content)
-                except Exception as e:
-                    error_message = f"Error processing text: {str(e)}"
-
-            if error_message:
-                messages.error(request, error_message)
-            elif not parsed_items:
-                messages.warning(request, "No items were found in the provided data.")
-            else:
-                session_key_items = f"parsed_items_{uuid.uuid4().hex}"
-                request.session[session_key_items] = parsed_items
-                request.session['original_filename'] = original_filename
-                messages.info(request, f"Successfully parsed {len(parsed_items)} items. Please configure the new list.")
-                return redirect(reverse('configure_uploaded_list', args=[session_key_items]))
-        else:
-            # Handle form validation errors
-            for field, errors in form.errors.items():
-                for error in errors:
-                    if field == '__all__':
-                        messages.error(request, error)
-                    else:
-                        messages.error(request, f"{field}: {error}")
-    else:
-        form = UploadFileForm()
-
-    context = {
-        'form': form,
-        'title': 'Upload Packing List',
-        'error_message': error_message
-    }
-    return render(request, 'packing_lists/upload_form.html', context)
 
 
 def packing_list_detail(request, list_id):
@@ -410,109 +340,6 @@ def handle_vote(request):
     return redirect(reverse('home'))
 
 
-def configure_uploaded_list(request, session_key_items):
-    """
-    Step 2 of upload process: Configure the PackingList (name, school)
-    and then create the PackingList and its PackingListItems from session data.
-    """
-    parsed_items = request.session.get(session_key_items)
-    original_filename = request.session.get('original_filename', 'Uploaded List')
-
-    if not parsed_items:
-        messages.error(request, "No items found to configure. Session may have expired or data was not passed correctly.")
-        return redirect(reverse('upload_packing_list'))
-
-    if request.method == 'POST':
-        form = ConfigureUploadListForm(request.POST)
-        if form.is_valid():
-            list_name = form.cleaned_data['list_name']
-            description = form.cleaned_data['description']
-            school_instance = form.get_school_instance() # Gets or creates school
-
-            # Create the PackingList
-            try:
-                packing_list = PackingList.objects.create(
-                    name=list_name,
-                    description=description,
-                    school=school_instance
-                    # user=request.user if request.user.is_authenticated else None # If user accounts
-                )
-            except IntegrityError: # Should be caught by form's unique name validation
-                form.add_error('list_name', "A packing list with this name already exists. Please choose a different name.")
-                # Fall through to re-render form with this error
-            else:
-                # Create Items and PackingListItems
-                created_count = 0
-                for item_data in parsed_items:
-                    item_name_str = item_data.get('item_name')
-                    quantity = item_data.get('quantity', 1)
-                    notes = item_data.get('notes', '')
-
-                    if not item_name_str:
-                        continue
-
-                    item, _ = Item.objects.get_or_create(
-                        name=item_name_str.strip(),
-                        defaults={'description': ''}
-                    )
-
-                    _, pli_created = PackingListItem.objects.get_or_create(
-                        packing_list=packing_list,
-                        item=item,
-                        defaults={'quantity': quantity, 'notes': notes}
-                    )
-                    if pli_created:
-                        created_count += 1
-
-                # Clear session data for this upload
-                del request.session[session_key_items]
-                if 'original_filename' in request.session:
-                    del request.session['original_filename']
-
-                messages.success(request, f"Successfully created packing list '{packing_list.name}' with {created_count} item(s).")
-                return redirect(reverse('view_packing_list', args=[packing_list.id]))
-    else:
-        # Pre-fill the form if possible
-        initial_data = {'list_name': f"{original_filename} Packing List"}
-        # Check if initial_data['list_name'] already exists, append number if so
-        counter = 1
-        base_name = initial_data['list_name']
-        while PackingList.objects.filter(name=initial_data['list_name']).exists():
-            initial_data['list_name'] = f"{base_name} ({counter})"
-            counter +=1
-            if counter > 100: # Safety break
-                initial_data['list_name'] = f"{base_name} ({uuid.uuid4().hex[:6]})"
-                break
-        form = ConfigureUploadListForm(initial=initial_data)
-
-    context = {
-        'form': form,
-        'title': 'Configure New Packing List',
-        'num_items': len(parsed_items)
-    }
-    return render(request, 'packing_lists/configure_upload_form.html', context)
-
-
-from django.db.models import Q
-import math
-
-def haversine(lat1, lon1, lat2, lon2):
-    R = 6371  # Radius of Earth in kilometers. Use 3959 for miles.
-
-    lat1_rad = math.radians(lat1)
-    lon1_rad = math.radians(lon1)
-    lat2_rad = math.radians(lat2)
-    lon2_rad = math.radians(lon2)
-
-    dlon = lon2_rad - lon1_rad
-    dlat = lat2_rad - lat1_rad
-
-    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-    distance = R * c
-    return distance
-
 def store_list(request):
     """
     Displays a list of stores with filtering options:
@@ -747,3 +574,38 @@ def edit_item_modal(request, list_id, pli_id):
             html = render_to_string('packing_lists/packing_listitem_form_modal.html', context, request=request)
             return JsonResponse({'html': html})
         return render(request, 'packing_lists/packing_listitem_form_modal.html', context)
+
+def lists_page(request):
+    """
+    Lists all packing lists and provides a button to create a new list.
+    """
+    packing_lists = PackingList.objects.all().order_by('-id')
+    return render(request, 'packing_lists/lists.html', {
+        'packing_lists': packing_lists,
+    })
+
+def items_page(request):
+    """
+    Placeholder for items page.
+    """
+    return render(request, 'packing_lists/items.html')
+
+def edit_packing_list(request, list_id):
+    """
+    View for editing an existing PackingList.
+    """
+    packing_list = get_object_or_404(PackingList, id=list_id)
+    if request.method == 'POST':
+        form = PackingListForm(request.POST, request.FILES, instance=packing_list)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Packing list '{packing_list.name}' updated successfully!")
+            return redirect(reverse('view_packing_list', args=[packing_list.id]))
+    else:
+        form = PackingListForm(instance=packing_list)
+    context = {
+        'form': form,
+        'title': f'Edit Packing List: {packing_list.name}',
+        'packing_list': packing_list,
+    }
+    return render(request, 'packing_lists/packing_list_form.html', context)
