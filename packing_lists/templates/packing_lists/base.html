@@ -15,10 +15,10 @@
 
     <nav class="main-nav">
         <ul>
-            <li><a href="{% url 'home' %}" {% if request.resolver_match.url_name == 'home' %}class="active"{% endif %}>Home</a></li>
-            <li><a href="{% url 'store_list' %}" {% if request.resolver_match.url_name == 'store_list' %}class="active"{% endif %}>Stores</a></li>
-            <li><a href="{% url 'create_packing_list' %}" {% if request.resolver_match.url_name == 'create_packing_list' %}class="active"{% endif %}>Create List</a></li>
-            <li><a href="{% url 'upload_packing_list' %}" {% if request.resolver_match.url_name == 'upload_packing_list' %}class="active"{% endif %}>Upload List</a></li>
+            <li><a href="/" {% if request.resolver_match.url_name == 'home' %}class="active"{% endif %}>Home</a></li>
+            <li><a href="/stores/" {% if request.resolver_match.url_name == 'store_list' %}class="active"{% endif %}>Stores</a></li>
+            <li><a href="/list/create/" {% if request.resolver_match.url_name == 'create_packing_list' %}class="active"{% endif %}>Create List</a></li>
+            <li><a href="/list/upload/" {% if request.resolver_match.url_name == 'upload_packing_list' %}class="active"{% endif %}>Upload List</a></li>
             {# Add more common navigation links here, e.g., Admin, Login/Logout when implemented #}
             {# Example for admin if needed: #}
             {# {% if user.is_staff %}<li><a href="{% url 'admin:index' %}">Admin</a></li>{% endif %} #}
