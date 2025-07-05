@@ -232,9 +232,9 @@
                                         <button type="button" class="action-btn add-price-btn" data-item-id="{{ item_wp.item.id }}" data-list-id="{{ packing_list.id }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                                         </button>
-                                        <a href="{% url 'edit_item_in_list' packing_list.id item_wp.pli.id %}" class="action-btn edit-btn">
+                                        <button type="button" class="action-btn edit-btn edit-item-btn" data-list-id="{{ packing_list.id }}" data-pli-id="{{ item_wp.pli.id }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                                        </a>
+                                        </button>
                                     </div>
                                 </td>
                                 <!-- Hidden columns -->
@@ -271,6 +271,16 @@
         <div id="price-modal-content" class="modal-content">
             <button id="close-price-modal" class="modal-close">&times;</button>
             <div id="price-modal-body">
+                <!-- AJAX-loaded form will go here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Item Modal -->
+    <div id="edit-item-modal" class="modal">
+        <div id="edit-item-modal-content" class="modal-content">
+            <button id="close-edit-item-modal" class="modal-close">&times;</button>
+            <div id="edit-item-modal-body">
                 <!-- AJAX-loaded form will go here -->
             </div>
         </div>
@@ -355,53 +365,94 @@
         function sortTable(sortType, direction) {
             const tbody = table.querySelector('tbody');
             const allRows = Array.from(tbody.querySelectorAll('tr'));
-            
-            // Separate section headers and item rows
+
+            // Separate rows
             const sectionHeaders = allRows.filter(row => row.classList.contains('section-header-row'));
             const itemRows = allRows.filter(row => row.classList.contains('item-row'));
-            
-            // Sort item rows
+
+            const getCellValue = (row, selector, fallback = '') => {
+                const cell = row.querySelector(selector);
+                return cell ? cell.textContent.trim().toLowerCase() : fallback;
+            };
+
+            // Sort items
             itemRows.sort((a, b) => {
                 let aVal, bVal;
-                
-                switch(sortType) {
+                switch (sortType) {
                     case 'name':
-                        aVal = a.querySelector('.item-name-cell').textContent.trim().toLowerCase();
-                        bVal = b.querySelector('.item-name-cell').textContent.trim().toLowerCase();
+                        aVal = getCellValue(a, '.item-name-cell');
+                        bVal = getCellValue(b, '.item-name-cell');
                         break;
                     case 'quantity':
-                        aVal = parseInt(a.querySelector('.quantity-badge').textContent);
-                        bVal = parseInt(b.querySelector('.quantity-badge').textContent);
+                        aVal = parseInt(getCellValue(a, '.quantity-badge', '0')) || 0;
+                        bVal = parseInt(getCellValue(b, '.quantity-badge', '0')) || 0;
                         break;
                     case 'required':
-                        aVal = a.querySelector('.status-badge').textContent.includes('Required') ? 1 : 0;
-                        bVal = b.querySelector('.status-badge').textContent.includes('Required') ? 1 : 0;
+                        aVal = a.querySelector('.status-badge').textContent.toLowerCase().includes('required') ? 1 : 0;
+                        bVal = b.querySelector('.status-badge').textContent.toLowerCase().includes('required') ? 1 : 0;
                         break;
                     case 'packed':
                         aVal = a.classList.contains('packed-row') ? 1 : 0;
                         bVal = b.classList.contains('packed-row') ? 1 : 0;
                         break;
                     case 'price':
-                        const aPriceEl = a.querySelector('.best-price');
-                        const bPriceEl = b.querySelector('.best-price');
-                        aVal = aPriceEl ? parseFloat(aPriceEl.textContent.replace('$', '')) : 0;
-                        bVal = bPriceEl ? parseFloat(bPriceEl.textContent.replace('$', '')) : 0;
+                        aVal = parseFloat(getCellValue(a, '.best-price', '0').replace('$', '')) || 0;
+                        bVal = parseFloat(getCellValue(b, '.best-price', '0').replace('$', '')) || 0;
+                        break;
+                    case 'store':
+                        aVal = getCellValue(a, '.store-cell');
+                        bVal = getCellValue(b, '.store-cell');
+                        break;
+                    case 'section':
+                        aVal = getCellValue(a, '.section-cell');
+                        bVal = getCellValue(b, '.section-cell');
+                        break;
+                    case 'nsn':
+                        aVal = getCellValue(a, '.nsn-cell');
+                        bVal = getCellValue(b, '.nsn-cell');
                         break;
                     default:
                         aVal = a.textContent.trim().toLowerCase();
                         bVal = b.textContent.trim().toLowerCase();
                 }
-                
+
                 if (direction === 'asc') {
-                    return aVal > bVal ? 1 : -1;
+                    return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
                 } else {
-                    return aVal < bVal ? 1 : -1;
+                    return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
                 }
             });
-            
-            // Clear tbody and re-add sorted rows
+
+            // Rebuild tbody with section headers preserved
             tbody.innerHTML = '';
-            itemRows.forEach(row => tbody.appendChild(row));
+            let currentSection = '';
+            let sectionsProcessed = new Set();
+            
+            itemRows.forEach(row => {
+                const sectionText = getCellValue(row, '.section-cell', '').trim();
+                if (sectionText !== currentSection && sectionText !== '') {
+                    currentSection = sectionText;
+                    
+                    // Only add section header if we haven't processed this section yet
+                    if (!sectionsProcessed.has(sectionText.toLowerCase())) {
+                        sectionsProcessed.add(sectionText.toLowerCase());
+                        
+                        const headerRow = sectionHeaders.find(h => {
+                            const headerCell = h.querySelector('.section-header-cell');
+                            if (headerCell) {
+                                const headerText = headerCell.textContent.trim().toLowerCase();
+                                return headerText === sectionText.toLowerCase();
+                            }
+                            return false;
+                        });
+                        
+                        if (headerRow) {
+                            tbody.appendChild(headerRow.cloneNode(true));
+                        }
+                    }
+                }
+                tbody.appendChild(row);
+            });
         }
         
         // Price details toggle
@@ -451,7 +502,7 @@
                 const listId = btn.dataset.listId;
                 
                 // Load the price form via AJAX
-                fetch(`/packing-lists/item/${itemId}/add_price_modal/to_list/${listId}/`, {
+                fetch(`/item/${itemId}/add_price_modal/to_list/${listId}/`, {
                     method: 'GET',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -510,19 +561,129 @@
             document.getElementById('price-modal').style.display = 'none';
         });
         
-        // Vote functionality (simplified)
+        // Edit item modal functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.edit-item-btn')) {
+                const btn = e.target.closest('.edit-item-btn');
+                const listId = btn.dataset.listId;
+                const pliId = btn.dataset.pliId;
+                
+                // Load the edit form via AJAX
+                fetch(`/list/${listId}/edit_item_modal/${pliId}/`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.html) {
+                        const modal = document.getElementById('edit-item-modal');
+                        const modalBody = document.getElementById('edit-item-modal-body');
+                        modalBody.innerHTML = data.html;
+                        modal.style.display = 'flex';
+                        
+                        // Handle form submission
+                        const form = modalBody.querySelector('form');
+                        if (form) {
+                            form.addEventListener('submit', function(e) {
+                                e.preventDefault();
+                                
+                                const formData = new FormData(form);
+                                
+                                fetch(form.action, {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                    },
+                                    body: formData
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        modal.style.display = 'none';
+                                        location.reload(); // Refresh to show changes
+                                    } else if (data.html) {
+                                        modalBody.innerHTML = data.html;
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    alert('Error updating item. Please try again.');
+                                });
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading edit form:', error);
+                    alert('Error loading edit form. Please try again.');
+                });
+            }
+        });
+        
+        // Close edit item modal functionality
+        document.getElementById('close-edit-item-modal').addEventListener('click', function() {
+            document.getElementById('edit-item-modal').style.display = 'none';
+        });
+        
+        // Vote functionality with AJAX
         document.addEventListener('click', function(e) {
             if (e.target.closest('.vote-btn')) {
                 const btn = e.target.closest('.vote-btn');
                 const priceId = btn.dataset.priceId;
                 const isUpvote = btn.classList.contains('upvote');
                 
-                // This would normally make an AJAX call to handle the vote
-                console.log(`${isUpvote ? 'Upvote' : 'Downvote'} for price ${priceId}`);
+                // Disable button to prevent double-clicking
+                btn.disabled = true;
                 
-                // For now, just update the count visually
-                const currentCount = parseInt(btn.textContent.match(/\d+/)[0]);
-                btn.innerHTML = btn.innerHTML.replace(/\d+/, currentCount + 1);
+                // Make AJAX call to handle the vote
+                const formData = new FormData();
+                formData.append('price_id', priceId);
+                formData.append('vote_type', isUpvote ? 'up' : 'down');
+                
+                fetch('{% url "handle_vote" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update vote counts
+                        const priceEntry = btn.closest('.price-entry');
+                        const upvoteBtn = priceEntry.querySelector('.vote-btn.upvote');
+                        const downvoteBtn = priceEntry.querySelector('.vote-btn.downvote');
+                        
+                        if (upvoteBtn) {
+                            upvoteBtn.innerHTML = upvoteBtn.innerHTML.replace(/\d+/, data.upvotes);
+                        }
+                        if (downvoteBtn) {
+                            downvoteBtn.innerHTML = downvoteBtn.innerHTML.replace(/\d+/, data.downvotes);
+                        }
+                        
+                        // Show success message briefly
+                        const originalText = btn.textContent;
+                        btn.textContent = isUpvote ? '✓' : '✗';
+                        setTimeout(() => {
+                            btn.textContent = originalText;
+                        }, 1000);
+                    } else {
+                        alert(data.message || 'Error voting. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error voting. Please try again.');
+                })
+                .finally(() => {
+                    // Re-enable button
+                    btn.disabled = false;
+                });
             }
         });
         

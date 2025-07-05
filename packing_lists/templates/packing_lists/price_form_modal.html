@@ -1,0 +1,135 @@
+<div class="form-container">
+    <h3>{{ title }}</h3>
+    <p class="mb-2">Adding price for item: <strong>{{ item.name }}</strong></p>
+
+    <form method="post" id="price-form" action="{% url 'add_price_for_item' item_id=item.id list_id=list_id %}">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <ul class="form-field-errors">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="id_store">{{ form.store.label }}:</label>
+            {{ form.store }}
+            {% if form.store.help_text %}
+                <span class="helptext">{{ form.store.help_text|safe }}</span>
+            {% endif %}
+            {% if form.store.errors %}
+                <ul class="form-field-errors">
+                    {% for error in form.store.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="id_price">{{ form.price.label }}:</label>
+            {{ form.price }}
+            {% if form.price.help_text %}
+                <span class="helptext">{{ form.price.help_text|safe }}</span>
+            {% endif %}
+            {% if form.price.errors %}
+                <ul class="form-field-errors">
+                    {% for error in form.price.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="id_quantity">{{ form.quantity.label }}:</label>
+            {{ form.quantity }}
+            {% if form.quantity.help_text %}
+                <span class="helptext">{{ form.quantity.help_text|safe }}</span>
+            {% endif %}
+            {% if form.quantity.errors %}
+                <ul class="form-field-errors">
+                    {% for error in form.quantity.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="id_date_purchased">{{ form.date_purchased.label }}:</label>
+            {{ form.date_purchased }}
+            {% if form.date_purchased.help_text %}
+                <span class="helptext">{{ form.date_purchased.help_text|safe }}</span>
+            {% endif %}
+            {% if form.date_purchased.errors %}
+                <ul class="form-field-errors">
+                    {% for error in form.date_purchased.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="show-add-store" style="margin-right: 0.5em;">
+                Or add a new store
+            </label>
+        </div>
+
+        <div id="inline-add-store" style="display:none;" class="form-group">
+            <div style="border:1px solid var(--border-color); padding: var(--spacing-md); border-radius: var(--border-radius-md); background: var(--background-light);">
+                <h4 style="margin-top: 0;">Add New Store</h4>
+                <div class="form-group">
+                    <label for="id_store_name">{{ form.store_name.label }}:</label>
+                    {{ form.store_name }}
+                    {% if form.store_name.help_text %}
+                        <span class="helptext">{{ form.store_name.help_text|safe }}</span>
+                    {% endif %}
+                    {% if form.store_name.errors %}
+                        <ul class="form-field-errors">
+                            {% for error in form.store_name.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="button success">Save Price</button>
+            <button type="button" class="button secondary" onclick="document.getElementById('price-modal').style.display='none'">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle new store form
+    const showAddStoreCheckbox = document.getElementById('show-add-store');
+    const addStoreDiv = document.getElementById('inline-add-store');
+    const storeSelect = document.getElementById('id_store');
+    const storeNameInput = document.getElementById('id_store_name');
+    
+    if (showAddStoreCheckbox && addStoreDiv) {
+        showAddStoreCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                addStoreDiv.style.display = 'block';
+                if (storeSelect) storeSelect.required = false;
+                if (storeNameInput) storeNameInput.required = true;
+            } else {
+                addStoreDiv.style.display = 'none';
+                if (storeSelect) storeSelect.required = true;
+                if (storeNameInput) {
+                    storeNameInput.required = false;
+                    storeNameInput.value = '';
+                }
+            }
+        });
+    }
+});
+</script> 
