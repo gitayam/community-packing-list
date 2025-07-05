@@ -8,10 +8,12 @@ ENV PYTHONUNBUFFERED 1
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies (if any, e.g., for psycopg2 or other libraries)
-# For psycopg2, python:3.x-slim typically has what's needed.
-# If not, you might need: RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
-# For GeoDjango, you'd need much more (GEOS, GDAL, PROJ libraries)
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    gcc \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
 COPY requirements.txt /app/
