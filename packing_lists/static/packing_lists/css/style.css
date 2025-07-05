@@ -8,6 +8,13 @@
   --military-khaki: #C3B091;
   --military-sand: #F4F1DE;
   --military-dark: #2C2C2C;
+
+  /* RGB versions for opacity */
+  --military-olive-rgb: 75, 83, 32;
+  --military-navy-rgb: 27, 54, 93;
+  --military-khaki-rgb: 195, 176, 145;
+  --military-sand-rgb: 244, 241, 222;
+  --military-dark-rgb: 44, 44, 44;
   
   /* Status Colors */
   --status-required: #DC3545;
@@ -80,6 +87,33 @@ header.main-header {
   overflow: hidden;
 }
 
+.header-content-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg); /* 1.5rem */
+  position: relative; /* Ensure it's above the ::before pseudo-element */
+  z-index: 1;
+}
+
+.logo-container {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--military-olive-rgb), 0.12);
+  border-radius: 50%;
+  border: 2px solid var(--military-olive);
+}
+
+/* Ensure the SVG or img inside logo-container is sized if needed, though inline SVG has width/height */
+.logo-container svg,
+.logo-container img {
+  width: 40px; /* Corresponds to original inline style */
+  height: 40px; /* Corresponds to original inline style */
+}
+
 header.main-header::before {
   content: '';
   position: absolute;
@@ -92,7 +126,7 @@ header.main-header::before {
 }
 
 header.main-header h1 {
-  margin: 0;
+  margin: 0; /* Override default h1 margins */
   font-size: var(--font-size-xxl);
   font-weight: 700;
   text-transform: uppercase;
@@ -792,6 +826,255 @@ footer.main-footer {
     font-size: var(--font-size-xl);
   }
 }
+
+/* --- Home Page Specific Styles --- */
+.home-hero-section {
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-lg);
+  margin-bottom: var(--spacing-xxl);
+}
+
+.home-hero-section .hero-title {
+  font-size: var(--font-size-xxl); /* Or even larger, e.g., 2rem or 2.5rem */
+  color: var(--military-navy);
+  margin-top: 0;
+  margin-bottom: var(--spacing-sm);
+}
+
+.home-hero-section .lead {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xl);
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.home-hero-section .hero-actions .button svg {
+  margin-right: var(--spacing-sm);
+  vertical-align: middle; /* Better alignment */
+}
+
+.section-title { /* General purpose section title, if needed beyond default h2 */
+  margin-top: var(--spacing-xxl);
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+  border-bottom: 2px solid var(--military-khaki);
+  padding-bottom: var(--spacing-md);
+  color: var(--military-navy);
+}
+
+.packing-lists-ul .packing-list-entry {
+  /* Uses existing .item-list li styles, can add specifics if needed */
+  /* Example: border-left: 4px solid var(--military-olive); */
+}
+
+.packing-list-entry .list-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.packing-list-entry .list-entry-title-group {
+  flex: 1;
+  min-width: 0; /* Prevents overflow issues with flex items */
+}
+
+.packing-list-entry .list-entry-title-group h3 {
+  margin-bottom: var(--spacing-xs); /* Reduced margin for h3 in this context */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.packing-list-entry .list-entry-title-group h3 a {
+  text-decoration: none;
+  color: var(--military-navy);
+}
+.packing-list-entry .list-entry-title-group h3 a:hover {
+  color: var(--military-olive);
+  text-decoration: underline;
+}
+
+
+.packing-list-entry .school-tag {
+  display: inline-flex; /* Changed to inline-flex */
+  align-items: center;
+  gap: var(--spacing-xs);
+  background-color: rgba(var(--military-khaki-rgb), 0.2); /* Using RGB for opacity */
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-md); /* Consistent border radius */
+  font-size: var(--font-size-sm); /* Smaller font size for tags */
+  color: var(--military-olive); /* Darker text for better contrast */
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%; /* Ensure it doesn't overflow its container */
+}
+
+.packing-list-entry .school-tag svg {
+  width: 14px; /* Explicit size for icon */
+  height: 14px;
+  stroke-width: 2.5; /* Slightly bolder for small icon */
+}
+
+.packing-list-entry .button svg {
+  margin-right: var(--spacing-xs);
+  vertical-align: middle; /* Better alignment */
+}
+
+.no-lists-box { /* Specific styling for the "no lists" box on home page if needed */
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+.no-lists-box .no-lists { /* Ensure the p tag inside also behaves as expected */
+   font-size: var(--font-size-lg);
+   color: var(--text-secondary);
+}
+
+/* --- Packing List Detail Page Specific Styles --- */
+.list-meta {
+  background-color: rgba(var(--military-khaki-rgb), 0.1);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-xl);
+  border-left: 4px solid var(--military-khaki);
+}
+.list-meta p {
+  margin-bottom: var(--spacing-sm);
+}
+.list-meta p:last-child {
+  margin-bottom: 0;
+}
+
+.list-controls {
+  margin-bottom: var(--spacing-lg);
+}
+
+.item-filter-input { /* Was input#item-table-filter */
+  margin-bottom: var(--spacing-md); /* Was 10px */
+  width: 300px; /* Was 250px, increased slightly */
+  max-width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md); /* Adjusted padding */
+}
+
+#packing-list-items-form th {
+  white-space: nowrap;
+}
+
+#packing-list-items-form th.sort-asc::after,
+#packing-list-items-form th.sort-desc::after {
+  content: '';
+  display: inline-block;
+  margin-left: var(--spacing-sm);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+}
+
+#packing-list-items-form th.sort-asc::after {
+  border-bottom: 5px solid var(--text-light); /* Arrow up */
+}
+
+#packing-list-items-form th.sort-desc::after {
+  border-top: 5px solid var(--text-light); /* Arrow down */
+}
+
+
+.status-tag {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-light); /* Default text color, overridden by specific status */
+}
+
+.status-required-yes {
+  background-color: var(--status-complete); /* Green */
+}
+
+.status-required-no {
+  background-color: var(--status-optional); /* Yellow/Orange */
+  color: var(--military-dark); /* Darker text for yellow background */
+}
+
+.item-instructions-highlight {
+  color: var(--status-required); /* Red */
+  font-weight: 600;
+}
+
+.recommended-store {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-weight: 600;
+  color: var(--military-olive);
+}
+.recommended-store svg {
+  stroke-width: 2.5;
+}
+
+.best-value-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-weight: bold;
+  color: var(--status-complete); /* Green to match existing .best-value border */
+}
+.best-value-tag svg {
+  stroke-width: 2.5;
+}
+
+/* Styles for SVG icons in buttons */
+.button-icon svg,
+.actions-bar .button svg, /* For Add New Item button */
+.packing-list-entry .button svg, /* For View button on homepage */
+.price-info .button svg, /* For Add Price button */
+#packing-list-items-form .button svg /* For Edit button in table */
+ {
+  margin-right: var(--spacing-sm);
+  vertical-align: middle; /* Or text-bottom, adjust as needed */
+  width: 16px; /* Default icon size */
+  height: 16px;
+}
+
+.button-icon-sm svg { /* For smaller buttons like vote buttons */
+  margin-right: var(--spacing-xs); /* Less margin for smaller buttons */
+  width: 14px;
+  height: 14px;
+}
+/* If icons are standalone, no margin needed */
+.vote-buttons button.button-icon-sm svg {
+    margin-right: 0;
+}
+
+
+.vote-count svg {
+  vertical-align: middle;
+  margin-right: var(--spacing-xs);
+  margin-left: var(--spacing-xs);
+  width: 12px;
+  height: 12px;
+}
+.vote-count svg.feather-thumbs-up {
+    color: var(--status-complete);
+}
+.vote-count svg.feather-thumbs-down {
+    color: var(--status-required);
+}
+
+
+#price-modal-content {
+  /* Overrides for the price modal if needed, e.g. max-width */
+  /* max-width: 500px; */ /* If specific size is still desired */
+}
+
 
 /* Military Loading States */
 .loading {
