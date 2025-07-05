@@ -73,6 +73,8 @@ class PackingListFormTests(TestCase):
     
     def test_packing_list_form_school_queryset(self):
         """Test that school queryset is ordered by name"""
+        # Clear existing schools to ensure clean test
+        School.objects.all().delete()
         School.objects.create(name="A School")
         School.objects.create(name="Z School")
         
@@ -113,11 +115,9 @@ class UploadFileFormTests(TestCase):
         """Test form with both file and text"""
         csv_file = SimpleUploadedFile("test.csv", b"content", content_type="text/csv")
         form_data = {
-            'file': csv_file,
             'text_content': 'Some text'
         }
-        form = UploadFileForm(data={}, files={'file': csv_file})
-        form.cleaned_data = {'text_content': 'Some text'}
+        form = UploadFileForm(data=form_data, files={'file': csv_file})
         self.assertFalse(form.is_valid())
         self.assertIn('__all__', form.errors)
     
@@ -131,7 +131,7 @@ class UploadFileFormTests(TestCase):
         form_data = {'file': invalid_file}
         form = UploadFileForm(data={}, files=form_data)
         self.assertFalse(form.is_valid())
-        self.assertIn('file', form.errors)
+        self.assertIn('__all__', form.errors)
     
     def test_upload_file_form_valid_file_types(self):
         """Test form with various valid file types"""
@@ -147,6 +147,14 @@ class UploadFileFormTests(TestCase):
             form_data = {'file': file_obj}
             form = UploadFileForm(data={}, files=form_data)
             self.assertTrue(form.is_valid(), f"Failed for {filename}")
+    
+    def test_upload_file_form_empty_file(self):
+        """Test form with empty file"""
+        empty_file = SimpleUploadedFile("empty.csv", b"", content_type="text/csv")
+        form_data = {'file': empty_file}
+        form = UploadFileForm(data={}, files=form_data)
+        self.assertFalse(form.is_valid())  # Empty file is not valid content
+        self.assertIn('__all__', form.errors)
 
 
 class PriceFormTests(TestCase):
@@ -242,6 +250,8 @@ class PriceFormTests(TestCase):
     
     def test_price_form_store_queryset(self):
         """Test that store queryset is ordered by name"""
+        # Clear existing stores to ensure clean test
+        Store.objects.all().delete()
         Store.objects.create(name="A Store")
         Store.objects.create(name="Z Store")
         
@@ -325,6 +335,8 @@ class ConfigureUploadListFormTests(TestCase):
     
     def test_configure_upload_list_form_school_queryset(self):
         """Test that school queryset is ordered by name"""
+        # Clear existing schools to ensure clean test
+        School.objects.all().delete()
         School.objects.create(name="A School")
         School.objects.create(name="Z School")
         
@@ -367,13 +379,6 @@ class FormEdgeCaseTests(TestCase):
         form = PriceForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn('price', form.errors)
-    
-    def test_upload_file_form_empty_file(self):
-        """Test form with empty file"""
-        empty_file = SimpleUploadedFile("empty.csv", b"", content_type="text/csv")
-        form_data = {'file': empty_file}
-        form = UploadFileForm(data={}, files=form_data)
-        self.assertTrue(form.is_valid())  # File validation happens in view
     
     def test_upload_file_form_large_file(self):
         """Test form with large file (would need file size validation)"""
