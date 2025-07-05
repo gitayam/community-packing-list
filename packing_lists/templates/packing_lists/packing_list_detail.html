@@ -17,7 +17,7 @@
     <div class="actions-bar">
         {# Add links to edit list details or add more items later if needed #}
         {# <a href="{% url 'edit_packing_list' packing_list.id %}" class="button secondary">Edit List Details</a> #}
-        {# <a href="{% url 'add_item_to_list' packing_list.id %}" class="button">Add New Item to this List</a> #}
+        <a href="{% url 'add_item_to_list' packing_list.id %}" class="button">Add New Item to this List</a>
     </div>
 
     <h2>Items</h2>
@@ -27,16 +27,29 @@
             <table>
                 <thead>
                     <tr>
+                        <th>Section</th>
                         <th>Packed?</th>
                         <th>Item Name</th>
                         <th>Quantity</th>
+                        <th>NSN/LIN</th>
+                        <th>Required?</th>
                         <th>Notes</th>
+                        <th>Instructions</th>
                         <th>Pricing Info</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item_wp in items_with_prices %}
+                    {% regroup items_with_prices by pli.section as sectioned_items %}
+                    {% for section in sectioned_items %}
+                        {% if section.grouper %}
+                        <tr class="section-header">
+                            <td colspan="10"><strong>{{ section.grouper }}</strong></td>
+                        </tr>
+                        {% endif %}
+                        {% for item_wp in section.list %}
                         <tr class="{% if item_wp.pli.packed %}packed-true{% else %}packed-false{% endif %}">
+                            <td>{% if item_wp.pli.section %}{{ item_wp.pli.section }}{% else %}-{% endif %}</td>
                             <td>
                                 <button type="submit" name="toggle_packed_item_id" value="{{ item_wp.pli.id }}" class="button {% if item_wp.pli.packed %}secondary{% else %}success{% endif %}">
                                     {% if item_wp.pli.packed %}Undo{% else %}Pack{% endif %}
@@ -44,11 +57,20 @@
                             </td>
                             <td>{{ item_wp.item.name }}</td>
                             <td>{{ item_wp.pli.quantity }}</td>
+                            <td>{% if item_wp.pli.nsn_lin %}{{ item_wp.pli.nsn_lin }}{% else %}-{% endif %}</td>
+                            <td>{% if item_wp.pli.required %}<span style="color:green;">Yes</span>{% else %}<span style="color:orange;">No</span>{% endif %}</td>
                             <td>
                                 {% if item_wp.pli.notes %}
                                     <span class="item-notes">{{ item_wp.pli.notes }}</span>
                                 {% else %}
                                     <span class="item-notes text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item_wp.pli.instructions %}
+                                    <span class="item-instructions" style="color:#b00;">{{ item_wp.pli.instructions }}</span>
+                                {% else %}
+                                    <span class="item-instructions text-muted">-</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -83,7 +105,11 @@
                                     <a href="{% url 'add_price_for_item' item_id=item_wp.item.id list_id=packing_list.id %}" class="button text-small mt-1">Add Price for {{ item_wp.item.name }}</a>
                                 </div>
                             </td>
+                            <td>
+                                <a href="{% url 'edit_item_in_list' packing_list.id item_wp.pli.id %}" class="button text-small">Edit</a>
+                            </td>
                         </tr>
+                        {% endfor %}
                     {% endfor %}
                 </tbody>
             </table>
