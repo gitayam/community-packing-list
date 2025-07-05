@@ -27,4 +27,9 @@ urlpatterns = [
 
     # URL for listing stores
     path('stores/', views.store_list, name='store_list'),
+
+    path('add-store-ajax/', views.add_store_ajax, name='add_store_ajax'),
+
+    path('list/<int:list_id>/add_item/', views.add_item_to_list, name='add_item_to_list'),
+    path('list/<int:list_id>/edit_item/<int:pli_id>/', views.edit_item_in_list, name='edit_item_in_list'),
 ]
