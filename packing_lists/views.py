@@ -176,6 +176,18 @@ def packing_list_detail(request, list_id):
 def add_price_for_item(request, item_id, list_id=None): # list_id is for redirecting back
     item = get_object_or_404(Item, id=item_id)
 
+    # Handle store creation first
+    if request.method == 'POST' and 'new_store_name' in request.POST:
+        store_name = request.POST.get('new_store_name', '').strip()
+        store_address = request.POST.get('new_store_address', '').strip()
+        
+        if store_name:
+            store, created = Store.objects.get_or_create(name=store_name, defaults={'address_line1': store_address})
+            if created:
+                messages.success(request, f"Store '{store.name}' created successfully.")
+            # Redirect back to the same page to show the new store in the dropdown
+            return redirect(request.path)
+
     if request.method == 'POST':
         form = PriceForm(request.POST)
         if form.is_valid():

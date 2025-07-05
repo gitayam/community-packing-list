@@ -77,46 +77,20 @@
 
         <button type="submit" class="button success">Save Price</button>
         {% if list_id %}
-            <a href="{% url 'view_packing_list' list_id %}" class="button secondary">Cancel</a>
+            <a href="/list/{{ list_id }}/" class="button secondary">Cancel</a>
         {% else %}
-            <a href="{% url 'home' %}" class="button secondary">Cancel</a>
+            <a href="/" class="button secondary">Cancel</a>
         {% endif %}
     </form>
 
     <script>
-    // Minimal JS for inline add store (AJAX)
+    // Simple JS for inline add store (no AJAX for now)
     document.addEventListener('DOMContentLoaded', function() {
         var addStoreForm = document.getElementById('add-store-form');
         if (addStoreForm) {
             addStoreForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                var name = document.getElementById('new_store_name').value;
-                var address = document.getElementById('new_store_address').value;
-                var csrf = addStoreForm.querySelector('input[name=csrfmiddlewaretoken]').value;
-                fetch('/add-store-ajax/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrf
-                    },
-                    body: JSON.stringify({name: name, address: address})
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Add new store to dropdown
-                        var storeSelect = document.getElementById('id_store');
-                        var option = document.createElement('option');
-                        option.value = data.store_id;
-                        option.text = data.store_name;
-                        option.selected = true;
-                        storeSelect.appendChild(option);
-                        // Hide the inline form
-                        document.getElementById('inline-add-store').style.display = 'none';
-                    } else {
-                        alert(data.error || 'Error adding store');
-                    }
-                });
+                // Let the form submit normally - it will reload the page
+                // The store will be created and available in the dropdown
             });
         }
     });
