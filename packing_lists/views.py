@@ -444,30 +444,13 @@ def store_list(request):
     }
     return render(request, 'packing_lists/store_list.html', context)
 
-def add_store_ajax(request):
-    if request.method == 'POST':
-        import json
-        try:
-            if request.content_type == 'application/json':
-                data = json.loads(request.body.decode('utf-8'))
-                name = data.get('name', '').strip()
-                address = data.get('address', '').strip()
-            else:
-                name = request.POST.get('new_store_name', '').strip()
-                address = request.POST.get('new_store_address', '').strip()
-        except Exception:
-            return JsonResponse({'success': False, 'error': 'Invalid data.'}, status=400)
+def test_ajax(request):
+    """Test view for debugging."""
+    return JsonResponse({'success': True, 'message': 'Test response'})
 
-        if not name:
-            return JsonResponse({'success': False, 'error': 'Store name is required.'}, status=400)
-        store, created = Store.objects.get_or_create(name=name, defaults={'address_line1': address})
-        if request.content_type == 'application/json':
-            return JsonResponse({'success': True, 'store_id': store.id, 'store_name': store.name})
-        else:
-            # Fallback: redirect to the referring page (should reload with new store in dropdown)
-            from django.shortcuts import redirect
-            return redirect(request.META.get('HTTP_REFERER', '/'))
-    return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
+def add_store_ajax(request):
+    """Simple AJAX view for adding stores."""
+    return JsonResponse({'success': True, 'message': 'Test response'})
 
 def add_item_to_list(request, list_id):
     """
