@@ -77,12 +77,23 @@ PACKING_LIST_TYPE_CHOICES = [
 ]
 
 class PackingList(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, verbose_name="Packing List Name")
     description = models.TextField(blank=True, null=True, default="")
     school = models.ForeignKey(School, on_delete=models.SET_NULL, null=True, blank=True, related_name='packing_lists')
     base = models.ForeignKey('Base', on_delete=models.SET_NULL, null=True, blank=True, related_name='packing_lists')
-    type = models.CharField(max_length=20, choices=PACKING_LIST_TYPE_CHOICES, default="course")
-    custom_type = models.CharField(max_length=100, blank=True, null=True, help_text="If 'Other', specify type")
+
+    EVENT_TYPE_CHOICES = [
+        ("school", "School"),
+        ("training", "Training"),
+        ("deployment", "Deployment"),
+        ("other", "Other/Custom"),
+    ]
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPE_CHOICES, default="school", help_text="Type of event this list is for.")
+    custom_event_type = models.CharField(max_length=100, blank=True, null=True, help_text="If 'Other/Custom', specify type")
+    last_updated = models.CharField(max_length=20, blank=True, null=True, help_text="Last update (YYYY, YYYY-MM, or YYYY-MM-DD)")
+    direct_url = models.URLField(blank=True, null=True, help_text="Direct URL to the official or source list")
+    uploaded_file = models.FileField(upload_to="packing_list_uploads/", blank=True, null=True, help_text="Upload a file for this list (CSV, Excel, PDF, etc.)")
+
     # user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True) # If user-specific lists
 
     def __str__(self):
