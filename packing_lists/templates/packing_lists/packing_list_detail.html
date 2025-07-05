@@ -166,45 +166,49 @@
         });
       });
     }
-    // Sorting
+    // Sorting (grouped by section)
     document.querySelectorAll('table thead th').forEach(function(header, i) {
       header.style.cursor = 'pointer';
       header.addEventListener('click', function() {
         var table = header.closest('table');
         var tbody = table.querySelector('tbody');
-        var rows = Array.from(tbody.querySelectorAll('tr')).filter(r => !r.classList.contains('section-header'));
-        var sectionHeaders = Array.from(tbody.querySelectorAll('tr.section-header'));
-        var asc = header.classList.toggle('sort-asc');
-        header.classList.toggle('sort-desc', !asc);
-        // Remove sort classes from other headers
-        document.querySelectorAll('table thead th').forEach(function(h) { if (h !== header) h.classList.remove('sort-asc', 'sort-desc'); });
-        rows.sort(function(a, b) {
-          var ta = a.children[i].textContent.trim().toLowerCase();
-          var tb = b.children[i].textContent.trim().toLowerCase();
-          if (!isNaN(parseFloat(ta)) && !isNaN(parseFloat(tb))) {
-            return asc ? parseFloat(ta) - parseFloat(tb) : parseFloat(tb) - parseFloat(ta);
-          }
-          return asc ? ta.localeCompare(tb) : tb.localeCompare(ta);
-        });
-        // Re-insert rows, keeping section headers in place
         var allRows = Array.from(tbody.children);
         var newRows = [];
-        allRows.forEach(function(row) {
+        var idx = 0;
+        while (idx < allRows.length) {
+          var row = allRows[idx];
           if (row.classList.contains('section-header')) {
-            newRows.push(row);
+            // Start a new section
+            var sectionHeader = row;
+            var sectionRows = [];
+            idx++;
+            // Collect all item rows until next section header or end
+            while (idx < allRows.length && !allRows[idx].classList.contains('section-header')) {
+              sectionRows.push(allRows[idx]);
+              idx++;
+            }
+            // Sort sectionRows by column i
+            sectionRows.sort(function(a, b) {
+              var ta = a.children[i].textContent.trim().toLowerCase();
+              var tb = b.children[i].textContent.trim().toLowerCase();
+              if (!isNaN(parseFloat(ta)) && !isNaN(parseFloat(tb))) {
+                return header.classList.contains('sort-asc') ? parseFloat(ta) - parseFloat(tb) : parseFloat(tb) - parseFloat(ta);
+              }
+              return header.classList.contains('sort-asc') ? ta.localeCompare(tb) : tb.localeCompare(ta);
+            });
+            // Add section header and sorted rows
+            newRows.push(sectionHeader);
+            sectionRows.forEach(function(r) { newRows.push(r); });
           } else {
-            // skip, will add sorted below
+            // Not expected, but just in case
+            newRows.push(row);
+            idx++;
           }
-        });
-        // Insert sorted rows after each section header
-        var lastSectionIdx = -1;
-        newRows.forEach(function(row, idx) {
-          if (row.classList.contains('section-header')) {
-            lastSectionIdx = idx;
-          }
-        });
-        // For simplicity, just append all sorted rows after section headers
-        newRows = newRows.concat(rows);
+        }
+        // Toggle sort direction
+        var asc = !header.classList.contains('sort-asc');
+        document.querySelectorAll('table thead th').forEach(function(h) { h.classList.remove('sort-asc', 'sort-desc'); });
+        header.classList.add(asc ? 'sort-asc' : 'sort-desc');
         tbody.innerHTML = '';
         newRows.forEach(function(row) { tbody.appendChild(row); });
       });
@@ -223,11 +227,21 @@
           })
           .then(response => response.json())
           .then(data => {
+            console.log('Price form AJAX response:', data); // Debug log
             if (data.success) {
               document.getElementById('price-modal').style.display = 'none';
               window.location.reload(); // Reload to update price info
             } else if (data.html) {
               document.getElementById('price-modal-body').innerHTML = data.html;
+              // Show a visible error message if not already present
+              if (!document.getElementById('modal-error-msg')) {
+                var err = document.createElement('div');
+                err.id = 'modal-error-msg';
+                err.style.color = 'red';
+                err.style.marginBottom = '1em';
+                err.textContent = 'There was an error saving the price. Please check the form.';
+                document.getElementById('price-modal-body').prepend(err);
+              }
               bindPriceFormAjax(); // Re-bind for new form
             }
           });
