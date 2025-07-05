@@ -91,6 +91,14 @@ def upload_packing_list(request):
                 request.session['original_filename'] = original_filename
                 messages.info(request, f"Successfully parsed {len(parsed_items)} items. Please configure the new list.")
                 return redirect(reverse('configure_uploaded_list', args=[session_key_items]))
+        else:
+            # Handle form validation errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    if field == '__all__':
+                        messages.error(request, error)
+                    else:
+                        messages.error(request, f"{field}: {error}")
     else:
         form = UploadFileForm()
 
@@ -204,6 +212,8 @@ def handle_vote(request):
     if request.method == 'POST':
         # Determine if it's an upvote or downvote based on the button name/value
         vote_type = None
+        price_id = None
+        
         if 'upvote_price_id' in request.POST:
             vote_type = 'up'
             price_id = request.POST.get('upvote_price_id')
@@ -214,7 +224,13 @@ def handle_vote(request):
             messages.error(request, "Invalid vote submission.")
             return redirect(request.META.get('HTTP_REFERER', reverse('home')))
 
-        form = VoteForm(request.POST, vote_type=vote_type)
+        # Construct form data for VoteForm
+        form_data = {
+            'price_id': price_id,
+            'is_correct_price': vote_type == 'up'
+        }
+        
+        form = VoteForm(form_data, vote_type=vote_type)
 
         if form.is_valid():
             price_id = form.cleaned_data.get('price_id')
@@ -223,7 +239,8 @@ def handle_vote(request):
             try:
                 price_instance = Price.objects.get(id=price_id)
             except Price.DoesNotExist:
-                raise Http404("Price not found.")
+                messages.error(request, "Price not found.")
+                return redirect(request.META.get('HTTP_REFERER', reverse('home')))
 
             ip_address = request.META.get('REMOTE_ADDR')
             Vote.objects.create(
