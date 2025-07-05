@@ -3,11 +3,12 @@ from django.urls import reverse
 from django.contrib import messages # For feedback to the user
 from django.db import IntegrityError
 from .models import PackingList, Item, PackingListItem, School, Price, Vote, Store
-from .forms import PackingListForm, UploadFileForm, PriceForm, VoteForm, ConfigureUploadListForm, PackingListItemForm
+from .forms import PackingListForm, UploadFileForm, PriceForm, VoteForm, ConfigureUploadListForm, PackingListItemForm, StoreForm
 from .parsers import parse_csv, parse_excel, parse_pdf, parse_text
 import io
 import uuid # For unique session keys
 from django.http import Http404, JsonResponse
+from django.template.loader import render_to_string
 
 # Requires login for actions that modify data if user accounts are active
 # from django.contrib.auth.decorators import login_required
@@ -533,3 +534,48 @@ def edit_item_in_list(request, list_id, pli_id):
         'title': f"Edit Item in {packing_list.name}",
     }
     return render(request, 'packing_lists/packing_listitem_form.html', context)
+
+def store_edit(request, store_id):
+    store = get_object_or_404(Store, id=store_id)
+    if request.method == 'POST':
+        form = StoreForm(request.POST, instance=store)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Store '{store.name}' updated successfully.")
+            return redirect('store_list')
+    else:
+        form = StoreForm(instance=store)
+    return render(request, 'packing_lists/store_form.html', {'form': form, 'store': store, 'title': f"Edit Store: {store.name}"})
+
+def price_form_partial(request, item_id, list_id=None):
+    item = get_object_or_404(Item, id=item_id)
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        form = PriceForm(request.POST)
+        if form.is_valid():
+            price = form.save(commit=False)
+            price.item = item
+            price.save()
+            return JsonResponse({'success': True})
+        else:
+            context = {
+                'form': form,
+                'item': item,
+                'list_id': list_id,
+                'title': f"Add Price for {item.name}",
+                'is_modal': True,
+            }
+            html = render_to_string('packing_lists/price_form.html', context, request=request)
+            return JsonResponse({'success': False, 'html': html})
+    else:
+        form = PriceForm()
+        context = {
+            'form': form,
+            'item': item,
+            'list_id': list_id,
+            'title': f"Add Price for {item.name}",
+            'is_modal': True,
+        }
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            html = render_to_string('packing_lists/price_form.html', context, request=request)
+            return JsonResponse({'html': html})
+        return render(request, 'packing_lists/price_form.html', context)
