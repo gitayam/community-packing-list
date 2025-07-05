@@ -4,7 +4,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model # If testing user-related features later
 
 from .models import School, Store, PackingList, Item, PackingListItem, Price, Vote
-from .forms import PackingListForm, UploadFileForm, PriceForm, ConfigureUploadListForm
+from .forms import PackingListForm, PriceForm
 from .parsers import parse_csv, parse_excel, parse_pdf, parse_text
 
 import pandas as pd
