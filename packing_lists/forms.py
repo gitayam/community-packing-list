@@ -12,6 +12,10 @@ SCHOOL_TYPE_CHOICES = [
     ("sniper", "Sniper School"),
     ("mountain", "Mountain Warfare School"),
     ("sapper", "Sapper School"),
+    ("cdqc", "Combat Diver Qualification Course (CDQC)"),
+    ("sfqc", "Special Forces Qualification Course (SFQC)"),
+    ("buds", "Basic Underwater Demolition/SEAL (BUD/S)"),
+    ("sere", "Survival, Evasion, Resistance and Escape (SERE) School"),
     ("other", "Other School (specify in description)")
 ]
 # Assessment & Selection types
@@ -21,15 +25,84 @@ ASSESSMENT_TYPE_CHOICES = [
     ("caas", "Civil Affairs Assessment & Selection (CAAS)"),
     ("rasp", "Ranger Assessment & Selection Program (RASP)"),
     ("ocs", "Officer Candidate School (OCS)"),
-    ("woc", "Warrant Officer Candidate School (WOCS)"),
+    ("wocs", "Warrant Officer Candidate School (WOCS)"),
+    ("seal_pst", "Navy SEAL/SWCC PST (Physical Screening Test)"),
+    ("recon", "Marine Corps Reconnaissance Selection"),
+    ("pj_indoc", "Air Force Pararescue Indoctrination Course"),
+    ("marsoc_as", "Marine Raider Assessment and Selection (MARSOC A&S)"),
+    ("cct_selection", "Combat Control Selection Course"),
     ("other", "Other Assessment (specify in description)")
 ]
+TRAINING_TYPE_CHOICES = [
+    ("bct", "Basic Combat Training (BCT)"),
+    ("ait", "Advanced Individual Training (AIT)"),
+    ("osut", "Infantry One Station Unit Training (OSUT)"),
+    ("pre_ranger", "Pre-Ranger Course"),
+    ("pre_sapper", "Pre-Sapper Course"),
+    ("pre_airborne", "Pre-Airborne Course"),
+    ("pre_seal", "Pre-SEAL/SWCC Training"),
+    ("tactical_fitness", "Tactical Fitness Course"),
+    ("never_quit", "Never Quit Mindset Training Course"),
+    ("other", "Other Training (specify in description)")
+]
 # To add more, just edit the above lists.
+
+BRANCH_CHOICES = [
+    ("all", "ALL"),
+    ("army", "Army"),
+    ("navy", "Navy"),
+    ("marines", "Marines"),
+    ("air_force", "Air Force")
+]
+
+# Mapping of type to branch for filtering
+SCHOOL_TYPE_BRANCHES = {
+    "airborne": ["army", "all"],
+    "air_assault": ["army", "all"],
+    "jumpmaster": ["army", "all"],
+    "ranger_school": ["army", "all"],
+    "pathfinder": ["army", "all"],
+    "sniper": ["army", "marines", "all"],
+    "mountain": ["army", "all"],
+    "sapper": ["army", "all"],
+    "cdqc": ["army", "all"],
+    "sfqc": ["army", "all"],
+    "buds": ["navy", "all"],
+    "sere": ["army", "navy", "marines", "air_force", "all"],
+    "other": ["all", "army", "navy", "marines", "air_force"]
+}
+ASSESSMENT_TYPE_BRANCHES = {
+    "sfas": ["army", "all"],
+    "poas": ["army", "all"],
+    "caas": ["army", "all"],
+    "rasp": ["army", "all"],
+    "ocs": ["army", "navy", "marines", "air_force", "all"],
+    "wocs": ["army", "all"],
+    "seal_pst": ["navy", "all"],
+    "recon": ["marines", "all"],
+    "pj_indoc": ["air_force", "all"],
+    "marsoc_as": ["marines", "all"],
+    "cct_selection": ["air_force", "all"],
+    "other": ["all", "army", "navy", "marines", "air_force"]
+}
+TRAINING_TYPE_BRANCHES = {
+    "bct": ["army", "all"],
+    "ait": ["army", "all"],
+    "osut": ["army", "all"],
+    "pre_ranger": ["army", "all"],
+    "pre_sapper": ["army", "all"],
+    "pre_airborne": ["army", "all"],
+    "pre_seal": ["navy", "all"],
+    "tactical_fitness": ["all", "army", "navy", "marines", "air_force"],
+    "never_quit": ["all", "army", "navy", "marines", "air_force"],
+    "other": ["all", "army", "navy", "marines", "air_force"]
+}
 
 class PackingListForm(forms.ModelForm):
     """
     Form for creating a Packing List manually.
     """
+    branch = forms.ChoiceField(choices=BRANCH_CHOICES, initial='all', label="Branch", help_text="Which military branch is this list for?")
     school_name = forms.CharField(max_length=200, required=False, help_text="If your school isn't listed, enter its name here to create it.")
     uploaded_file = forms.FileField(required=False, help_text="Upload CSV, Excel, or PDF file.")
     last_updated = forms.CharField(max_length=20, required=False, help_text="Last update (YYYY, YYYY-MM, or YYYY-MM-DD)")
@@ -37,11 +110,12 @@ class PackingListForm(forms.ModelForm):
     event_type = forms.ChoiceField(choices=[('school', 'School'), ('assessment', 'Assessment & Selection'), ('training', 'Training'), ('deployment', 'Deployment'), ('other', 'Other/Custom')], initial='school', help_text="Type of event this list is for.")
     school_type = forms.ChoiceField(choices=SCHOOL_TYPE_CHOICES, required=False, help_text="Select school type", label="School Type")
     assessment_type = forms.ChoiceField(choices=ASSESSMENT_TYPE_CHOICES, required=False, help_text="Select assessment type", label="Assessment Type")
+    training_type = forms.ChoiceField(choices=TRAINING_TYPE_CHOICES, required=False, help_text="Select training type", label="Training Type")
     custom_event_type = forms.CharField(max_length=100, required=False, help_text="If 'Other/Custom', specify type")
 
     class Meta:
         model = PackingList
-        fields = ['event_type', 'school_type', 'assessment_type', 'name', 'description', 'school', 'custom_event_type', 'last_updated', 'direct_url', 'uploaded_file']
+        fields = ['branch', 'event_type', 'school_type', 'assessment_type', 'training_type', 'name', 'description', 'school', 'custom_event_type', 'last_updated', 'direct_url', 'uploaded_file']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
             'name': forms.TextInput(attrs={'placeholder': 'Packing List Name'}),
@@ -57,6 +131,24 @@ class PackingListForm(forms.ModelForm):
         self.fields['custom_event_type'].widget.attrs['placeholder'] = 'Specify event type if Other/Custom'
         self.fields['school_type'].widget.attrs['style'] = 'display:none;'
         self.fields['assessment_type'].widget.attrs['style'] = 'display:none;'
+        self.fields['training_type'].widget.attrs['style'] = 'display:none;'
+        # Set last_updated initial value to today if not already set
+        if not self.initial.get('last_updated') and not self.data.get('last_updated'):
+            self.fields['last_updated'].initial = date.today().isoformat()
+        # Filter type choices by branch
+        branch = self.data.get('branch') or self.initial.get('branch') or 'all'
+        # School types
+        self.fields['school_type'].choices = [
+            (k, v) for k, v in SCHOOL_TYPE_CHOICES if branch in SCHOOL_TYPE_BRANCHES.get(k, []) or branch == 'all'
+        ]
+        # Assessment types
+        self.fields['assessment_type'].choices = [
+            (k, v) for k, v in ASSESSMENT_TYPE_CHOICES if branch in ASSESSMENT_TYPE_BRANCHES.get(k, []) or branch == 'all'
+        ]
+        # Training types
+        self.fields['training_type'].choices = [
+            (k, v) for k, v in TRAINING_TYPE_CHOICES if branch in TRAINING_TYPE_BRANCHES.get(k, []) or branch == 'all'
+        ]
         # Show/hide logic will be handled in the template with JS
 
     def clean(self):
