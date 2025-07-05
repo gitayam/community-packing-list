@@ -1,0 +1,27 @@
+{% extends "packing_lists/base.html" %}
+
+{% block title %}Packing Lists{% endblock %}
+
+{% block page_header %}Packing Lists{% endblock %}
+
+{% block content %}
+    <div class="actions-bar">
+        <a href="{% url 'create_packing_list' %}" class="button success">Create New List</a>
+    </div>
+    <h2 class="section-title">Available Packing Lists</h2>
+    {% if packing_lists %}
+        <ul class="packing-list-list">
+            {% for pl in packing_lists %}
+                <li>
+                    <a href="{% url 'view_packing_list' pl.id %}">{{ pl.name }}</a>
+                    {% if pl.event_type %} ({{ pl.get_event_type_display }}){% endif %}
+                    {% if pl.last_updated %} - Last updated: {{ pl.last_updated }}{% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="info-box no-lists-box">
+            <p class="no-lists">No packing lists found. Click 'Create New List' to get started!</p>
+        </div>
+    {% endif %}
+{% endblock %} 

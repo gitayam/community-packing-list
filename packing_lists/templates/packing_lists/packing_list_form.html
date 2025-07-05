@@ -16,7 +16,37 @@
             </ul>
         {% endif %}
 
+        <p>
+            {{ form.event_type.label_tag }}
+            {{ form.event_type }}
+            {% if form.event_type.help_text %}
+                <span class="helptext">{{ form.event_type.help_text|safe }}</span>
+            {% endif %}
+            {% if form.event_type.errors %}
+                <ul class="form-field-errors">
+                    {% for error in form.event_type.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </p>
+        <p id="school-type-row" style="display:none;">
+            {{ form.school_type.label_tag }}
+            {{ form.school_type }}
+            {% if form.school_type.help_text %}
+                <span class="helptext">{{ form.school_type.help_text|safe }}</span>
+            {% endif %}
+        </p>
+        <p id="assessment-type-row" style="display:none;">
+            {{ form.assessment_type.label_tag }}
+            {{ form.assessment_type }}
+            {% if form.assessment_type.help_text %}
+                <span class="helptext">{{ form.assessment_type.help_text|safe }}</span>
+            {% endif %}
+        </p>
+
         {% for field in form %}
+            {% if field.name not in ['event_type', 'school_type', 'assessment_type'] %}
             <p>
                 {{ field.label_tag }}
                 {{ field }}
@@ -31,8 +61,33 @@
                     </ul>
                 {% endif %}
             </p>
+            {% endif %}
         {% endfor %}
         <button type="submit" class="button success">Save</button>
         <a href="{% if packing_list %}{% url 'view_packing_list' packing_list.id %}{% else %}{% url 'home' %}{% endif %}" class="button secondary">Cancel</a>
     </form>
+    <script>
+        function updateEventTypeFields() {
+            var eventType = document.querySelector('[name="event_type"]').value;
+            var schoolRow = document.getElementById('school-type-row');
+            var assessmentRow = document.getElementById('assessment-type-row');
+            if (eventType === 'school') {
+                schoolRow.style.display = '';
+                assessmentRow.style.display = 'none';
+            } else if (eventType === 'assessment') {
+                schoolRow.style.display = 'none';
+                assessmentRow.style.display = '';
+            } else {
+                schoolRow.style.display = 'none';
+                assessmentRow.style.display = 'none';
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            var eventTypeField = document.querySelector('[name="event_type"]');
+            if (eventTypeField) {
+                eventTypeField.addEventListener('change', updateEventTypeFields);
+                updateEventTypeFields();
+            }
+        });
+    </script>
 {% endblock %}
