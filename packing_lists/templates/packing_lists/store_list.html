@@ -1,4 +1,5 @@
 {% extends "packing_lists/base.html" %}
+{% load static %}
 
 {% block title %}{{ title }} - Community Packing Lists{% endblock %}
 
@@ -98,85 +99,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const findNearMeButton = document.getElementById('find-near-me');
-        if (findNearMeButton) {
-            findNearMeButton.addEventListener('click', function() {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(function(position) {
-                        document.getElementById('user_lat').value = position.coords.latitude;
-                        document.getElementById('user_lon').value = position.coords.longitude;
-                        // Clear other location-based filters if user clicks "near me"
-                        document.getElementById('school_id').value = '';
-                        // Submit the form
-                        document.querySelector('.filter-form form').submit();
-                    }, function(error) {
-                        let userMessage = 'Error getting location: ';
-                        switch(error.code) {
-                            case error.PERMISSION_DENIED:
-                                userMessage += "User denied the request for Geolocation.";
-                                break;
-                            case error.POSITION_UNAVAILABLE:
-                                userMessage += "Location information is unavailable.";
-                                break;
-                            case error.TIMEOUT:
-                                userMessage += "The request to get user location timed out.";
-                                break;
-                            case error.UNKNOWN_ERROR:
-                                userMessage += "An unknown error occurred.";
-                                break;
-                        }
-                        alert(userMessage);
-                    });
-                } else {
-                    alert('Geolocation is not supported by your browser.');
-                }
-            });
-        }
-        // Add Store modal logic
-        document.getElementById('add-store-btn').onclick = function() {
-            var modal = document.getElementById('store-modal');
-            var modalBody = document.getElementById('store-modal-body');
-            modal.style.display = 'flex';
-            modalBody.innerHTML = '<p>Loading...</p>';
-            fetch('{% url 'add_store_modal' %}', {headers: {'x-requested-with': 'XMLHttpRequest'}})
-                .then(response => response.json())
-                .then(data => {
-                    modalBody.innerHTML = data.html;
-                    bindStoreFormAjax();
-                });
-        };
-        document.getElementById('close-store-modal').onclick = function() {
-            document.getElementById('store-modal').style.display = 'none';
-        };
-        document.getElementById('store-modal').onclick = function(e) {
-            if (e.target === this) this.style.display = 'none';
-        };
-        function bindStoreFormAjax() {
-            var storeForm = document.getElementById('store-form');
-            if (storeForm) {
-                storeForm.onsubmit = function(e) {
-                    e.preventDefault();
-                    var formData = new FormData(storeForm);
-                    fetch(storeForm.action || window.location.href, {
-                        method: 'POST',
-                        headers: {'x-requested-with': 'XMLHttpRequest'},
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            document.getElementById('store-modal').style.display = 'none';
-                            window.location.reload();
-                        } else if (data.html) {
-                            document.getElementById('store-modal-body').innerHTML = data.html;
-                            bindStoreFormAjax();
-                        }
-                    });
-                };
-            }
-        }
-    });
-</script>
+<script src="{% static 'packing_lists/js/store-list.js' %}"></script>
 {% endblock %}
