@@ -1,0 +1,16 @@
+{% extends "packing_lists/base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block page_header %}{{ title }}{% endblock %}
+
+{% block content %}
+  <div class="form-container">
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="button success">Save Store</button>
+      <a href="{% url 'store_list' %}" class="button secondary">Cancel</a>
+    </form>
+  </div>
+{% endblock %} 
