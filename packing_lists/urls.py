@@ -13,6 +13,8 @@ from . import views
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('test-ajax/', views.test_ajax, name='test_ajax'),
+    path('add-store-ajax/', views.add_store_ajax, name='add_store_ajax'),
     path('list/create/', views.create_packing_list, name='create_packing_list'),
     path('list/upload/', views.upload_packing_list, name='upload_packing_list'),
     path('list/<int:list_id>/', views.packing_list_detail, name='view_packing_list'),
@@ -28,8 +30,7 @@ urlpatterns = [
     # URL for listing stores
     path('stores/', views.store_list, name='store_list'),
 
-    path('add-store-ajax/', views.add_store_ajax, name='add_store_ajax'),
-
+    # URLs for managing items
     path('list/<int:list_id>/add_item/', views.add_item_to_list, name='add_item_to_list'),
     path('list/<int:list_id>/edit_item/<int:pli_id>/', views.edit_item_in_list, name='edit_item_in_list'),
 ]
