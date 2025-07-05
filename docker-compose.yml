@@ -1,0 +1,43 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15-alpine # Using version 15 Alpine for a smaller image
+    container_name: packing_list_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=${DB_NAME:-packinglist_dev}
+      - POSTGRES_USER=${DB_USER:-packinglist_user}
+      - POSTGRES_PASSWORD=${DB_PASS:-supersecretpassword} # Change this in production!
+    ports:
+      - "${DB_PORT_HOST:-5433}:5432" # Expose DB port to host if needed for direct access (optional)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-packinglist_user} -d ${DB_NAME:-packinglist_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: packing_list_web
+    command: gunicorn community_packing_list.wsgi:application --bind 0.0.0.0:8000 --workers 4 --log-level info
+    # For development, you might use:
+    # command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app # Mount current directory to /app in container for live code changes (dev)
+               # For production, you might not mount the code directly after build.
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    env_file:
+      - .env # Load environment variables from .env file
+    environment:
+      - DJANGO_SETTINGS_MODULE=community_packing_list.settings
+      # - DEBUG=${DEBUG:-True} # Control Django DEBUG mode
+      # Environment variables for database connection will be in .env
+    depends_on:
+      db:
+        condition: service_healthy # Wait for db to be healthy
+
+volumes:
+  postgres_data: # Persists PostgreSQL data across container restarts

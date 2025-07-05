@@ -1,0 +1,332 @@
+/* General Body Styles */
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa; /* Lighter grey */
+    color: #343a40; /* Darker text for better contrast */
+    line-height: 1.6;
+}
+
+.container {
+    width: 80%;
+    max-width: 960px; /* Max width for larger screens */
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #ffffff; /* White background for content */
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Header and Navigation */
+header.main-header {
+    background-color: #007bff; /* Primary blue */
+    color: #ffffff;
+    padding: 15px 0;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+header.main-header h1 {
+    margin: 0;
+    font-size: 2em;
+}
+
+nav.main-nav {
+    background-color: #343a40; /* Dark background for nav */
+    padding: 10px 0;
+    text-align: center;
+}
+
+nav.main-nav ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+nav.main-nav ul li {
+    display: inline;
+    margin: 0 15px;
+}
+
+nav.main-nav ul li a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+nav.main-nav ul li a:hover,
+nav.main-nav ul li a.active {
+    background-color: #007bff; /* Highlight color */
+    text-decoration: none;
+}
+
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: #343a40;
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+}
+h1 { font-size: 2.2em; }
+h2 { font-size: 1.8em; }
+h3 { font-size: 1.5em; }
+
+/* Links */
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+    color: #0056b3; /* Darker blue on hover */
+}
+
+/* Buttons */
+button, .button, a.button {
+    display: inline-block;
+    padding: 10px 18px;
+    font-size: 1em;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+button:hover, .button:hover, a.button:hover {
+    background-color: #0056b3;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+button.secondary, a.button.secondary {
+    background-color: #6c757d; /* Grey */
+}
+button.secondary:hover, a.button.secondary:hover {
+    background-color: #545b62;
+}
+
+button.success, a.button.success {
+    background-color: #28a745; /* Green */
+}
+button.success:hover, a.button.success:hover {
+    background-color: #1e7e34;
+}
+
+button.danger, a.button.danger {
+    background-color: #dc3545; /* Red */
+}
+button.danger:hover, a.button.danger:hover {
+    background-color: #b02a37;
+}
+
+/* Forms */
+form p {
+    margin-bottom: 15px;
+}
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+input[type="text"],
+input[type="number"],
+input[type="file"],
+input[type="date"],
+input[type="email"], /* Assuming we might add user auth later */
+input[type="password"],
+textarea,
+select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 5px;
+    border: 1px solid #ced4da; /* Lighter border */
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1em;
+}
+input[type="number"] { -moz-appearance: textfield; }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+.helptext {
+    font-size: 0.9em;
+    color: #6c757d; /* Grey text for help */
+    display: block;
+    margin-top: 2px;
+    margin-bottom: 10px;
+}
+.form-field-errors {
+    color: #dc3545; /* Red for errors */
+    font-size: 0.9em;
+    list-style-type: none;
+    padding-left: 0;
+    margin-top: 3px;
+}
+.form-field-errors li { margin-bottom: 3px; }
+
+/* Messages (Django messages framework) */
+.messages {
+    list-style-type: none;
+    padding: 0;
+    margin-bottom: 20px;
+}
+.messages li {
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+}
+.messages li.success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+.messages li.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+.messages li.warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba; }
+.messages li.info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+th, td {
+    border: 1px solid #dee2e6; /* Lighter border for tables */
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+th {
+    background-color: #e9ecef; /* Light grey for table headers */
+    font-weight: bold;
+}
+tr:nth-child(even) {
+    background-color: #f8f9fa; /* Subtle striping for table rows */
+}
+tr.packed-true td:not(:last-child):not(:first-child) { /* Avoid strikethrough on buttons/actions */
+    text-decoration: line-through;
+    color: #6c757d;
+}
+tr.packed-true { background-color: #e6ffe6; } /* Light green for packed rows */
+
+
+/* Specific List Styles */
+.item-list, .store-list, .packing-lists-ul {
+    list-style-type: none;
+    padding: 0;
+}
+.item-list li, .store-list li, .packing-lists-ul li {
+    background-color: #ffffff;
+    border: 1px solid #eee;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+.item-list h3, .store-list h3, .packing-lists-ul h3 { margin-top: 0; }
+.item-notes, .price-info ul li, .store-item p, .packing-lists-ul p {
+    font-size: 0.95em;
+    color: #495057;
+}
+.no-items, .no-lists, .no-prices, .no-stores {
+    font-style: italic;
+    color: #6c757d;
+}
+
+/* Price Info & Voting */
+.price-info { margin-top: 8px; }
+.price-info ul { list-style-type: none; margin-left: 0; padding-left: 0; }
+.price-info li { margin-bottom: 8px; padding: 5px; border-bottom: 1px dotted #eee; }
+.price-info li:last-child { border-bottom: none; }
+
+.vote-buttons form { display: inline; margin-left: 5px; }
+.vote-buttons button {
+    font-size: 0.8em !important;
+    padding: 3px 6px !important;
+}
+.vote-count { font-size:0.85em; color: #555; margin-left: 5px; }
+
+/* Filter Forms (e.g., Store List) */
+.filter-form {
+    background-color: #e9ecef;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 25px;
+}
+.filter-form form div {
+    margin-bottom: 12px;
+    /* display: flex;
+    flex-wrap: wrap;
+    align-items: center; */
+}
+.filter-form label {
+    /* margin-right: 10px; */
+    font-weight: bold;
+    /* min-width: 120px; */
+}
+.filter-form input[type="text"],
+.filter-form select {
+    /* padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-right: 10px;
+    flex-grow: 1; */
+}
+.filter-form .actions-row { margin-top: 15px; }
+.filter-form .actions-row button, .filter-form .actions-row a { margin-right: 10px; }
+.filter-form .gps-button { background-color: #28a745; }
+.filter-form .gps-button:hover { background-color: #218838; }
+
+
+/* Utility Classes */
+.text-muted { color: #6c757d; }
+.text-small { font-size: 0.9em; }
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+
+/* Footer */
+footer.main-footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 30px;
+    font-size: 0.9em;
+    color: #6c757d;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Specific page element styling */
+#packing-list-items-form td button { /* Toggle packed button */
+    padding: 6px 10px;
+    font-size: 0.9em;
+}
+
+.actions-bar { /* For multiple action buttons on a page */
+    margin-bottom: 20px;
+    margin-top: 10px;
+}
+.actions-bar a.button, .actions-bar button {
+    margin-right: 10px;
+}
+
+.info-box { /* Used in configure_upload_form.html */
+    background-color: #e9ecef;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-size: 0.95em;
+    border: 1px solid #ced4da;
+}
