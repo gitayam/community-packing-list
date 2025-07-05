@@ -18,6 +18,12 @@ A Django-based web application for creating, sharing, and managing structured pa
 - **Packing Status**: Check off items as you pack them
 - **Inline Store Creation**: Add new stores while adding prices
 
+### Frontend Technology
+- **TypeScript**: Modern type-safe JavaScript for better development experience
+- **Webpack**: Module bundling and asset optimization
+- **ESLint**: Code quality and consistency enforcement
+- **Responsive Design**: Mobile-first approach with modern CSS
+
 ### Example Data
 The application includes a comprehensive Ranger School packing list example with:
 - 35+ items organized into 7 categories
@@ -31,44 +37,104 @@ The application includes a comprehensive Ranger School packing list example with
 ### Prerequisites
 - Python 3.8+
 - pip
+- Docker and Docker Compose (recommended)
 
-### Installation
+### Installation with Docker (Recommended)
+
 1. Clone the repository:
    ```bash
    git clone <repository-url>
    cd community-packing-list
    ```
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Set up environment:
+2. Set up environment:
    ```bash
    cp .env.example .env
    # Edit .env with your database settings
    ```
 
-4. Run the startup script (recommended):
+3. Build and run with Docker:
    ```bash
-   python3 startup.py
+   docker-compose up --build
    ```
+   
    This will:
+   - Build the TypeScript frontend assets
+   - Set up the PostgreSQL database
    - Run database migrations
    - Create example data
    - Start the development server
 
 ### Alternative Manual Setup
-```bash
-# Run migrations
-python3 manage.py migrate
 
+1. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Install Node.js dependencies (for TypeScript compilation):
+   ```bash
+   npm install
+   ```
+
+3. Build TypeScript assets:
+   ```bash
+   npm run build
+   ```
+
+4. Set up environment:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your database settings
+   ```
+
+5. Run the startup script:
+   ```bash
+   python3 startup.py
+   ```
+
+## Development
+
+### TypeScript Development
+
+The frontend uses TypeScript for better type safety and developer experience:
+
+```bash
+# Install dependencies
+npm install
+
+# Development mode with watch
+npm run dev
+
+# Build for production
+npm run build
+
+# Type checking
+npm run type-check
+
+# Linting
+npm run lint
+npm run lint:fix
+```
+
+### Running Tests
+```bash
+python3 manage.py test
+```
+
+### Creating Migrations
+```bash
+python3 manage.py makemigrations
+python3 manage.py migrate
+```
+
+### Management Commands
+```bash
 # Create example data
 python3 manage.py create_example_data
 
-# Start server
-python3 manage.py runserver
+# Clear all data (development only)
+python3 manage.py flush
 ```
 
 ## Usage
@@ -111,35 +177,14 @@ python3 manage.py runserver
 - GPS coordinates for distance calculations
 - Price information for items
 
-## Development
-
-### Running Tests
-```bash
-python3 manage.py test
-```
-
-### Creating Migrations
-```bash
-python3 manage.py makemigrations
-python3 manage.py migrate
-```
-
-### Management Commands
-```bash
-# Create example data
-python3 manage.py create_example_data
-
-# Clear all data (development only)
-python3 manage.py flush
-```
-
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
 4. Add tests for new functionality
-5. Submit a pull request
+5. Ensure TypeScript builds successfully
+6. Submit a pull request
 
 ## License
 
