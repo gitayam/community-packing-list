@@ -5,7 +5,7 @@
 {% block page_header %}{{ title }}{% endblock %}
 
 {% block content %}
-    <div class="filter-form">
+    <div class="filter-form" style="margin-bottom: 2.5em;">
         <form method="get" action="{% url 'store_list' %}">
             <div>
                 <label for="city">City:</label>
@@ -43,7 +43,9 @@
     </div>
 
     <h2>{{ filter_description }}</h2>
-    <button id="add-store-btn" class="button" style="margin-bottom:1em;">➕ Add Store</button>
+    <div class="centered-action">
+      <button id="add-store-btn" class="button">➕ Add Store</button>
+    </div>
     <div id="store-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
       <div id="store-modal-content" style="background:#fff; padding:2em; border-radius:8px; max-width:500px; margin:40px auto; position:relative;">
         <button id="close-store-modal" style="position:absolute; top:10px; right:10px; font-size:1.2em;">&times;</button>
@@ -55,10 +57,10 @@
     {% if stores %}
         <ul class="store-list">
             {% for item_data in stores %}
-                <li class="store-item" style="box-shadow:0 2px 8px rgba(27,54,93,0.08);border:2px solid #C3B09122;padding:1.5em 1.5em 1em 1.5em;border-radius:12px;margin-bottom:1.5em;background:#fff;">
+                <li class="store-item">
                     <div style="display:flex;align-items:center;gap:1rem;">
                         <div style="flex:1;">
-                            <h3 style="margin-bottom:0.25em;">🏬 {{ item_data.store.name }}</h3>
+                            <h2 class="store-name">🏬 {{ item_data.store.name }}</h2>
                             <p class="item-notes mb-1">{{ item_data.store.formatted_address }}</p>
                             {% if item_data.store.url %}
                                 <p><a href="{{ item_data.store.url }}" target="_blank">🌐 Website</a></p>
