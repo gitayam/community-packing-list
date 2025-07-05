@@ -50,13 +50,22 @@
                 <li class="store-item">
                     <h3>{{ item_data.store.name }}</h3>
                     <p>{{ item_data.store.formatted_address }}</p>
+                    <p class="text-small">
+                        {% if item_data.store.is_online and item_data.store.is_in_person %}
+                            <span style="color:#007bff;">Online</span> &amp; <span style="color:#28a745;">In Person</span>
+                        {% elif item_data.store.is_online %}
+                            <span style="color:#007bff;">Online</span>
+                        {% elif item_data.store.is_in_person %}
+                            <span style="color:#28a745;">In Person</span>
+                        {% endif %}
+                    </p>
                     {% if item_data.store.latitude and item_data.store.longitude %}
                     <p class="text-small text-muted">Lat: {{ item_data.store.latitude|floatformat:4 }}, Lon: {{ item_data.store.longitude|floatformat:4 }}</p>
                     {% endif %}
                     {% if item_data.distance is not None %}
                         <p class="distance"><strong>Distance:</strong> {{ item_data.distance|floatformat:2 }} km</p>
                     {% endif %}
-                    {# Maybe link to store detail or prices from this store in future #}
+                    <a href="{% url 'edit_store' item_data.store.id %}" class="button text-small">Edit</a>
                 </li>
             {% endfor %}
         </ul>
