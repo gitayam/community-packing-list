@@ -12,6 +12,10 @@ class PackingListDetailManager {
 
   constructor() {
     this.initialize();
+    // Inject SVG icons into action buttons after DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      this.injectActionButtonIcons();
+    });
   }
 
   private initialize(): void {
@@ -119,11 +123,11 @@ class PackingListDetailManager {
   }
 
   private handleFilterInput(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    const searchTerm = target.value.toLowerCase();
+    const target = event.target as HTMLElement;
+    const searchTerm = (target as HTMLInputElement).value.toLowerCase();
 
     this.rows.forEach(row => {
-      const itemName = row.dataset.itemName || '';
+      const itemName = (row as HTMLElement).dataset.itemName || '';
       const visible = itemName.includes(searchTerm);
       row.style.display = visible ? '' : 'none';
     });
@@ -157,8 +161,8 @@ class PackingListDetailManager {
   }
 
   private handleSortClick(event: Event): void {
-    const header = event.target as HTMLTableCellElement;
-    const sortType = header.dataset.sort || '';
+    const header = event.target as HTMLElement;
+    const sortType = (header as HTMLElement).dataset.sort || '';
     const currentSort = header.classList.contains('sort-asc') ? 'asc' : 
                        header.classList.contains('sort-desc') ? 'desc' : 'none';
 
@@ -202,75 +206,33 @@ class PackingListDetailManager {
           bVal = getCellValue(b, '.item-name-cell');
           break;
         case 'quantity':
-          aVal = parseInt(getCellValue(a, '.quantity-badge', '0')) || 0;
-          bVal = parseInt(getCellValue(b, '.quantity-badge', '0')) || 0;
+          aVal = parseInt(getCellValue(a, '.quantity-cell'), 10) || 0;
+          bVal = parseInt(getCellValue(b, '.quantity-cell'), 10) || 0;
           break;
         case 'required':
-          aVal = a.querySelector('.status-badge')?.textContent?.toLowerCase().includes('required') ? 1 : 0;
-          bVal = b.querySelector('.status-badge')?.textContent?.toLowerCase().includes('required') ? 1 : 0;
-          break;
-        case 'packed':
-          aVal = a.classList.contains('packed-row') ? 1 : 0;
-          bVal = b.classList.contains('packed-row') ? 1 : 0;
-          break;
-        case 'price':
-          aVal = parseFloat(getCellValue(a, '.best-price', '0').replace('$', '')) || 0;
-          bVal = parseFloat(getCellValue(b, '.best-price', '0').replace('$', '')) || 0;
+          aVal = getCellValue(a, '.required-cell');
+          bVal = getCellValue(b, '.required-cell');
           break;
         case 'store':
           aVal = getCellValue(a, '.store-cell');
           bVal = getCellValue(b, '.store-cell');
           break;
-        case 'section':
-          aVal = getCellValue(a, '.section-cell');
-          bVal = getCellValue(b, '.section-cell');
-          break;
-        case 'nsn':
-          aVal = getCellValue(a, '.nsn-cell');
-          bVal = getCellValue(b, '.nsn-cell');
+        case 'price':
+          aVal = parseFloat(getCellValue(a, '.price-cell').replace(/[^\d.]/g, '')) || 0;
+          bVal = parseFloat(getCellValue(b, '.price-cell').replace(/[^\d.]/g, '')) || 0;
           break;
         default:
-          aVal = a.textContent?.trim().toLowerCase() || '';
-          bVal = b.textContent?.trim().toLowerCase() || '';
+          aVal = '';
+          bVal = '';
       }
 
-      if (direction === 'asc') {
-        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-      } else {
-        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
-      }
+      if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+      return 0;
     });
 
-    // Rebuild tbody with section headers preserved
-    tbody.innerHTML = '';
-    let currentSection = '';
-    const sectionsProcessed = new Set<string>();
-    
-    itemRows.forEach(row => {
-      const sectionText = getCellValue(row, '.section-cell', '').trim();
-      if (sectionText !== currentSection && sectionText !== '') {
-        currentSection = sectionText;
-        
-        // Only add section header if we haven't processed this section yet
-        if (!sectionsProcessed.has(sectionText.toLowerCase())) {
-          sectionsProcessed.add(sectionText.toLowerCase());
-          
-          const headerRow = sectionHeaders.find(h => {
-            const headerCell = h.querySelector('.section-header-cell');
-            if (headerCell) {
-              const headerText = headerCell.textContent?.trim().toLowerCase() || '';
-              return headerText === sectionText.toLowerCase();
-            }
-            return false;
-          });
-          
-          if (headerRow) {
-            tbody.appendChild(headerRow.cloneNode(true));
-          }
-        }
-      }
-      tbody.appendChild(row);
-    });
+    // Re-insert sorted rows
+    itemRows.forEach(row => tbody.appendChild(row));
   }
 
   private handleGlobalClick(event: Event): void {
@@ -378,43 +340,45 @@ class PackingListDetailManager {
 
   private async handlePriceModalClick(event: Event): Promise<void> {
     const target = event.target as HTMLElement;
-    const btn = target.closest('.add-price-btn');
-    if (!btn) return;
+    if (target.classList.contains('price-details-btn')) {
+      const itemId = (target as HTMLElement).dataset.itemId;
+      if (!itemId) return Promise.resolve();
 
-    const itemId = btn.dataset.itemId;
-    const listId = btn.dataset.listId;
-    
-    if (!itemId || !listId) return;
-
-    // Show loading state
-    UIUtils.showLoading(btn as HTMLButtonElement);
-
-    try {
-      // Load the price form via AJAX
-      const response = await apiClient.get(`/item/${itemId}/add_price_modal/`);
+      const listId = (target as HTMLElement).dataset.listId;
       
-      if (response.html) {
-        const modal = DOMUtils.getElement<HTMLElement>('#price-modal');
-        const modalBody = DOMUtils.getElement<HTMLElement>('#price-modal-body');
+      if (!itemId || !listId) return Promise.resolve();
+
+      // Show loading state
+      UIUtils.showLoading(target as HTMLButtonElement);
+
+      try {
+        // Load the price form via AJAX
+        const response = await apiClient.get(`/item/${itemId}/add_price_modal/`);
         
-        if (modal && modalBody) {
-          modalBody.innerHTML = response.html;
-          UIUtils.showModal('price-modal');
+        if (response.html) {
+          const modal = DOMUtils.getElement<HTMLElement>('#price-modal');
+          const modalBody = DOMUtils.getElement<HTMLElement>('#price-modal-body');
           
-          // Handle form submission
-          const form = modalBody.querySelector('form') as HTMLFormElement;
-          if (form) {
-            this.setupPriceFormSubmission(form, itemId, listId);
+          if (modal && modalBody) {
+            modalBody.innerHTML = response.html;
+            UIUtils.showModal('price-modal');
+            
+            // Handle form submission
+            const form = modalBody.querySelector('form') as HTMLFormElement;
+            if (form) {
+              this.setupPriceFormSubmission(form, itemId, listId);
+            }
           }
         }
+      } catch (error) {
+        console.error('Error loading price form:', error);
+        UIUtils.showNotification('Error loading price form. Please try again.', 'error');
+      } finally {
+        // Remove loading state
+        UIUtils.hideLoading(target as HTMLButtonElement, 'Add Price');
       }
-    } catch (error) {
-      console.error('Error loading price form:', error);
-      UIUtils.showNotification('Error loading price form. Please try again.', 'error');
-    } finally {
-      // Remove loading state
-      UIUtils.hideLoading(btn as HTMLButtonElement, 'Add Price');
     }
+    return Promise.resolve();
   }
 
   private setupPriceFormSubmission(form: HTMLFormElement, itemId: string, listId: string): void {
@@ -458,43 +422,43 @@ class PackingListDetailManager {
 
   private async handleEditItemModalClick(event: Event): Promise<void> {
     const target = event.target as HTMLElement;
-    const btn = target.closest('.edit-item-btn');
-    if (!btn) return;
-
-    const listId = btn.dataset.listId;
-    const pliId = btn.dataset.pliId;
-    
-    if (!listId || !pliId) return;
-
-    // Show loading state
-    UIUtils.showLoading(btn as HTMLButtonElement);
-
-    try {
-      // Load the edit form via AJAX
-      const response = await apiClient.get(`/list/${listId}/item/${pliId}/edit_modal/`);
+    if (target.classList.contains('edit-item-btn')) {
+      const listId = (target as HTMLElement).dataset.listId;
+      const pliId = (target as HTMLElement).dataset.pliId;
       
-      if (response.html) {
-        const modal = DOMUtils.getElement<HTMLElement>('#edit-item-modal');
-        const modalBody = DOMUtils.getElement<HTMLElement>('#edit-item-modal-body');
+      if (!listId || !pliId) return Promise.resolve();
+
+      // Show loading state
+      UIUtils.showLoading(target as HTMLButtonElement);
+
+      try {
+        // Load the edit form via AJAX
+        const response = await apiClient.get(`/list/${listId}/item/${pliId}/edit_modal/`);
         
-        if (modal && modalBody) {
-          modalBody.innerHTML = response.html;
-          UIUtils.showModal('edit-item-modal');
+        if (response.html) {
+          const modal = DOMUtils.getElement<HTMLElement>('#edit-item-modal');
+          const modalBody = DOMUtils.getElement<HTMLElement>('#edit-item-modal-body');
           
-          // Handle form submission
-          const form = modalBody.querySelector('form') as HTMLFormElement;
-          if (form) {
-            this.setupEditItemFormSubmission(form, listId, pliId);
+          if (modal && modalBody) {
+            modalBody.innerHTML = response.html;
+            UIUtils.showModal('edit-item-modal');
+            
+            // Handle form submission
+            const form = modalBody.querySelector('form') as HTMLFormElement;
+            if (form) {
+              this.setupEditItemFormSubmission(form, listId, pliId);
+            }
           }
         }
+      } catch (error) {
+        console.error('Error loading edit form:', error);
+        UIUtils.showNotification('Error loading edit form. Please try again.', 'error');
+      } finally {
+        // Remove loading state
+        UIUtils.hideLoading(target as HTMLButtonElement, 'Edit');
       }
-    } catch (error) {
-      console.error('Error loading edit form:', error);
-      UIUtils.showNotification('Error loading edit form. Please try again.', 'error');
-    } finally {
-      // Remove loading state
-      UIUtils.hideLoading(btn as HTMLButtonElement, 'Edit');
     }
+    return Promise.resolve();
   }
 
   private setupEditItemFormSubmission(form: HTMLFormElement, listId: string, pliId: string): void {
@@ -538,54 +502,56 @@ class PackingListDetailManager {
 
   private async handleVoteClick(event: Event): Promise<void> {
     const target = event.target as HTMLElement;
-    const btn = target.closest('.vote-btn');
-    if (!btn) return;
-
-    const priceId = btn.dataset.priceId;
-    const isUpvote = btn.classList.contains('upvote');
-    
-    if (!priceId) return;
-
-    // Disable button to prevent double-clicking
-    btn.disabled = true;
-
-    try {
-      const response = await apiClient.vote(parseInt(priceId), isUpvote ? 'up' : 'down');
+    if (target.classList.contains('vote-btn')) {
+      const priceId = (target as HTMLElement).dataset.priceId;
+      if (!priceId) return;
+      const isUpvote = target.classList.contains('upvote');
       
-      if (response.success) {
-        // Update vote counts
-        const priceEntry = btn.closest('.price-entry');
-        if (priceEntry) {
-          const upvoteBtn = priceEntry.querySelector('.vote-btn.upvote') as HTMLElement;
-          const downvoteBtn = priceEntry.querySelector('.vote-btn.downvote') as HTMLElement;
-          
-          if (upvoteBtn) {
-            upvoteBtn.innerHTML = upvoteBtn.innerHTML.replace(/\d+/, response.upvotes.toString());
-          }
-          if (downvoteBtn) {
-            downvoteBtn.innerHTML = downvoteBtn.innerHTML.replace(/\d+/, response.downvotes.toString());
-          }
-        }
+      // Disable button to prevent double-clicking
+      (target as HTMLButtonElement).disabled = true;
+
+      try {
+        const response = await apiClient.vote(parseInt(priceId), isUpvote ? 'up' : 'down');
         
-        // Show success message briefly
-        const originalText = btn.textContent || '';
-        btn.textContent = isUpvote ? '✓' : '✗';
-        setTimeout(() => {
-          btn.textContent = originalText;
-        }, 1000);
-      } else {
-        UIUtils.showNotification(response.message || 'Error voting. Please try again.', 'error');
+        if (response.success) {
+          // Update vote counts
+          const priceEntry = target.closest('.price-entry');
+          if (priceEntry) {
+            const upvoteBtn = priceEntry.querySelector('.vote-btn.upvote') as HTMLElement;
+            const downvoteBtn = priceEntry.querySelector('.vote-btn.downvote') as HTMLElement;
+            
+            if (upvoteBtn) {
+              upvoteBtn.innerHTML = upvoteBtn.innerHTML.replace(/\d+/, response.upvotes.toString());
+            }
+            if (downvoteBtn) {
+              downvoteBtn.innerHTML = downvoteBtn.innerHTML.replace(/\d+/, response.downvotes.toString());
+            }
+          }
+          
+          // Show success message briefly
+          const originalText = target.textContent || '';
+          target.textContent = isUpvote ? '✓' : '✗';
+          setTimeout(() => {
+            target.textContent = originalText;
+          }, 1000);
+        } else {
+          UIUtils.showNotification(response.message || 'Error voting. Please try again.', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        UIUtils.showNotification('Error voting. Please try again.', 'error');
+      } finally {
+        // Re-enable button
+        (target as HTMLButtonElement).disabled = false;
       }
-    } catch (error) {
-      console.error('Error:', error);
-      UIUtils.showNotification('Error voting. Please try again.', 'error');
-    } finally {
-      // Re-enable button
-      btn.disabled = false;
     }
   }
 
   private handleClearBaseFilter(): void {
+    const baseSelect = DOMUtils.getElement<HTMLSelectElement>('#base-select');
+    const radiusSelect = DOMUtils.getElement<HTMLSelectElement>('#radius-select');
+    if (baseSelect) (baseSelect as HTMLSelectElement).disabled = false;
+    if (radiusSelect) (radiusSelect as HTMLSelectElement).disabled = false;
     // Clear the form and redirect without filter parameters
     const url = new URL(window.location.href);
     url.searchParams.delete('base_filter');
@@ -615,23 +581,24 @@ class PackingListDetailManager {
       }
     }
   }
+
+  private injectActionButtonIcons(): void {
+    document.querySelectorAll<HTMLButtonElement>('.add-price-btn').forEach(btn => {
+      btn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+      `;
+    });
+    document.querySelectorAll<HTMLButtonElement>('.edit-item-btn').forEach(btn => {
+      btn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-3"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19.5 3 21l1.5-4L16.5 3.5z"></path></svg>
+      `;
+    });
+  }
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   new PackingListDetailManager();
-
-  // Inject SVG icons into action buttons
-  document.querySelectorAll<HTMLButtonElement>('.add-price-btn').forEach(btn => {
-    btn.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-    `;
-  });
-  document.querySelectorAll<HTMLButtonElement>('.edit-item-btn').forEach(btn => {
-    btn.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-    `;
-  });
 });
 
 // Export for global access (if needed)
