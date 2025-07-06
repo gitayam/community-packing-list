@@ -36,12 +36,8 @@ services:
       target: production
     container_name: packing_list_web
     command: ${WEB_COMMAND:-gunicorn community_packing_list.wsgi:application --bind 0.0.0.0:8000 --workers 4 --log-level info}
-    # For development, you might use:
-    # command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/app # Mount current directory to /app in container for live code changes (dev)
-               # For production, you might not mount the code directly after build.
-      - static_volume:/app/staticfiles # Mount static files volume
+      - static_volume:/app/staticfiles # Only static files in prod
     ports:
       - "${WEB_PORT:-8000}:8000"
     env_file:
@@ -49,13 +45,32 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=community_packing_list.settings
       - NODE_ENV=${NODE_ENV:-production}
-      # - DEBUG=${DEBUG:-True} # Control Django DEBUG mode
-      # Environment variables for database connection will be in .env
     depends_on:
       db:
         condition: service_healthy # Wait for db to be healthy
     profiles:
       - prod
+
+  web-dev:
+    build: 
+      context: .
+      target: production
+    container_name: packing_list_web_dev
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app # Mount code for live reload in dev
+      - static_volume:/app/staticfiles
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=community_packing_list.settings
+      - NODE_ENV=development
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
       - dev
 
 volumes:
