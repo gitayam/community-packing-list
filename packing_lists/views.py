@@ -14,6 +14,7 @@ from reportlab.lib import colors
 from io import BytesIO
 from datetime import datetime
 from reportlab.lib.utils import simpleSplit
+from django.template.loader import render_to_string
 
 # Requires login for actions that modify data if user accounts are active
 # from django.contrib.auth.decorators import login_required
