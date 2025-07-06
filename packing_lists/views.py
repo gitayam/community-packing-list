@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib import messages # For feedback to the user
 from django.db import IntegrityError
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .models import PackingList, Item, PackingListItem, School, Price, Vote, Store, Base
 from .forms import PackingListForm, PriceForm, VoteForm, PackingListItemForm, StoreForm
 from django.db.models import Q
