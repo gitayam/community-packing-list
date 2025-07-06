@@ -8,12 +8,12 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
 
-# Copy TypeScript source files
-COPY tsconfig.json webpack.config.js .eslintrc.js ./
+# Copy TypeScript source files and configuration
+COPY tsconfig.json webpack.config.js postcss.config.js .prettierrc ./
 COPY src/ ./src/
 
-# Build TypeScript files
-RUN npm run build
+# Build TypeScript files and process CSS
+RUN npm run build && npm run css:build
 
 # Python runtime stage
 FROM python:3.12-slim
@@ -21,6 +21,7 @@ FROM python:3.12-slim
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV NODE_ENV production
 
 # Set work directory
 WORKDIR /app
@@ -41,6 +42,10 @@ COPY . /app/
 
 # Copy compiled TypeScript files from builder stage
 COPY --from=typescript-builder /app/packing_lists/static/packing_lists/js/ /app/packing_lists/static/packing_lists/js/
+COPY --from=typescript-builder /app/packing_lists/static/packing_lists/css/compiled.css /app/packing_lists/static/packing_lists/css/
+
+# Collect static files
+RUN python manage.py collectstatic --noinput
 
 # Expose port (Gunicorn default, or Django dev server)
 EXPOSE 8000
