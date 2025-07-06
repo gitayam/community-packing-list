@@ -83,6 +83,7 @@ You are a senior developer. Identify the best method to accomplish the task with
 ## Git Workflow and Commit Practices
 
 ### 1. **Auto Staging and Committing After Testing**
+- First run git status to see the items that are uncommited. 
 - Always stage and commit your changes after you have tested them locally, but do **not** push immediately. This allows for local version control and easy rollback if needed, while preventing unreviewed code from reaching shared branches.
 
 ### 2. **Descriptive, Searchable Commit Messages**
