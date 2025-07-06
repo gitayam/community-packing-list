@@ -125,14 +125,57 @@ header.main-header::before {
   opacity: 0.3;
 }
 
-header.main-header h1 {
-  margin: 0; /* Override default h1 margins */
-  font-size: var(--font-size-xxl);
-  font-weight: 700;
+/* Visually prominent header title styles */
+.header-title-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  background: #1B365D; /* solid navy for max contrast */
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 24px rgba(44,44,44,0.25), 0 1.5px 0 #4B5320;
+  padding: 0.25rem 0.5rem;
+  border: 2px solid #C3B091;
+}
+
+.header-title {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.08em;
+  text-shadow: 0 3px 18px rgba(44,44,44,0.45), 0 1.5px 0 #000, 0 0 8px #C3B091;
+  padding: 0.5rem 2rem;
+  margin: 0;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  position: relative;
-  z-index: 1;
+  line-height: 1.1;
+  border-radius: 0.5rem;
+  background: transparent;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  transition: background 0.2s, color 0.2s;
+  border: 2px solid #C3B091;
+  box-shadow: 0 0 0 4px rgba(27,54,93,0.25), 0 2px 12px rgba(44,44,44,0.18);
+}
+
+@media (max-width: 768px) {
+  .header-title {
+    font-size: 1.5rem;
+    padding: 0.5rem 1rem;
+  }
+  .header-title-container {
+    padding: 0.15rem 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-title {
+    font-size: 1.1rem;
+    padding: 0.25rem 0.5rem;
+  }
+  .header-title-container {
+    padding: 0.05rem 0.1rem;
+  }
 }
 
 /* Military Navigation */
@@ -173,12 +216,12 @@ nav.main-nav ul li a {
 
 nav.main-nav ul li a:hover,
 nav.main-nav ul li a.active {
-  background: var(--military-olive);
-  border-color: var(--military-khaki);
-  color: var(--text-light);
+  background: #C3B091;
+  color: #1B365D !important;
+  font-weight: 900;
+  border-bottom: 4px solid #C3B091;
+  box-shadow: 0 2px 8px rgba(195,176,145,0.12);
   text-decoration: none;
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
 }
 
 /* Main Container */
