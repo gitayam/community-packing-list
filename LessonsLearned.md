@@ -2,7 +2,7 @@
 
 This document captures key lessons learned during the development and debugging of the Community Packing List Application. These insights will help streamline future development and troubleshooting.
 
-You are a senior developer. Identify the best method to accomplish the task with modern and secure code. 
+You are a senior developer. Identify the best method to accomplish the task with modern and secure code. Don't ask if i want to fix it , of course we need to fix it. 
 
 ## Common Issues and Solutions
 
