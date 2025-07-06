@@ -33,6 +33,15 @@ echo "PostgreSQL started"
 echo "Applying database migrations..."
 python manage.py migrate --noinput
 
+# Clean up any existing demo data and recreate properly
+echo "Cleaning up and recreating demo data..."
+python manage.py shell -c "
+from packing_lists.models import PackingList, PackingListItem
+# Remove any existing demo lists
+PackingList.objects.filter(name__in=['Ranger School Packing List V10', 'Ranger School Packing List']).delete()
+print('Cleaned up existing demo lists')
+"
+
 # Check if we need to create example data
 echo "Checking if example data exists..."
 if ! check_tables_exist || [ "$(python manage.py shell -c "from packing_lists.models import PackingList; print(PackingList.objects.count())")" = "0" ]; then
@@ -41,6 +50,19 @@ if ! check_tables_exist || [ "$(python manage.py shell -c "from packing_lists.mo
 else
     echo "Example data already exists, skipping creation."
 fi
+
+# Ensure demo packing list has the correct description
+echo "Updating demo packing list description..."
+python manage.py shell -c "
+from packing_lists.models import PackingList
+demo_list = PackingList.objects.filter(name='Ranger School Packing List V10').first()
+if demo_list and '(DEMO)' not in demo_list.description:
+    demo_list.description = 'Official Ranger School Packing List V10 as of Dec 2024 (DEMO)'
+    demo_list.save()
+    print('Updated demo list description')
+else:
+    print('Demo list already has correct description or does not exist')
+"
 
 # Collect static files
 echo "Collecting static files..."
