@@ -16,30 +16,53 @@ services:
       timeout: 5s
       retries: 5
 
+  # TypeScript development service for hot reloading
+  typescript-dev:
+    image: node:18-alpine
+    container_name: packing_list_typescript_dev
+    working_dir: /app
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    command: sh -c "npm install && npm run dev & npm run css:dev"
+    environment:
+      - NODE_ENV=development
+    profiles:
+      - dev
+
   web:
     build: 
       context: .
       target: ${BUILD_TARGET:-production} # Use 'typescript-builder' for development builds
     container_name: packing_list_web
-    command: gunicorn community_packing_list.wsgi:application --bind 0.0.0.0:8000 --workers 4 --log-level info
+    command: ${WEB_COMMAND:-gunicorn community_packing_list.wsgi:application --bind 0.0.0.0:8000 --workers 4 --log-level info}
     # For development, you might use:
     # command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app # Mount current directory to /app in container for live code changes (dev)
                # For production, you might not mount the code directly after build.
       - static_volume:/app/staticfiles # Mount static files volume
+      - compiled_assets:/app/packing_lists/static/packing_lists/js # Mount compiled JS
+      - compiled_css:/app/packing_lists/static/packing_lists/css # Mount compiled CSS
     ports:
       - "${WEB_PORT:-8000}:8000"
     env_file:
       - .env # Load environment variables from .env file
     environment:
       - DJANGO_SETTINGS_MODULE=community_packing_list.settings
+      - NODE_ENV=${NODE_ENV:-production}
       # - DEBUG=${DEBUG:-True} # Control Django DEBUG mode
       # Environment variables for database connection will be in .env
     depends_on:
       db:
         condition: service_healthy # Wait for db to be healthy
+    profiles:
+      - prod
+      - dev
 
 volumes:
   postgres_data: # Persists PostgreSQL data across container restarts
   static_volume: # Persists static files across container restarts
+  node_modules: # Persists node_modules for faster rebuilds
+  compiled_assets: # Persists compiled JavaScript assets
+  compiled_css: # Persists compiled CSS assets
