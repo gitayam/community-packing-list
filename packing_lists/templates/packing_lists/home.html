@@ -6,17 +6,17 @@
 {% block page_header %}Welcome to Community Packing Lists!{% endblock %}
 
 {% block content %}
-    <div class="info-box home-auth-box" style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; gap: 2rem;">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-            <img src="{% static 'packing_lists/icons/travel-bag.svg' %}" alt="Packing List Icon" width="40" height="40" style="display:block;" />
+    <div class="info-box home-auth-box" style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap; flex-direction: column; text-align: center;">
+        <div style="display: flex; align-items: center; gap: 1rem; justify-content: center; flex-direction: column;">
+            <img src="{% static 'packing_lists/icons/travel-bag.svg' %}" alt="Packing List Icon" width="40" height="40" style="display:block; margin: 0 auto;" />
             <div>
                 <h2 class="hero-title" style="margin-bottom: 0.5rem;">Welcome to Community Packing Lists!</h2>
                 <p class="lead" style="margin-bottom: 0.5rem;">Create, manage, and share military packing lists. Sign up to save your lists, access from any device, and join the community.</p>
             </div>
         </div>
-        <div style="display: flex; gap: 1rem;">
-            <a href="#" class="button" style="background: #1B365D; color: #fff;">Sign In</a>
-            <a href="#" class="button success">Sign Up</a>
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem; flex-wrap: wrap;">
+            <a href="#" class="button" style="background: #1B365D; color: #fff; min-width: 120px;">Sign In</a>
+            <a href="#" class="button success" style="min-width: 120px;">Sign Up</a>
         </div>
     </div>
 
@@ -56,4 +56,21 @@
             <p class="no-lists">No packing lists found. Why not create or upload one to get started?</p>
         </div>
     {% endif %}
+
+    <style>
+    @media (min-width: 600px) {
+      .home-auth-box {
+        flex-direction: row !important;
+        text-align: left !important;
+      }
+      .home-auth-box > div:first-child {
+        flex-direction: row !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+      }
+      .home-auth-box .button {
+        min-width: 120px;
+      }
+    }
+    </style>
 {% endblock %}
