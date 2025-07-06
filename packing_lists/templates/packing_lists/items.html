@@ -165,6 +165,9 @@
                     {% else %}
                         <div class="no-price">
                             <em>No pricing information available</em>
+                            <button type="button" class="add-price-btn" onclick="openPriceModal({{ item_data.item.id }}, null)">
+                                Add Price
+                            </button>
                         </div>
                     {% endif %}
                 </div>
@@ -248,6 +251,16 @@
             <p>No items found matching your filters.</p>
         </div>
         {% endfor %}
+    </div>
+</div>
+
+<!-- Price Modal -->
+<div id="price-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span id="close-price-modal" class="modal-close">&times;</span>
+        <div id="price-modal-body">
+            <!-- AJAX-loaded form will go here -->
+        </div>
     </div>
 </div>
 
@@ -657,6 +670,97 @@ document.addEventListener('DOMContentLoaded', function() {
         flex-direction: column;
         align-items: flex-start;
         gap: 5px;
+    }
+}
+
+/* Edit price button styling */
+.edit-price-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    margin-left: 8px;
+    border-radius: 4px;
+    color: var(--color-primary, #007bff);
+    transition: background-color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-price-btn:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    color: var(--color-primary-dark, #0056b3);
+}
+
+.edit-price-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Modal styling */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: #333;
+}
+
+/* Add price button for items without prices */
+.add-price-btn {
+    background: var(--color-primary, #007bff);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-top: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.add-price-btn:hover {
+    background: var(--color-primary-dark, #0056b3);
+}
+
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+        max-height: 90vh;
     }
 }
 </style>

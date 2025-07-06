@@ -502,8 +502,22 @@ def store_edit(request, store_id):
 
 def price_form_partial(request, item_id, list_id=None):
     item = get_object_or_404(Item, id=item_id)
+    
+    # Check if we're editing an existing price
+    price_id = request.GET.get('price_id')
+    price_instance = None
+    if price_id:
+        try:
+            price_instance = Price.objects.get(id=price_id, item=item)
+        except Price.DoesNotExist:
+            pass
+    
     if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        form = PriceForm(request.POST)
+        if price_instance:
+            form = PriceForm(request.POST, instance=price_instance)
+        else:
+            form = PriceForm(request.POST)
+            
         if form.is_valid():
             price = form.save(commit=False)
             price.item = item
@@ -515,18 +529,22 @@ def price_form_partial(request, item_id, list_id=None):
                 'form': form,
                 'item': item,
                 'list_id': list_id,
-                'title': f"Add Price for {item.name}",
+                'title': f"{'Edit' if price_instance else 'Add'} Price for {item.name}",
                 'is_modal': True,
             }
             html = render_to_string('packing_lists/price_form_modal.html', context, request=request)
             return JsonResponse({'success': False, 'html': html})
     else:
-        form = PriceForm()
+        if price_instance:
+            form = PriceForm(instance=price_instance)
+        else:
+            form = PriceForm()
+            
         context = {
             'form': form,
             'item': item,
             'list_id': list_id,
-            'title': f"Add Price for {item.name}",
+            'title': f"{'Edit' if price_instance else 'Add'} Price for {item.name}",
             'is_modal': True,
         }
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -987,7 +1005,6 @@ def delete_packing_lists(request):
     """
     if request.method == 'POST':
         list_ids = request.POST.getlist('list_ids')
-        print('DEBUG: Received list_ids for deletion:', list_ids)
         
         if not list_ids:
             messages.error(request, "Please select at least one list to delete.")
