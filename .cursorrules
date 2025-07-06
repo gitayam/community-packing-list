@@ -1,0 +1,156 @@
+You are an expert in Django, TypeScript, React, and modern web development. You specialize in building full-stack applications with Django backend and TypeScript frontend components.
+
+### Tech Stack
+- Django 5.2+ with modern patterns
+- TypeScript for frontend components
+- Webpack for bundling
+- Docker for development and deployment
+- PostgreSQL for production, SQLite for development
+- Modern CSS with PostCSS and Tailwind-like utilities
+
+### Code Implementation Guidelines
+
+#### Django Backend
+- Use Django's built-in security features (CSRF, XSS protection)
+- Implement proper form validation with Django forms
+- Use Django's ORM efficiently with select_related/prefetch_related
+- Always create migrations for model changes
+- Use Django's template system with proper URL names
+- Implement comprehensive error handling in views and parsers
+- Use Django's testing framework for backend tests
+
+#### TypeScript Frontend
+- Use functional components with TypeScript interfaces
+- Implement proper error handling and loading states
+- Use descriptive variable names with auxiliary verbs (isLoading, hasError)
+- Structure files: exported component, subcomponents, helpers, static content, types
+- Use early returns for error conditions to avoid deep nesting
+- Implement accessibility features (ARIA labels, keyboard navigation)
+
+#### Docker Development Workflow
+- All npm, Node.js, and Python commands must be run inside Docker containers
+- Use `docker compose exec <service> <command>` for development
+- Never install packages locally on host
+- Use docker-compose.dev.yml for development environment
+
+#### Django Template and URL Best Practices
+- Use Django's URL names consistently across templates
+- When removing URL patterns, search all templates for references using grep
+- Use `{% url 'name' %}` template tags instead of hardcoded URLs
+- Avoid nested forms in templates (use div containers for modals)
+- Use Django's template inheritance properly
+- Implement consistent loading states for AJAX operations
+- Use SVG icons instead of emojis for professional appearance
+
+#### Form Handling
+- Use Django forms for validation and security
+- Implement proper CSRF protection
+- Handle form errors gracefully with user feedback
+- Use form widgets for consistent styling and behavior
+- Remove inner forms and use div containers for modal AJAX compatibility
+
+#### Modal and AJAX Implementation
+- Implement consistent loading states
+- Provide keyboard accessibility (ESC to close modals)
+- Handle AJAX errors with user-friendly messages
+- Use proper event handling for dynamic content
+
+#### Database and Migration Management
+- Always create migrations for model changes
+- Test migrations on sample data before deployment
+- Use proper field types and constraints
+- Implement proper relationships between models
+- Use Django's built-in model validation
+- Consider performance implications of field choices
+
+#### Error Handling and Validation
+- Handle errors at the beginning of functions
+- Use early returns for error conditions
+- Implement proper error logging and user-friendly messages
+- Use Django's form validation and custom error types
+- Test edge cases in parsers and data processing
+- Prioritize error handling and edge cases in all functions
+
+#### Git Workflow
+- Stage and commit changes after testing locally
+- Use descriptive, searchable commit messages
+- Never commit sensitive files (.env, db.sqlite3)
+- Use .env-example for environment variable documentation
+- First run git status to see uncommitted items
+- Always stage and commit after testing but do not push immediately
+
+#### Performance and UX
+- Implement responsive design from the start
+- Use server-side operations for large datasets
+- Implement pagination and filtering
+- Provide search and export options
+- Use modals and AJAX for better user experience
+- Minimize data sent to frontend
+
+#### Testing and Quality
+- Write comprehensive tests for all components
+- Test migrations on sample data
+- Use Django's testing framework for backend
+- Implement proper test coverage
+- Test all components thoroughly to prevent regressions
+
+#### Security Best Practices
+- Sanitize user inputs to prevent XSS
+- Use Django's built-in security features
+- Never commit sensitive data
+- Use environment variables for configuration
+- Implement proper input validation
+
+#### Frontend Component Architecture
+- Use functional components with TypeScript interfaces
+- Export components as named exports
+- Structure files: component, subcomponents, helpers, types
+- Use descriptive interface names (ComponentNameProps)
+- Use React hooks for local state
+- Implement proper loading and error states
+- Use early returns for conditional rendering
+- Minimize unnecessary re-renders
+
+#### Event Handling
+- Use descriptive event handler names (handleClick, handleSubmit)
+- Implement proper error handling in event handlers
+- Use TypeScript for event type safety
+- Implement keyboard accessibility
+
+#### Styling and UX
+- Use consistent CSS classes
+- Implement responsive design patterns
+- Provide loading states for all async operations
+- Use proper ARIA labels and roles
+- Use Tailwind classes for styling HTML elements
+- Avoid inline styles
+
+#### Development and Deployment Workflow
+- Use Docker for all development tasks
+- Run commands inside containers: `docker compose exec <service> <command>`
+- Use docker-compose.dev.yml for development
+- Never install packages locally
+- Use ESLint and Prettier for code formatting
+- Follow TypeScript best practices
+- Use descriptive variable and function names
+
+#### Common Issues to Avoid
+- URL template tag issues: Use hardcoded URLs temporarily during development, then refactor to proper URL names
+- Form nesting: Remove inner forms and use div containers instead
+- Template filter compatibility: Move logic to form widgets or backend views
+- Database migration management: Always create migrations for model changes and test them thoroughly
+- Git repository management: Proper .gitignore configuration and environment variable management
+- Template URL cleanup: When removing features, search and update all template references to prevent broken URLs
+
+#### Key Takeaways
+1. Server-side operations are crucial - Don't send more data than necessary to the frontend
+2. User experience matters - Provide search, filters, and export options for large datasets
+3. Consistent error handling - Always provide meaningful feedback to users
+4. Mobile-first design - Ensure responsive design from the start
+5. Proper git hygiene - Keep sensitive data out of repositories
+6. Comprehensive testing - Test all components thoroughly to prevent regressions
+7. Modular architecture - Use modals and AJAX for better user experience
+8. Performance considerations - Implement filtering and pagination early
+9. Documentation - Keep README and code comments up to date
+10. Migration management - Always create and test database migrations
+11. Thorough cleanup - When removing features, search and update all template references to prevent broken URLs 

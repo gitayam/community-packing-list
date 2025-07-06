@@ -166,7 +166,9 @@
                                 </td>
                                 <td class="item-name-cell">
                                     <input type="checkbox" class="print-check" style="width:16px;height:16px;margin-right:4px;" />
-                                    <strong>{{ item_wp.item.name }}</strong>
+                                    <a href="#" class="edit-item-link" data-list-id="{{ packing_list.id }}" data-pli-id="{{ item_wp.pli.id }}">
+                                        <strong>{{ item_wp.item.name }}</strong>
+                                    </a>
                                 </td>
                                 <td class="quantity-cell">
                                     <span class="quantity-badge">{{ item_wp.pli.quantity }}</span>

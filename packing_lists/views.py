@@ -4,7 +4,7 @@ from django.contrib import messages # For feedback to the user
 from django.db import IntegrityError
 from django.http import HttpResponse, JsonResponse
 from .models import PackingList, Item, PackingListItem, School, Price, Vote, Store, Base
-from .forms import PackingListForm, PriceForm, VoteForm, PackingListItemForm, StoreForm
+from .forms import PackingListForm, PriceForm, VoteForm, PackingListItemForm, StoreForm, ItemForm
 from django.db.models import Q
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -1241,3 +1241,42 @@ def export_packing_list_pdf(request, list_id):
     
     response.write(pdf)
     return response
+
+def create_item(request):
+    """
+    View for creating a new standalone item.
+    """
+    if request.method == 'POST':
+        form = ItemForm(request.POST)
+        if form.is_valid():
+            item = form.save()
+            messages.success(request, f"Item '{item.name}' created successfully!")
+            return redirect('items')  # Redirect to items page
+    else:
+        form = ItemForm()
+
+    context = {
+        'form': form,
+        'title': 'Create New Item'
+    }
+    return render(request, 'packing_lists/item_form.html', context)
+
+def add_item_modal(request):
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        form = ItemForm(request.POST)
+        if form.is_valid():
+            item = form.save()
+            return JsonResponse({'success': True, 'item_id': item.id})
+        else:
+            print('DEBUG: ItemForm errors:', form.errors.as_json())  # Log form errors
+            context = {
+                'form': form,
+                'title': 'Add Item',
+                'is_modal': True,
+            }
+            html = render_to_string('packing_lists/item_form_modal.html', context, request=request)
+            return JsonResponse({'success': False, 'html': html})
+    else:
+        form = ItemForm()
+        html = render_to_string('packing_lists/item_form_modal.html', {'form': form, 'title': 'Add Item', 'is_modal': True}, request=request)
+        return JsonResponse({'html': html})

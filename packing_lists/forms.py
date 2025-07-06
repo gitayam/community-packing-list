@@ -202,7 +202,10 @@ class PriceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         # item_instance = kwargs.pop('item_instance', None) # If we were to pass item for context
         super().__init__(*args, **kwargs)
-        self.fields['store'].queryset = Store.objects.all().order_by('name')
+        # Add option to create new store
+        store_choices = [('', 'Select a store...')] + [(store.id, store.name) for store in Store.objects.all().order_by('name')]
+        store_choices.append(('__add_new__', '➕ Add New Store...'))
+        self.fields['store'].choices = store_choices
         self.fields['store'].required = False # Allow creating a new store via store_name
         self.fields['date_purchased'].required = False
 
@@ -274,6 +277,9 @@ class PackingListItemForm(forms.ModelForm):
         }
 
 class StoreForm(forms.ModelForm):
+    """
+    Form for adding or editing a store.
+    """
     class Meta:
         model = Store
         fields = [
@@ -282,11 +288,74 @@ class StoreForm(forms.ModelForm):
             'is_online', 'is_in_person'
         ]
         widgets = {
-            'address_line1': forms.TextInput(attrs={'placeholder': 'Street address'}),
-            'address_line2': forms.TextInput(attrs={'placeholder': 'Apt, suite, etc. (optional)'}),
+            'name': forms.TextInput(attrs={'placeholder': 'Store Name'}),
+            'address_line1': forms.TextInput(attrs={'placeholder': 'Address Line 1'}),
+            'address_line2': forms.TextInput(attrs={'placeholder': 'Address Line 2 (Optional)'}),
             'city': forms.TextInput(attrs={'placeholder': 'City'}),
-            'state': forms.TextInput(attrs={'placeholder': 'State'}),
-            'zip_code': forms.TextInput(attrs={'placeholder': 'ZIP code'}),
-            'country': forms.TextInput(attrs={'placeholder': 'Country'}),
-            'url': forms.URLInput(attrs={'placeholder': 'Store website (https://...)', 'class': 'input-url'}),
+            'state': forms.TextInput(attrs={'placeholder': 'State/Province'}),
+            'zip_code': forms.TextInput(attrs={'placeholder': 'ZIP/Postal Code'}),
+            'country': forms.TextInput(attrs={'placeholder': 'Country', 'value': 'USA'}),
+            'url': forms.URLInput(attrs={'placeholder': 'https://store-website.com'}),
         }
+        labels = {
+            'name': 'Store Name',
+            'address_line1': 'Address Line 1',
+            'address_line2': 'Address Line 2',
+            'city': 'City',
+            'state': 'State/Province',
+            'zip_code': 'ZIP/Postal Code',
+            'country': 'Country',
+            'url': 'Website URL',
+            'is_online': 'Online Store',
+            'is_in_person': 'Physical Location',
+        }
+        help_texts = {
+            'is_online': 'Check if this store operates online',
+            'is_in_person': 'Check if this store has a physical location',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set initial country to USA if not already set
+        if not self.initial.get('country') and not self.data.get('country'):
+            self.fields['country'].initial = 'USA'
+
+
+class ItemForm(forms.ModelForm):
+    """
+    Form for creating or editing a standalone item.
+    """
+    class Meta:
+        model = Item
+        fields = ['name', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'placeholder': 'Item Name',
+                'class': 'form-control'
+            }),
+            'description': forms.Textarea(attrs={
+                'placeholder': 'Optional description of the item...',
+                'rows': 3,
+                'class': 'form-control'
+            }),
+        }
+        labels = {
+            'name': 'Item Name',
+            'description': 'Description',
+        }
+        help_texts = {
+            'name': 'Enter the name of the item (e.g., "Compass", "Sleeping Bag", "First Aid Kit")',
+            'description': 'Optional description to help identify the item',
+        }
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        if name:
+            name = name.strip()
+            # Check if item with this name already exists (case-insensitive)
+            existing_item = Item.objects.filter(name__iexact=name)
+            if self.instance.pk:
+                existing_item = existing_item.exclude(pk=self.instance.pk)
+            if existing_item.exists():
+                raise forms.ValidationError("An item with this name already exists.")
+        return name
