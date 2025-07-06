@@ -13,6 +13,7 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 from io import BytesIO
 from datetime import datetime
+from reportlab.lib.utils import simpleSplit
 
 # Requires login for actions that modify data if user accounts are active
 # from django.contrib.auth.decorators import login_required
@@ -1150,37 +1151,26 @@ def export_packing_list_pdf(request, list_id):
         story.append(Paragraph("Items", heading_style))
         
         # Create items table
-        items_data = [['Item', 'Qty', 'Required', 'Notes', 'Best Price', 'Store']]
-        
+        items_data = [
+            [Paragraph('Item', normal_style), Paragraph('Qty', normal_style), Paragraph('Required', normal_style), Paragraph('Notes', normal_style), Paragraph('Best Price', normal_style), Paragraph('Store', normal_style)]
+        ]
+        # Add a row of checkboxes (empty squares) below the header
+        checkbox = '☐'  # Unicode empty checkbox
+        items_data.append([checkbox, '', '', '', '', ''])
+
         for pli in list_items:
-            # Get best price for this item
             best_price = None
             if pli.item.prices.exists():
                 prices = pli.item.prices.all()
-                # Sort by price (lowest first) and take the first one
                 best_price = min(prices, key=lambda p: p.price)
-            
-            item_name = pli.item.name
-            if len(item_name) > 30:
-                item_name = item_name[:27] + "..."
-            
-            price_info = ""
-            store_info = ""
-            if best_price:
-                price_info = f"${best_price.price:.2f}"
-                if best_price.store:
-                    store_info = best_price.store.name
-                    if len(store_info) > 20:
-                        store_info = store_info[:17] + "..."
-            
-            items_data.append([
-                item_name,
-                str(pli.quantity),
-                "Yes" if pli.required else "No",
-                pli.notes[:20] + "..." if pli.notes and len(pli.notes) > 20 else (pli.notes or ""),
-                price_info,
-                store_info
-            ])
+            # Use Paragraph for all cells to enable wrapping
+            item_name = Paragraph(pli.item.name, normal_style)
+            qty = Paragraph(str(pli.quantity), normal_style)
+            required = Paragraph("Yes" if pli.required else "No", normal_style)
+            notes = Paragraph((pli.notes or ""), normal_style)
+            price_info = Paragraph(f"${best_price.price:.2f}" if best_price else "", normal_style)
+            store_info = Paragraph(best_price.store.name if best_price and best_price.store else "", normal_style)
+            items_data.append([item_name, qty, required, notes, price_info, store_info])
         
         # Create table with proper styling
         items_table = Table(items_data, colWidths=[2.5*inch, 0.5*inch, 0.7*inch, 1.2*inch, 0.8*inch, 1.3*inch])
