@@ -101,6 +101,7 @@
                 <table class="modern-table">
                     <thead>
                         <tr>
+                            <th class="print-checkbox-col"></th>
                             <th class="sortable" data-sort="packed">
                                 <span class="th-content">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-square"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
@@ -145,6 +146,7 @@
                         {% for section in sectioned_items %}
                             {% if section.grouper %}
                             <tr class="section-header-row">
+                                <td class="print-checkbox-col"></td>
                                 <td colspan="7" class="section-header-cell">
                                     <strong>{{ section.grouper }}</strong>
                                 </td>
@@ -155,6 +157,7 @@
                             {% endif %}
                             {% for item_wp in section.list %}
                             <tr class="item-row {% if item_wp.pli.packed %}packed-row{% endif %}" data-item-name="{{ item_wp.item.name|lower }}">
+                                <td class="print-checkbox-col"><input type="checkbox" class="print-check" style="width:16px;height:16px;" /></td>
                                 <td class="packed-cell">
                                     <button type="submit" name="toggle_packed_item_id" value="{{ item_wp.pli.id }}" class="pack-button {% if item_wp.pli.packed %}packed{% else %}unpacked{% endif %}">
                                         {% if item_wp.pli.packed %}
