@@ -2,7 +2,7 @@ services:
   web:
     build:
       context: .
-      target: typescript-builder
+      target: production
     command: python manage.py runserver 0.0.0.0:8000
     environment:
       - DEBUG=True

@@ -33,7 +33,7 @@ services:
   web:
     build: 
       context: .
-      target: ${BUILD_TARGET:-production} # Use 'typescript-builder' for development builds
+      target: production
     container_name: packing_list_web
     command: ${WEB_COMMAND:-gunicorn community_packing_list.wsgi:application --bind 0.0.0.0:8000 --workers 4 --log-level info}
     # For development, you might use:
@@ -42,8 +42,6 @@ services:
       - .:/app # Mount current directory to /app in container for live code changes (dev)
                # For production, you might not mount the code directly after build.
       - static_volume:/app/staticfiles # Mount static files volume
-      - compiled_assets:/app/packing_lists/static/packing_lists/js # Mount compiled JS
-      - compiled_css:/app/packing_lists/static/packing_lists/css # Mount compiled CSS
     ports:
       - "${WEB_PORT:-8000}:8000"
     env_file:
@@ -64,5 +62,3 @@ volumes:
   postgres_data: # Persists PostgreSQL data across container restarts
   static_volume: # Persists static files across container restarts
   node_modules: # Persists node_modules for faster rebuilds
-  compiled_assets: # Persists compiled JavaScript assets
-  compiled_css: # Persists compiled CSS assets
