@@ -345,6 +345,7 @@ function onBaseChange() {
 }
 
 function openPriceModal(itemId, priceId) {
+    console.log('Opening price modal for item:', itemId, 'price:', priceId);
     const modal = document.getElementById('price-modal');
     const modalBody = document.getElementById('price-modal-body');
     modal.style.display = 'block';
@@ -353,13 +354,18 @@ function openPriceModal(itemId, priceId) {
     if (priceId) {
         url += `?price_id=${priceId}`;
     }
+    console.log('Fetching price modal from:', url);
     fetch(url, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Price modal response status:', response.status);
+            return response.json();
+        })
         .then(data => {
+            console.log('Price modal data received, setting up handler');
             modalBody.innerHTML = data.html;
             // Set up form submission handler after content is loaded
             setupPriceFormHandler();
@@ -371,6 +377,7 @@ function openPriceModal(itemId, priceId) {
 }
 
 function openItemModal() {
+    console.log('openItemModal called');
     const modal = document.getElementById('item-modal');
     const modalBody = document.getElementById('item-modal-body');
     modal.style.display = 'block';
@@ -379,6 +386,7 @@ function openItemModal() {
     fetch('{% url "add_item_modal" %}')
         .then(response => response.json())
         .then(data => {
+            console.log('Modal data received');
             modalBody.innerHTML = data.html;
             // Set up form submission handler after content is loaded
             setupItemFormHandler();
@@ -392,11 +400,11 @@ function openItemModal() {
 function setupPriceFormHandler() {
     const priceForm = document.getElementById('price-form');
     if (priceForm) {
-        // Remove any existing listeners
-        priceForm.replaceWith(priceForm.cloneNode(true));
-        const newPriceForm = document.getElementById('price-form');
+        // Remove any existing listeners by cloning
+        const newForm = priceForm.cloneNode(true);
+        priceForm.parentNode.replaceChild(newForm, priceForm);
         
-        newPriceForm.addEventListener('submit', function(e) {
+        newForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
             const formData = new FormData(this);
@@ -467,11 +475,11 @@ function setupPriceFormHandler() {
 function setupItemFormHandler() {
     const itemForm = document.getElementById('item-form');
     if (itemForm) {
-        // Remove any existing listeners
-        itemForm.replaceWith(itemForm.cloneNode(true));
-        const newItemForm = document.getElementById('item-form');
+        // Remove any existing listeners by cloning
+        const newForm = itemForm.cloneNode(true);
+        itemForm.parentNode.replaceChild(newForm, itemForm);
         
-        newItemForm.addEventListener('submit', function(e) {
+        newForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
             const formData = new FormData(this);

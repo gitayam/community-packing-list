@@ -1285,5 +1285,10 @@ def add_item_modal(request):
             return JsonResponse({'success': False, 'html': html})
     else:
         form = ItemForm()
-        html = render_to_string('packing_lists/item_form_modal.html', {'form': form, 'title': 'Add Item', 'is_modal': True}, request=request)
+        context = {
+            'form': form, 
+            'title': 'Add Item', 
+            'is_modal': True
+        }
+        html = render_to_string('packing_lists/item_form_modal.html', context, request=request)
         return JsonResponse({'html': html})
