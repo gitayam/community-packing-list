@@ -9,7 +9,7 @@ def create_ranger_school_packing_list(apps, schema_editor):
     if not PackingList.objects.filter(name=list_name).exists():
         packing_list = PackingList.objects.create(
             name=list_name,
-            description="Official Ranger School Packing List V10 as of Dec 2024"
+            description="Official Ranger School Packing List V10 as of Dec 2024 (DEMO)"
         )
 
         items_data = [

@@ -8,8 +8,7 @@ module.exports = (env, argv) => {
       'packing-list-detail': './src/packing-list-detail.ts',
       'store-list': './src/store-list.ts',
       'packing-list-form': './src/packing-list-form.ts',
-      'price-form-modal': './src/price-form-modal.ts',
-      'common': './src/common.ts'
+      'price-form-modal': './src/price-form-modal.ts'
     },
     output: {
       path: path.resolve(__dirname, 'packing_lists/static/packing_lists/js'),
@@ -25,7 +24,7 @@ module.exports = (env, argv) => {
             {
               loader: 'ts-loader',
               options: {
-                transpileOnly: !isProduction,
+                transpileOnly: true,
                 configFile: 'tsconfig.json'
               }
             }
@@ -58,8 +57,8 @@ module.exports = (env, argv) => {
             name: 'vendors',
             chunks: 'all',
           },
-          common: {
-            name: 'common',
+          shared: {
+            name: 'shared',
             minChunks: 2,
             chunks: 'all',
             enforce: true
