@@ -37,4 +37,5 @@ urlpatterns = [
     path('list/<int:list_id>/edit_item_modal/<int:pli_id>/', views.edit_item_modal, name='edit_item_modal'),
 
     path('stores/add/modal/', views.add_store_modal, name='add_store_modal'),
+    path('create_packing_list_from_items/', views.create_packing_list_from_items, name='create_packing_list_from_items'),
 ]

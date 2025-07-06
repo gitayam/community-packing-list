@@ -586,9 +586,209 @@ def lists_page(request):
 
 def items_page(request):
     """
-    Placeholder for items page.
+    Comprehensive items page showing all items with prices, notes, and packing list associations.
+    Users can checkmark items and create new packing lists from selected items.
     """
-    return render(request, 'packing_lists/items.html')
+    # Get filter parameters
+    search_query = request.GET.get('search', '').strip()
+    category_filter = request.GET.get('category', '')
+    price_min = request.GET.get('price_min', '')
+    price_max = request.GET.get('price_max', '')
+    has_prices = request.GET.get('has_prices', '')
+    in_packing_list = request.GET.get('in_packing_list', '')
+    
+    # Get all items with related data
+    items = Item.objects.prefetch_related(
+        'prices__store',
+        'packing_list_items__packing_list'
+    ).all()
+    
+    # Apply filters
+    if search_query:
+        items = items.filter(name__icontains=search_query)
+    
+    if category_filter:
+        items = items.filter(packing_list_items__section=category_filter).distinct()
+    
+    if has_prices == 'yes':
+        items = items.filter(prices__isnull=False).distinct()
+    elif has_prices == 'no':
+        items = items.filter(prices__isnull=True)
+    
+    if in_packing_list:
+        items = items.filter(packing_list_items__packing_list_id=in_packing_list).distinct()
+    
+    # Get unique categories for filter dropdown
+    categories = PackingListItem.objects.values_list('section', flat=True).exclude(
+        section__isnull=True
+    ).exclude(section='').distinct().order_by('section')
+    
+    # Get packing lists for filter dropdown
+    packing_lists = PackingList.objects.all().order_by('name')
+    
+    # Prepare items with comprehensive data
+    items_with_data = []
+    for item in items:
+        # Get all prices for this item with vote data
+        prices_with_votes = []
+        for price in item.prices.all():
+            upvotes = price.votes.filter(is_correct_price=True).count()
+            downvotes = price.votes.filter(is_correct_price=False).count()
+            total_votes = upvotes + downvotes
+            vote_confidence = (upvotes - downvotes) / max(total_votes, 1)
+            
+            prices_with_votes.append({
+                'price': price,
+                'upvotes': upvotes,
+                'downvotes': downvotes,
+                'vote_confidence': vote_confidence,
+                'price_per_unit': float(price.price) / max(price.quantity, 1)
+            })
+        
+        # Sort prices by vote confidence and price
+        prices_with_votes.sort(key=lambda x: (x['vote_confidence'], -x['price_per_unit']), reverse=True)
+        
+        # Get all packing lists this item appears in
+        packing_list_appearances = []
+        for pli in item.packing_list_items.all():
+            packing_list_appearances.append({
+                'packing_list': pli.packing_list,
+                'quantity': pli.quantity,
+                'notes': pli.notes,
+                'required': pli.required,
+                'section': pli.section,
+                'nsn_lin': pli.nsn_lin,
+                'instructions': pli.instructions
+            })
+        
+        # Calculate price range
+        price_range = None
+        if prices_with_votes:
+            min_price = min(p['price_per_unit'] for p in prices_with_votes)
+            max_price = max(p['price_per_unit'] for p in prices_with_votes)
+            price_range = f"${min_price:.2f} - ${max_price:.2f}"
+        
+        # Apply price filters
+        if price_min and prices_with_votes:
+            min_item_price = min(p['price_per_unit'] for p in prices_with_votes)
+            if min_item_price < float(price_min):
+                continue
+        
+        if price_max and prices_with_votes:
+            min_item_price = min(p['price_per_unit'] for p in prices_with_votes)
+            if min_item_price > float(price_max):
+                continue
+        
+        items_with_data.append({
+            'item': item,
+            'prices_with_votes': prices_with_votes,
+            'packing_list_appearances': packing_list_appearances,
+            'price_range': price_range,
+            'best_price': prices_with_votes[0] if prices_with_votes else None,
+            'total_prices': len(prices_with_votes),
+            'total_packing_lists': len(packing_list_appearances)
+        })
+    
+    # Sort items by name
+    items_with_data.sort(key=lambda x: x['item'].name.lower())
+    
+    context = {
+        'items_with_data': items_with_data,
+        'categories': categories,
+        'packing_lists': packing_lists,
+        'filters': {
+            'search': search_query,
+            'category': category_filter,
+            'price_min': price_min,
+            'price_max': price_max,
+            'has_prices': has_prices,
+            'in_packing_list': in_packing_list,
+        },
+        'title': 'All Items'
+    }
+    return render(request, 'packing_lists/items.html', context)
+
+def create_packing_list_from_items(request):
+    """
+    Create a new packing list from selected items on the items page.
+    """
+    if request.method == 'POST':
+        selected_items = request.POST.getlist('selected_items')
+        list_name = request.POST.get('list_name', '').strip()
+        list_description = request.POST.get('list_description', '').strip()
+        school_id = request.POST.get('school')
+        base_id = request.POST.get('base')
+        event_type = request.POST.get('event_type', 'school')
+        
+        if not selected_items:
+            messages.error(request, "Please select at least one item.")
+            return redirect('items_page')
+        
+        if not list_name:
+            messages.error(request, "Please provide a name for the packing list.")
+            return redirect('items_page')
+        
+        # Create the packing list
+        packing_list = PackingList.objects.create(
+            name=list_name,
+            description=list_description,
+            school_id=school_id if school_id else None,
+            base_id=base_id if base_id else None,
+            event_type=event_type
+        )
+        
+        # Add selected items to the packing list
+        items_added = 0
+        for item_id in selected_items:
+            try:
+                item = Item.objects.get(id=item_id)
+                # Get the most common quantity and notes from existing packing lists
+                existing_pli = item.packing_list_items.first()
+                if existing_pli:
+                    PackingListItem.objects.create(
+                        packing_list=packing_list,
+                        item=item,
+                        quantity=existing_pli.quantity,
+                        notes=existing_pli.notes,
+                        required=existing_pli.required,
+                        section=existing_pli.section,
+                        nsn_lin=existing_pli.nsn_lin,
+                        instructions=existing_pli.instructions
+                    )
+                else:
+                    PackingListItem.objects.create(
+                        packing_list=packing_list,
+                        item=item,
+                        quantity=1,
+                        required=True
+                    )
+                items_added += 1
+            except Item.DoesNotExist:
+                continue
+        
+        messages.success(request, f"Packing list '{packing_list.name}' created with {items_added} items!")
+        return redirect(reverse('view_packing_list', args=[packing_list.id]))
+    
+    # GET request - show form
+    selected_items = request.GET.getlist('selected_items')
+    if not selected_items:
+        messages.error(request, "No items selected.")
+        return redirect('items_page')
+    
+    # Get the selected items
+    items = Item.objects.filter(id__in=selected_items).order_by('name')
+    
+    # Get available schools and bases for the form
+    schools = School.objects.all().order_by('name')
+    bases = Base.objects.all().order_by('name')
+    
+    context = {
+        'selected_items': items,
+        'schools': schools,
+        'bases': bases,
+        'title': 'Create Packing List from Selected Items'
+    }
+    return render(request, 'packing_lists/create_packing_list_from_items.html', context)
 
 def edit_packing_list(request, list_id):
     """
