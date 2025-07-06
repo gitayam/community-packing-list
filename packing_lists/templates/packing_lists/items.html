@@ -152,6 +152,9 @@
                                 {% elif item_data.best_price.vote_confidence < 0 %}
                                     <span class="vote-confidence negative">✗</span>
                                 {% endif %}
+                                <button type="button" class="edit-price-btn" title="Edit Price" onclick="openPriceModal({{ item_data.item.id }}, {{ item_data.best_price.price.id }})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                </button>
                             </span>
                         </div>
                         {% if item_data.price_range and item_data.total_prices > 1 %}
@@ -216,6 +219,9 @@
                                         {% if price_data.price.store.url %}
                                             <a href="{{ price_data.price.store.url }}" target="_blank" class="store-link">🔗</a>
                                         {% endif %}
+                                        <button type="button" class="edit-price-btn" title="Edit Price" onclick="openPriceModal({{ item_data.item.id }}, {{ price_data.price.id }})">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                        </button>
                                     </div>
                                     <div class="price-details">
                                         ${{ price_data.price_per_unit|floatformat:2 }} 
@@ -308,6 +314,26 @@ function onBaseChange() {
         stateSelect.disabled = false;
     }
 }
+
+function openPriceModal(itemId, priceId) {
+    const modal = document.getElementById('price-modal');
+    const modalBody = document.getElementById('price-modal-body');
+    modal.style.display = 'block';
+    modalBody.innerHTML = '<div style="padding:2em;text-align:center;">Loading...</div>';
+    let url = `/item/${itemId}/add_price_modal/`;
+    if (priceId) {
+        url += `?price_id=${priceId}`;
+    }
+    fetch(url)
+        .then(response => response.text())
+        .then(html => {
+            modalBody.innerHTML = html;
+        });
+}
+
+document.getElementById('close-price-modal').onclick = function() {
+    document.getElementById('price-modal').style.display = 'none';
+};
 
 // Initialize selection on page load
 document.addEventListener('DOMContentLoaded', function() {
