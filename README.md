@@ -42,6 +42,18 @@ The application includes a comprehensive Ranger School packing list example with
 - Python 3.8+ (for local development)
 - Node.js 18+ (for local development)
 
+### Environment Setup
+
+- **Do NOT commit your `.env` file to version control.**
+- Use `.env.example` as the template for environment variables. Copy it to `.env` for local development only:
+
+```bash
+cp .env.example .env
+# Edit .env with your local or deployment-specific settings
+```
+
+- For production and CI, set environment variables securely using your deployment platform or secrets manager.
+
 ### Production Setup with Docker
 
 ```bash
