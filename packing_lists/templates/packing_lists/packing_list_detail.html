@@ -236,8 +236,15 @@
                                 </td>
                                 <td class="actions-cell">
                                     <div class="action-buttons">
-                                        <button type="button" class="action-btn add-price-btn" data-item-id="{{ item_wp.item.id }}" data-list-id="{{ packing_list.id }}"></button>
-                                        <button type="button" class="action-btn edit-btn edit-item-btn" data-list-id="{{ packing_list.id }}" data-pli-id="{{ item_wp.pli.id }}"></button>
+                                        <button type="button" class="action-btn add-price-btn" data-item-id="{{ item_wp.item.id }}" data-list-id="{{ packing_list.id }}" title="Add Price">
+                                            <img src="{% static 'packing_lists/icons/plus-square.svg' %}" alt="Add Price" width="16" height="16" />
+                                        </button>
+                                        <button type="button" class="action-btn expand-price-btn" data-item-id="{{ item_wp.item.id }}" title="Expand Price Details">
+                                            <img src="{% static 'packing_lists/icons/plus-database.svg' %}" alt="Expand Price" width="16" height="16" />
+                                        </button>
+                                        <button type="button" class="action-btn edit-btn edit-item-btn" data-list-id="{{ packing_list.id }}" data-pli-id="{{ item_wp.pli.id }}" title="Edit Item">
+                                            <img src="{% static 'packing_lists/icons/edit.svg' %}" alt="Edit Item" width="16" height="16" />
+                                        </button>
                                         <button type="button" class="action-btn review-btn" title="Review item brand">
                                             <img src="{% static 'packing_lists/icons/review.svg' %}" alt="Review" width="16" height="16" />
                                         </button>
