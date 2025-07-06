@@ -2,6 +2,14 @@
 
 This document captures key lessons learned during the development and debugging of the Community Packing List Application. These insights will help streamline future development and troubleshooting.
 
+You are a senior developer. Identify the best method to accomplish the task with modern and secure code. Don't ask if i want to fix it , of course we need to fix it. This project uses docker containers don't install packages locally. See the section about git stage and commit as well. 
+
+## Docker-Only Development Workflow
+- All npm, Node.js, and Python commands must be run inside Docker containers.
+- Never install or run packages locally on your host.
+- Use `docker compose exec <service> <command>` for all development, builds, and dependency management.
+- See the section below for proper Git staging and commit practices.
+
 ## Common Issues and Solutions
 
 ### 1. **URL Template Tag Issues**
@@ -81,6 +89,7 @@ This document captures key lessons learned during the development and debugging 
 ## Git Workflow and Commit Practices
 
 ### 1. **Auto Staging and Committing After Testing**
+- First run git status to see the items that are uncommited. 
 - Always stage and commit your changes after you have tested them locally, but do **not** push immediately. This allows for local version control and easy rollback if needed, while preventing unreviewed code from reaching shared branches.
 
 ### 2. **Descriptive, Searchable Commit Messages**
@@ -123,5 +132,16 @@ This document captures key lessons learned during the development and debugging 
 - Test migrations on sample data
 - Use proper field types and constraints
 - Implement proper relationships between models
+
+## GitHub Issue Creation Best Practice
+
+When creating a GitHub issue:
+- First, create a temporary markdown file to stage the issue content.
+- List all existing labels in the file and check if the needed labels exist.
+- Write and format the issue body clearly in markdown, including all relevant sections (description, steps to reproduce, expected/actual behavior, environment, etc.).
+- Use the markdown file to create the issue via the GitHub CLI, applying the correct labels.
+- After the issue is created, delete the temporary markdown file to keep the repo clean.
+
+This ensures issues are well-formatted, label-aware, and the process is repeatable and organized.
 
 ---

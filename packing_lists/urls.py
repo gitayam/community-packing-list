@@ -16,6 +16,7 @@ urlpatterns = [
     path('packer/', views.home, name='packer_home'),  # Alternative URL for home page
     path('lists/', views.lists_page, name='lists'),
     path('items/', views.items_page, name='items'),
+    path('item/create/', views.create_item, name='create_item'),
     path('list/create/', views.create_packing_list, name='create_packing_list'),
     path('list/<int:list_id>/', views.packing_list_detail, name='view_packing_list'),
     path('list/<int:list_id>/edit/', views.edit_packing_list, name='edit_packing_list'),
@@ -33,8 +34,17 @@ urlpatterns = [
     path('list/<int:list_id>/edit_item/<int:pli_id>/', views.edit_item_in_list, name='edit_item_in_list'),
     path('stores/<int:store_id>/edit/', views.store_edit, name='edit_store'),
 
-    path('item/<int:item_id>/add_price_modal/to_list/<int:list_id>/', views.price_form_partial, name='add_price_for_item_modal'),
+    path('item/<int:item_id>/add_price_modal/', views.price_form_partial, name='add_price_for_item_modal_no_list'),
+    path('item/add_modal/', views.add_item_modal, name='add_item_modal'),
     path('list/<int:list_id>/edit_item_modal/<int:pli_id>/', views.edit_item_modal, name='edit_item_modal'),
 
     path('stores/add/modal/', views.add_store_modal, name='add_store_modal'),
+    path('create_packing_list_from_items/', views.create_packing_list_from_items, name='create_packing_list_from_items'),
+
+    path('lists/merge/', views.merge_packing_lists, name='merge_packing_lists'),
+    path('lists/delete/', views.delete_packing_lists, name='delete_packing_lists'),
+    path('list/<int:list_id>/clone/', views.clone_packing_list, name='clone_packing_list'),
+    path('list/<int:list_id>/export_pdf/', views.export_packing_list_pdf, name='export_packing_list_pdf'),
+
+    path('list/<int:list_id>/item/<int:pli_id>/edit_modal/', views.edit_item_modal, name='edit_item_modal'),
 ]

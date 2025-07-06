@@ -77,108 +77,208 @@ body {
 
 /* Military Header */
 header.main-header {
-  background: linear-gradient(135deg, var(--military-navy) 0%, var(--military-olive) 100%);
+  background: linear-gradient(135deg, #1B2A3D 0%, #3B4B20 100%);
   color: var(--text-light);
-  padding: var(--spacing-lg) 0;
-  text-align: center;
-  margin-bottom: 0;
+  min-height: 80px;
   box-shadow: var(--shadow-md);
-  position: relative;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
-
 .header-content-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-lg); /* 1.5rem */
-  position: relative; /* Ensure it's above the ::before pseudo-element */
-  z-index: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 1.5rem;
+  min-height: 80px;
+  padding: 0 2rem;
 }
-
 .logo-container {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(var(--military-olive-rgb), 0.12);
+  background: rgba(var(--military-olive-rgb), 0.10);
   border-radius: 50%;
   border: 2px solid var(--military-olive);
+  margin-right: 0.75rem;
 }
-
-/* Ensure the SVG or img inside logo-container is sized if needed, though inline SVG has width/height */
-.logo-container svg,
-.logo-container img {
-  width: 40px; /* Corresponds to original inline style */
-  height: 40px; /* Corresponds to original inline style */
-}
-
-header.main-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="military-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23military-pattern)"/></svg>');
-  opacity: 0.3;
-}
-
-header.main-header h1 {
-  margin: 0; /* Override default h1 margins */
-  font-size: var(--font-size-xxl);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  position: relative;
-  z-index: 1;
-}
-
-/* Military Navigation */
-nav.main-nav {
-  background: var(--military-dark);
-  padding: var(--spacing-md) 0;
-  text-align: center;
-  box-shadow: var(--shadow-sm);
-  border-bottom: 3px solid var(--military-olive);
-}
-
-nav.main-nav ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
+.header-title-container {
+  background: none;
+  box-shadow: none;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0 1rem;
+  min-width: unset;
+  margin-right: 2rem;
   display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: var(--spacing-md);
+  align-items: center;
 }
-
-nav.main-nav ul li {
-  display: inline;
+.header-title {
+  font-size: 2.1rem;
+  font-weight: 900;
+  color: #F4F1DE !important;
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 8px rgba(44,44,44,0.45), 0 1.5px 0 #000, 0 0 8px #C3B091;
+  padding: 0.5rem 1.5rem;
+  margin: 0;
+  border-radius: 0.5rem;
+  background: rgba(27,54,93,0.18);
+  border: 2px solid #C3B091;
 }
-
-nav.main-nav ul li a {
-  color: var(--text-light);
-  text-decoration: none;
-  font-weight: 600;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--border-radius-sm);
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  font-size: var(--font-size-sm);
-  letter-spacing: 1px;
-  border: 2px solid transparent;
+nav.main-nav {
+  background: none;
+  box-shadow: none;
+  border-bottom: none;
+  padding: 0;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  height: 80px;
 }
-
-nav.main-nav ul li a:hover,
-nav.main-nav ul li a.active {
-  background: var(--military-olive);
-  border-color: var(--military-khaki);
-  color: var(--text-light);
-  text-decoration: none;
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+nav.main-nav ul.nav-list {
+  display: flex !important;
+  flex-direction: row;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  height: 80px;
+}
+nav.main-nav ul.nav-list li {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+}
+nav.main-nav ul.nav-list li a {
+  font-size: 1.12rem;
+  font-weight: 700;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.35rem;
+  margin: 0 0.1rem;
+  color: #F4F1DE;
+  background: none;
+  border: none;
+  transition: background 0.18s, color 0.18s;
+  box-shadow: none;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 4px rgba(44,44,44,0.25);
+}
+nav.main-nav ul.nav-list li a:hover,
+nav.main-nav ul.nav-list li a.active {
+  background: #C3B091;
+  color: #1B365D !important;
+  font-weight: 900;
+  border-bottom: 3px solid #C3B091;
+  box-shadow: 0 2px 8px rgba(195,176,145,0.12);
+  text-shadow: none;
+}
+#mobile-menu-toggle {
+  font-size: 2rem;
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  height: 52px;
+  width: 52px;
+  display: none;
+  color: #F4F1DE;
+  background: rgba(27,54,93,0.18);
+}
+@media (max-width: 1100px) {
+  .header-content-wrapper {
+    padding: 0 0.5rem;
+    gap: 0.75rem;
+  }
+  .header-title-container {
+    margin-right: 0.5rem;
+    padding: 0 0.5rem;
+  }
+}
+@media (max-width: 900px) {
+  .header-content-wrapper {
+    padding: 0 0.25rem;
+    gap: 0.5rem;
+  }
+  .header-title {
+    font-size: 1.3rem;
+    padding: 0.3rem 0.7rem;
+  }
+  .logo-container {
+    width: 36px;
+    height: 36px;
+    margin-right: 0.25rem;
+  }
+  nav.main-nav {
+    height: 52px;
+  }
+  nav.main-nav ul.nav-list {
+    height: 52px;
+  }
+  #mobile-menu-toggle {
+    height: 36px;
+    width: 36px;
+    font-size: 1.5rem;
+  }
+}
+@media (max-width: 700px) {
+  .header-content-wrapper {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 48px;
+    padding: 0 0.1rem;
+  }
+  .logo-container {
+    width: 28px;
+    height: 28px;
+    margin-right: 0.15rem;
+  }
+  .header-title {
+    font-size: 1rem;
+    padding: 0.15rem 0.25rem;
+  }
+  nav.main-nav {
+    height: 40px;
+  }
+  nav.main-nav ul.nav-list {
+    top: 110%;
+    right: 0;
+    left: auto;
+    width: 70vw;
+    min-width: 120px;
+    max-width: 200px;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+    background: #222d2f;
+    gap: 0;
+    padding: 0.25rem 0;
+    height: auto;
+  }
+  nav.main-nav ul.nav-list li a {
+    display: block;
+    padding: 0.55rem 1.1rem;
+    font-size: 1.05rem;
+    border-radius: 0;
+    margin: 0;
+  }
+  #mobile-menu-toggle {
+    display: inline-block !important;
+    font-size: 1.1rem;
+    margin-left: 0.15rem;
+    margin-right: 0.15rem;
+    height: 28px;
+    width: 28px;
+    padding: 0.05rem 0.1rem;
+  }
 }
 
 /* Main Container */
@@ -234,7 +334,6 @@ button, .button, a.button {
   border: 2px solid var(--military-navy);
   border-radius: var(--border-radius-md);
   cursor: pointer;
-  text-align: center;
   text-decoration: none;
   transition: all 0.3s ease;
   margin-right: var(--spacing-sm);
