@@ -59,6 +59,7 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app # Mount code for live reload in dev
+      - /app/packing_lists/static/packing_lists/js # Preserve compiled JS files
       - static_volume:/app/staticfiles
     ports:
       - "${WEB_PORT:-8000}:8000"
