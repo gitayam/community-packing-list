@@ -10,18 +10,99 @@
     </div>
     <h2 class="section-title">Available Packing Lists</h2>
     {% if packing_lists %}
-        <ul class="packing-list-list">
-            {% for pl in packing_lists %}
-                <li>
-                    <a href="{% url 'view_packing_list' pl.id %}">{{ pl.name }}</a>
-                    {% if pl.event_type %} ({{ pl.get_event_type_display }}){% endif %}
-                    {% if pl.last_updated %} - Last updated: {{ pl.last_updated }}{% endif %}
-                </li>
-            {% endfor %}
-        </ul>
+        <form id="bulkActionsForm" method="post">
+            {% csrf_token %}
+            <div class="bulk-actions" id="bulkActions" style="display: none;">
+                <button type="button" class="btn btn-primary" id="mergeBtn" disabled onclick="mergeLists()">Merge</button>
+                <button type="button" class="btn btn-danger" id="deleteBtn" disabled onclick="deleteLists()">Delete</button>
+                <span id="selectedCount">0 selected</span>
+            </div>
+            <ul class="packing-list-list">
+                {% for pl in packing_lists %}
+                    <li class="packing-list-row">
+                        <label class="list-checkbox">
+                            <input type="checkbox" class="list-select" value="{{ pl.id }}" onchange="updateBulkActions()">
+                            <span class="checkmark"></span>
+                        </label>
+                        <a href="{% url 'view_packing_list' pl.id %}">{{ pl.name }}</a>
+                        {% if pl.event_type %} ({{ pl.get_event_type_display }}){% endif %}
+                        {% if pl.last_updated %} - Last updated: {{ pl.last_updated }}{% endif %}
+                        <div class="list-actions">
+                            <a href="{% url 'clone_packing_list' pl.id %}" class="btn btn-sm btn-secondary">Clone</a>
+                            <a href="{% url 'export_packing_list_pdf' pl.id %}" class="btn btn-sm btn-outline">Export PDF</a>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </form>
     {% else %}
         <div class="info-box no-lists-box">
             <p class="no-lists">No packing lists found. Click 'Create New List' to get started!</p>
         </div>
     {% endif %}
+
+<script>
+let selectedLists = new Set();
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.list-select:checked');
+    selectedLists = new Set(Array.from(checkboxes).map(cb => cb.value));
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+    const mergeBtn = document.getElementById('mergeBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
+    if (selectedLists.size > 0) {
+        bulkActions.style.display = 'block';
+        selectedCount.textContent = `${selectedLists.size} selected`;
+        deleteBtn.disabled = false;
+        mergeBtn.disabled = selectedLists.size !== 2;
+    } else {
+        bulkActions.style.display = 'none';
+        deleteBtn.disabled = true;
+        mergeBtn.disabled = true;
+    }
+}
+function mergeLists() {
+    if (selectedLists.size !== 2) return;
+    const form = document.getElementById('bulkActionsForm');
+    form.action = '{% url "merge_packing_lists" %}';
+    form.method = 'post';
+    form.submit();
+}
+function deleteLists() {
+    if (selectedLists.size === 0) return;
+    if (!confirm('Are you sure you want to delete the selected lists?')) return;
+    const form = document.getElementById('bulkActionsForm');
+    form.action = '{% url "delete_packing_lists" %}';
+    form.method = 'post';
+    form.submit();
+}
+document.addEventListener('DOMContentLoaded', updateBulkActions);
+</script>
+
+<style>
+.packing-list-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.list-checkbox {
+    margin-right: 10px;
+}
+.list-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+}
+.bulk-actions {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: 10px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+</style>
 {% endblock %} 

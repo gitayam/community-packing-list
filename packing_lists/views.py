@@ -2,9 +2,17 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib import messages # For feedback to the user
 from django.db import IntegrityError
+from django.http import HttpResponse
 from .models import PackingList, Item, PackingListItem, School, Price, Vote, Store, Base
 from .forms import PackingListForm, PriceForm, VoteForm, PackingListItemForm, StoreForm
 from django.db.models import Q
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from io import BytesIO
+from datetime import datetime
 
 # Requires login for actions that modify data if user accounts are active
 # from django.contrib.auth.decorators import login_required
@@ -879,3 +887,347 @@ def edit_packing_list(request, list_id):
         'packing_list': packing_list,
     }
     return render(request, 'packing_lists/packing_list_form.html', context)
+
+def merge_packing_lists(request):
+    """
+    Merge two packing lists into one, deduping items and keeping highest quantity/required.
+    """
+    if request.method == 'POST':
+        list1_id = request.POST.get('list1_id')
+        list2_id = request.POST.get('list2_id')
+        new_list_name = request.POST.get('new_list_name', '').strip()
+        
+        if not list1_id or not list2_id:
+            messages.error(request, "Please select two lists to merge.")
+            return redirect('lists_page')
+        
+        if list1_id == list2_id:
+            messages.error(request, "Cannot merge a list with itself.")
+            return redirect('lists_page')
+        
+        if not new_list_name:
+            messages.error(request, "Please provide a name for the merged list.")
+            return redirect('lists_page')
+        
+        try:
+            list1 = PackingList.objects.get(id=list1_id)
+            list2 = PackingList.objects.get(id=list2_id)
+        except PackingList.DoesNotExist:
+            messages.error(request, "One or both lists not found.")
+            return redirect('lists_page')
+        
+        # Create the merged list
+        merged_list = PackingList.objects.create(
+            name=new_list_name,
+            description=f"Merged from '{list1.name}' and '{list2.name}'",
+            school=list1.school or list2.school,
+            base=list1.base or list2.base,
+            event_type=list1.event_type or list2.event_type
+        )
+        
+        # Track items by their ID to handle duplicates
+        merged_items = {}
+        
+        # Process items from both lists
+        for pli in list1.items.all():
+            item_id = pli.item.id
+            if item_id not in merged_items:
+                merged_items[item_id] = pli
+            else:
+                # Merge with existing item - keep highest quantity and required=True if either is True
+                existing = merged_items[item_id]
+                merged_items[item_id] = PackingListItem(
+                    packing_list=merged_list,
+                    item=pli.item,
+                    quantity=max(existing.quantity, pli.quantity),
+                    required=existing.required or pli.required,
+                    notes=existing.notes if existing.notes else pli.notes,
+                    section=existing.section if existing.section else pli.section,
+                    nsn_lin=existing.nsn_lin if existing.nsn_lin else pli.nsn_lin,
+                    instructions=existing.instructions if existing.instructions else pli.instructions
+                )
+        
+        for pli in list2.items.all():
+            item_id = pli.item.id
+            if item_id not in merged_items:
+                merged_items[item_id] = pli
+            else:
+                # Merge with existing item
+                existing = merged_items[item_id]
+                merged_items[item_id] = PackingListItem(
+                    packing_list=merged_list,
+                    item=pli.item,
+                    quantity=max(existing.quantity, pli.quantity),
+                    required=existing.required or pli.required,
+                    notes=existing.notes if existing.notes else pli.notes,
+                    section=existing.section if existing.section else pli.section,
+                    nsn_lin=existing.nsn_lin if existing.nsn_lin else pli.nsn_lin,
+                    instructions=existing.instructions if existing.instructions else pli.instructions
+                )
+        
+        # Save all merged items
+        for pli in merged_items.values():
+            pli.packing_list = merged_list
+            pli.save()
+        
+        messages.success(request, f"Successfully merged '{list1.name}' and '{list2.name}' into '{merged_list.name}' with {len(merged_items)} items.")
+        return redirect(reverse('view_packing_list', args=[merged_list.id]))
+    
+    # GET request - show merge form
+    packing_lists = PackingList.objects.all().order_by('name')
+    return render(request, 'packing_lists/merge_lists.html', {
+        'packing_lists': packing_lists,
+        'title': 'Merge Packing Lists'
+    })
+
+def delete_packing_lists(request):
+    """
+    Delete one or more packing lists.
+    """
+    if request.method == 'POST':
+        list_ids = request.POST.getlist('list_ids')
+        
+        if not list_ids:
+            messages.error(request, "Please select at least one list to delete.")
+            return redirect('lists_page')
+        
+        deleted_count = 0
+        deleted_names = []
+        
+        for list_id in list_ids:
+            try:
+                packing_list = PackingList.objects.get(id=list_id)
+                deleted_names.append(packing_list.name)
+                packing_list.delete()
+                deleted_count += 1
+            except PackingList.DoesNotExist:
+                continue
+        
+        if deleted_count == 1:
+            messages.success(request, f"Successfully deleted '{deleted_names[0]}'.")
+        elif deleted_count > 1:
+            messages.success(request, f"Successfully deleted {deleted_count} lists: {', '.join(deleted_names)}.")
+        else:
+            messages.error(request, "No lists were deleted.")
+        
+        return redirect('lists_page')
+    
+    # GET request - show delete confirmation
+    list_ids = request.GET.getlist('list_ids')
+    if not list_ids:
+        messages.error(request, "No lists selected for deletion.")
+        return redirect('lists_page')
+    
+    packing_lists = PackingList.objects.filter(id__in=list_ids).order_by('name')
+    if len(packing_lists) != len(list_ids):
+        messages.warning(request, "Some selected lists were not found.")
+    
+    return render(request, 'packing_lists/delete_lists.html', {
+        'packing_lists': packing_lists,
+        'title': 'Delete Packing Lists'
+    })
+
+def clone_packing_list(request, list_id):
+    """
+    Clone a packing list and all its items.
+    """
+    try:
+        original_list = PackingList.objects.get(id=list_id)
+    except PackingList.DoesNotExist:
+        messages.error(request, "Packing list not found.")
+        return redirect('lists_page')
+    
+    if request.method == 'POST':
+        new_name = request.POST.get('new_name', '').strip()
+        
+        if not new_name:
+            messages.error(request, "Please provide a name for the cloned list.")
+            return redirect('lists_page')
+        
+        # Create the cloned list
+        cloned_list = PackingList.objects.create(
+            name=new_name,
+            description=f"Cloned from '{original_list.name}'",
+            school=original_list.school,
+            base=original_list.base,
+            event_type=original_list.event_type
+        )
+        
+        # Clone all items from the original list
+        cloned_items_count = 0
+        for original_pli in original_list.items.all():
+            PackingListItem.objects.create(
+                packing_list=cloned_list,
+                item=original_pli.item,
+                quantity=original_pli.quantity,
+                required=original_pli.required,
+                notes=original_pli.notes,
+                section=original_pli.section,
+                nsn_lin=original_pli.nsn_lin,
+                instructions=original_pli.instructions
+            )
+            cloned_items_count += 1
+        
+        messages.success(request, f"Successfully cloned '{original_list.name}' as '{cloned_list.name}' with {cloned_items_count} items.")
+        return redirect(reverse('view_packing_list', args=[cloned_list.id]))
+    
+    # GET request - show clone form
+    return render(request, 'packing_lists/clone_list.html', {
+        'original_list': original_list,
+        'title': f'Clone Packing List: {original_list.name}'
+    })
+
+def export_packing_list_pdf(request, list_id):
+    """
+    Export a packing list as a PDF.
+    """
+    try:
+        packing_list = PackingList.objects.get(id=list_id)
+    except PackingList.DoesNotExist:
+        messages.error(request, "Packing list not found.")
+        return redirect('lists_page')
+    
+    # Create the PDF response
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{packing_list.name.replace(" ", "_")}_packing_list.pdf"'
+    
+    # Create the PDF document
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    story = []
+    
+    # Get styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        spaceAfter=30,
+        alignment=1  # Center alignment
+    )
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=12,
+        spaceBefore=20
+    )
+    normal_style = styles['Normal']
+    
+    # Add title
+    story.append(Paragraph(f"Packing List: {packing_list.name}", title_style))
+    story.append(Spacer(1, 20))
+    
+    # Add list details
+    details_data = []
+    if packing_list.description:
+        details_data.append(['Description:', packing_list.description])
+    if packing_list.school:
+        details_data.append(['School:', packing_list.school.name])
+    if packing_list.base:
+        details_data.append(['Base:', packing_list.base.name])
+    if packing_list.event_type:
+        details_data.append(['Event Type:', packing_list.event_type])
+    details_data.append(['Created:', packing_list.created_at.strftime('%B %d, %Y')])
+    
+    if details_data:
+        details_table = Table(details_data, colWidths=[1.5*inch, 4*inch])
+        details_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        story.append(details_table)
+        story.append(Spacer(1, 20))
+    
+    # Get items with prices
+    list_items = packing_list.items.select_related('item').prefetch_related('item__prices__store').order_by('item__name')
+    
+    if list_items:
+        story.append(Paragraph("Items", heading_style))
+        
+        # Create items table
+        items_data = [['Item', 'Qty', 'Required', 'Notes', 'Best Price', 'Store']]
+        
+        for pli in list_items:
+            # Get best price for this item
+            best_price = None
+            if pli.item.prices.exists():
+                prices = pli.item.prices.all()
+                # Sort by price (lowest first) and take the first one
+                best_price = min(prices, key=lambda p: p.price)
+            
+            item_name = pli.item.name
+            if len(item_name) > 30:
+                item_name = item_name[:27] + "..."
+            
+            price_info = ""
+            store_info = ""
+            if best_price:
+                price_info = f"${best_price.price:.2f}"
+                if best_price.store:
+                    store_info = best_price.store.name
+                    if len(store_info) > 20:
+                        store_info = store_info[:17] + "..."
+            
+            items_data.append([
+                item_name,
+                str(pli.quantity),
+                "Yes" if pli.required else "No",
+                pli.notes[:20] + "..." if pli.notes and len(pli.notes) > 20 else (pli.notes or ""),
+                price_info,
+                store_info
+            ])
+        
+        # Create table with proper styling
+        items_table = Table(items_data, colWidths=[2.5*inch, 0.5*inch, 0.7*inch, 1.2*inch, 0.8*inch, 1.3*inch])
+        items_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        
+        story.append(items_table)
+        story.append(Spacer(1, 20))
+        
+        # Add summary
+        total_items = len(list_items)
+        required_items = sum(1 for pli in list_items if pli.required)
+        items_with_prices = sum(1 for pli in list_items if pli.item.prices.exists())
+        
+        summary_data = [
+            ['Total Items:', str(total_items)],
+            ['Required Items:', str(required_items)],
+            ['Items with Prices:', str(items_with_prices)],
+        ]
+        
+        summary_table = Table(summary_data, colWidths=[1.5*inch, 1*inch])
+        summary_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        
+        story.append(Paragraph("Summary", heading_style))
+        story.append(summary_table)
+    else:
+        story.append(Paragraph("No items in this packing list.", normal_style))
+    
+    # Build the PDF
+    doc.build(story)
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    response.write(pdf)
+    return response
