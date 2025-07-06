@@ -6,6 +6,13 @@
 
 {% block content %}
 <div class="items-page">
+    <!-- Add Item Button -->
+    <div class="add-item-section">
+        <button type="button" class="btn btn-primary" onclick="openItemModal()">
+            ➕ Add New Item
+        </button>
+    </div>
+
     <!-- Filters Section -->
     <div class="filters-section">
         <form method="GET" class="filters-form">
@@ -264,6 +271,15 @@
     </div>
 </div>
 
+<!-- Item Modal -->
+<div id="item-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div id="item-modal-body">
+            <!-- AJAX-loaded form will go here -->
+        </div>
+    </div>
+</div>
+
 <script>
 let selectedItems = new Set();
 
@@ -341,12 +357,53 @@ function openPriceModal(itemId, priceId) {
         .then(response => response.text())
         .then(html => {
             modalBody.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading price modal:', error);
+            modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;">Error loading form. Please try again.</div>';
+        });
+}
+
+function openItemModal() {
+    const modal = document.getElementById('item-modal');
+    const modalBody = document.getElementById('item-modal-body');
+    modal.style.display = 'block';
+    modalBody.innerHTML = '<div style="padding:2em;text-align:center;">Loading...</div>';
+    
+    fetch('{% url "add_item_modal" %}')
+        .then(response => response.json())
+        .then(data => {
+            modalBody.innerHTML = data.html;
+        })
+        .catch(error => {
+            console.error('Error loading item modal:', error);
+            modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;">Error loading form. Please try again.</div>';
         });
 }
 
 document.getElementById('close-price-modal').onclick = function() {
     document.getElementById('price-modal').style.display = 'none';
 };
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+    const priceModal = document.getElementById('price-modal');
+    const itemModal = document.getElementById('item-modal');
+    if (event.target === priceModal) {
+        priceModal.style.display = 'none';
+    }
+    if (event.target === itemModal) {
+        itemModal.style.display = 'none';
+    }
+};
+
+// Close modals with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        document.getElementById('price-modal').style.display = 'none';
+        document.getElementById('item-modal').style.display = 'none';
+    }
+});
 
 // Initialize selection on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -360,6 +417,31 @@ document.addEventListener('DOMContentLoaded', function() {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+}
+
+.add-item-section {
+    margin-bottom: 20px;
+    text-align: right;
+}
+
+.add-item-section .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.add-item-section .btn:hover {
+    background: var(--color-primary-dark);
 }
 
 .filters-section {

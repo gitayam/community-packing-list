@@ -18,22 +18,87 @@
         <form method="post" id="price-form" action="{% url 'add_price_for_item_no_list' item_id=item.id %}">
     {% endif %}
         {% csrf_token %}
-        {% for field in form %}
-          <div class="form-group">
-            {{ field.label_tag }}
-            {{ field }}
-            {% if field.errors %}
+        
+        <!-- Store Selection -->
+        <div class="form-group">
+            {{ form.store.label_tag }}
+            {{ form.store }}
+            {% if form.store.errors %}
               <div class="text-danger">
-                {% for error in field.errors %}
+                {% for error in form.store.errors %}
                   <div>{{ error }}</div>
                 {% endfor %}
               </div>
             {% endif %}
-            {% if field.help_text %}
-              <small class="form-text text-muted">{{ field.help_text }}</small>
+            {% if form.store.help_text %}
+              <small class="form-text text-muted">{{ form.store.help_text }}</small>
             {% endif %}
-          </div>
-        {% endfor %}
+        </div>
+
+        <!-- Add New Store Section -->
+        <div id="inline-add-store" class="form-group" style="display: none;">
+            {{ form.store_name.label_tag }}
+            {{ form.store_name }}
+            {% if form.store_name.errors %}
+              <div class="text-danger">
+                {% for error in form.store_name.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% if form.store_name.help_text %}
+              <small class="form-text text-muted">{{ form.store_name.help_text }}</small>
+            {% endif %}
+        </div>
+
+        <!-- Price Field -->
+        <div class="form-group">
+            {{ form.price.label_tag }}
+            {{ form.price }}
+            {% if form.price.errors %}
+              <div class="text-danger">
+                {% for error in form.price.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% if form.price.help_text %}
+              <small class="form-text text-muted">{{ form.price.help_text }}</small>
+            {% endif %}
+        </div>
+
+        <!-- Quantity Field -->
+        <div class="form-group">
+            {{ form.quantity.label_tag }}
+            {{ form.quantity }}
+            {% if form.quantity.errors %}
+              <div class="text-danger">
+                {% for error in form.quantity.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% if form.quantity.help_text %}
+              <small class="form-text text-muted">{{ form.quantity.help_text }}</small>
+            {% endif %}
+        </div>
+
+        <!-- Date Purchased Field -->
+        <div class="form-group">
+            {{ form.date_purchased.label_tag }}
+            {{ form.date_purchased }}
+            {% if form.date_purchased.errors %}
+              <div class="text-danger">
+                {% for error in form.date_purchased.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% if form.date_purchased.help_text %}
+              <small class="form-text text-muted">{{ form.date_purchased.help_text }}</small>
+            {% endif %}
+        </div>
+
         <div class="form-actions">
             <button type="submit" class="button success">Save Price</button>
             <button type="button" class="button secondary" onclick="document.getElementById('price-modal').style.display='none'">Cancel</button>

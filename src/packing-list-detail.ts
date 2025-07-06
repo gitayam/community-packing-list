@@ -419,11 +419,15 @@ class PackingListDetailManager {
 
   private async handleEditItemModalClick(event: Event): Promise<void> {
     const target = event.target as HTMLElement;
-    if (target.closest('.edit-item-btn')) {
-      const btn = target.closest('.edit-item-btn') as HTMLElement;
+    if (target.closest('.edit-item-btn') || target.closest('.edit-item-link')) {
+      const btn = target.closest('.edit-item-btn, .edit-item-link') as HTMLElement;
       const listId = btn.dataset.listId;
       const pliId = btn.dataset.pliId;
       if (!listId || !pliId) return Promise.resolve();
+      // Prevent default if it's a link
+      if (btn.classList.contains('edit-item-link')) {
+        event.preventDefault();
+      }
       UIUtils.showLoading(btn as HTMLButtonElement);
       try {
         const response = await apiClient.get(`/list/${listId}/item/${pliId}/edit_modal/`);
