@@ -1,133 +1,102 @@
-<div class="form-container">
+{% load static %}
+
+<div class="form-container" id="price-modal-body">
     <h3>{{ title }}</h3>
     <p class="mb-2">Adding price for item: <strong>{{ item.name }}</strong></p>
 
-    <form method="post" id="price-form" action="{% url 'add_price_for_item' item_id=item.id list_id=list_id %}">
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for error in form.non_field_errors %}
+          <div>{{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if list_id %}
+        <form method="post" id="price-form" action="{% url 'add_price_for_item' item_id=item.id list_id=list_id %}">
+    {% else %}
+        <form method="post" id="price-form" action="{% url 'add_price_for_item_no_list' item_id=item.id %}">
+    {% endif %}
         {% csrf_token %}
-
-        {% if form.non_field_errors %}
-            <ul class="form-field-errors">
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-
+        
+        <!-- Store Selection -->
         <div class="form-group">
-            <label for="id_store">{{ form.store.label }}:</label>
-            <select name="store" id="id_store">
-                {% for option in form.store.field.choices %}
-                    <option value="{{ option.0 }}" {% if option.0 == form.store.value %}selected{% endif %}>{{ option.1 }}</option>
-                {% endfor %}
-                <option value="__add_new__">Add new store...</option>
-            </select>
-            {% if form.store.help_text %}
-                <span class="helptext">{{ form.store.help_text|safe }}</span>
-            {% endif %}
+            {{ form.store.label_tag }}
+            {{ form.store }}
             {% if form.store.errors %}
-                <ul class="form-field-errors">
-                    {% for error in form.store.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
+              <div class="text-danger">
+                {% for error in form.store.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% if form.store.help_text %}
+              <small class="form-text text-muted">{{ form.store.help_text }}</small>
             {% endif %}
         </div>
 
+        <!-- Add New Store Section -->
+        <div id="inline-add-store" class="form-group" style="display: none;">
+            {{ form.store_name.label_tag }}
+            {{ form.store_name }}
+            {% if form.store_name.errors %}
+              <div class="text-danger">
+                {% for error in form.store_name.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% if form.store_name.help_text %}
+              <small class="form-text text-muted">{{ form.store_name.help_text }}</small>
+            {% endif %}
+        </div>
+
+        <!-- Price Field -->
         <div class="form-group">
-            <label for="id_price">{{ form.price.label }}:</label>
+            {{ form.price.label_tag }}
             {{ form.price }}
-            {% if form.price.help_text %}
-                <span class="helptext">{{ form.price.help_text|safe }}</span>
-            {% endif %}
             {% if form.price.errors %}
-                <ul class="form-field-errors">
-                    {% for error in form.price.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
+              <div class="text-danger">
+                {% for error in form.price.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% if form.price.help_text %}
+              <small class="form-text text-muted">{{ form.price.help_text }}</small>
             {% endif %}
         </div>
 
+        <!-- Quantity Field -->
         <div class="form-group">
-            <label for="id_quantity">{{ form.quantity.label }}:</label>
+            {{ form.quantity.label_tag }}
             {{ form.quantity }}
-            {% if form.quantity.help_text %}
-                <span class="helptext">{{ form.quantity.help_text|safe }}</span>
-            {% endif %}
             {% if form.quantity.errors %}
-                <ul class="form-field-errors">
-                    {% for error in form.quantity.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
+              <div class="text-danger">
+                {% for error in form.quantity.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% if form.quantity.help_text %}
+              <small class="form-text text-muted">{{ form.quantity.help_text }}</small>
             {% endif %}
         </div>
 
+        <!-- Date Purchased Field -->
         <div class="form-group">
-            <label for="id_date_purchased">{{ form.date_purchased.label }}:</label>
+            {{ form.date_purchased.label_tag }}
             {{ form.date_purchased }}
-            {% if form.date_purchased.help_text %}
-                <span class="helptext">{{ form.date_purchased.help_text|safe }}</span>
-            {% endif %}
             {% if form.date_purchased.errors %}
-                <ul class="form-field-errors">
-                    {% for error in form.date_purchased.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
+              <div class="text-danger">
+                {% for error in form.date_purchased.errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
             {% endif %}
-        </div>
-
-        <div id="inline-add-store" style="display:none;" class="form-group">
-            <div style="border:1px solid var(--border-color); padding: var(--spacing-md); border-radius: var(--border-radius-md); background: var(--background-light);">
-                <h4 style="margin-top: 0;">Add New Store</h4>
-                <div class="form-group">
-                    <label for="id_store_name">{{ form.store_name.label }}:</label>
-                    {{ form.store_name }}
-                    {% if form.store_name.help_text %}
-                        <span class="helptext">{{ form.store_name.help_text|safe }}</span>
-                    {% endif %}
-                    {% if form.store_name.errors %}
-                        <ul class="form-field-errors">
-                            {% for error in form.store_name.errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    <label for="id_store_address_line1">Address:</label>
-                    <input type="text" name="store_address_line1" id="id_store_address_line1" placeholder="Street address" class="input" />
-                </div>
-                <div class="form-group">
-                    <label for="id_store_address_line2">Address 2:</label>
-                    <input type="text" name="store_address_line2" id="id_store_address_line2" placeholder="Apt, suite, etc. (optional)" class="input" />
-                </div>
-                <div class="form-group">
-                    <label for="id_store_city">City:</label>
-                    <input type="text" name="store_city" id="id_store_city" placeholder="City" class="input" />
-                </div>
-                <div class="form-group">
-                    <label for="id_store_state">State:</label>
-                    <input type="text" name="store_state" id="id_store_state" placeholder="State" class="input" />
-                </div>
-                <div class="form-group">
-                    <label for="id_store_zip_code">ZIP Code:</label>
-                    <input type="text" name="store_zip_code" id="id_store_zip_code" placeholder="ZIP code" class="input" />
-                </div>
-                <div class="form-group">
-                    <label for="id_store_country">Country:</label>
-                    <input type="text" name="store_country" id="id_store_country" placeholder="Country" class="input" value="USA" />
-                </div>
-                <div class="form-group">
-                    <label for="id_store_url">Store Website:</label>
-                    <input type="url" name="store_url" id="id_store_url" placeholder="Store website (https://...)" class="input input-url" />
-                </div>
-                <div class="form-group">
-                    <label><input type="checkbox" name="store_is_online" id="id_store_is_online" value="1" /> Online Store</label>
-                    <label><input type="checkbox" name="store_is_in_person" id="id_store_is_in_person" value="1" checked /> In-Person Store</label>
-                </div>
-            </div>
+            {% if form.date_purchased.help_text %}
+              <small class="form-text text-muted">{{ form.date_purchased.help_text }}</small>
+            {% endif %}
         </div>
 
         <div class="form-actions">
@@ -137,30 +106,4 @@
     </form>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Toggle new store form based on dropdown
-    const addStoreDiv = document.getElementById('inline-add-store');
-    const storeSelect = document.getElementById('id_store');
-    const storeNameInput = document.getElementById('id_store_name');
-
-    function toggleAddStoreSection() {
-        if (storeSelect && storeSelect.value === '__add_new__') {
-            addStoreDiv.style.display = 'block';
-            if (storeNameInput) storeNameInput.required = true;
-        } else {
-            addStoreDiv.style.display = 'none';
-            if (storeNameInput) {
-                storeNameInput.required = false;
-                storeNameInput.value = '';
-            }
-        }
-    }
-
-    if (storeSelect && addStoreDiv) {
-        storeSelect.addEventListener('change', toggleAddStoreSection);
-        // Initial state
-        toggleAddStoreSection();
-    }
-});
-</script> 
+ 

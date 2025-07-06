@@ -1,11 +1,1074 @@
 {% extends "packing_lists/base.html" %}
+{% load static %}
 
-{% block title %}Items{% endblock %}
+{% block title %}All Items{% endblock %}
 
-{% block page_header %}Items{% endblock %}
+{% block page_header %}All Items{% endblock %}
 
 {% block content %}
-    <div class="info-box">
-        <p>This is the Items page. Item management coming soon.</p>
+<div class="items-page">
+    <!-- View Toggle -->
+    <div class="view-toggle" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
+        <button type="button" id="cardViewBtn" class="btn btn-secondary active" aria-pressed="true" onclick="setItemsView('card')">Card View</button>
+        <button type="button" id="tableViewBtn" class="btn btn-secondary" aria-pressed="false" onclick="setItemsView('table')">Table View</button>
     </div>
+
+    <!-- Add Item Button -->
+    <div class="add-item-section">
+        <button type="button" class="btn btn-primary" onclick="openItemModal()">
+            ➕ Add New Item
+        </button>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+        <form method="GET" class="filters-form">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label for="search">Search Items:</label>
+                    <input type="text" id="search" name="search" value="{{ filters.search }}" placeholder="Search by item name...">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="category">Category:</label>
+                    <select id="category" name="category">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                            <option value="{{ category }}" {% if filters.category == category %}selected{% endif %}>
+                                {{ category }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="has_prices">Has Prices:</label>
+                    <select id="has_prices" name="has_prices">
+                        <option value="">All Items</option>
+                        <option value="yes" {% if filters.has_prices == 'yes' %}selected{% endif %}>With Prices</option>
+                        <option value="no" {% if filters.has_prices == 'no' %}selected{% endif %}>Without Prices</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="in_packing_list">In Packing List:</label>
+                    <select id="in_packing_list" name="in_packing_list">
+                        <option value="">All Items</option>
+                        {% for pl in packing_lists %}
+                            <option value="{{ pl.id }}" {% if filters.in_packing_list == pl.id|stringformat:"s" %}selected{% endif %}>
+                                {{ pl.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="price_min">Min Price:</label>
+                    <input type="number" id="price_min" name="price_min" value="{{ filters.price_min }}" step="0.01" min="0" placeholder="Min $">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="price_max">Max Price:</label>
+                    <input type="number" id="price_max" name="price_max" value="{{ filters.price_max }}" step="0.01" min="0" placeholder="Max $">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="store">Store:</label>
+                    <select id="store" name="store">
+                        <option value="">All Stores</option>
+                        {% for store in stores %}
+                            <option value="{{ store.id }}" {% if filters.store == store.id|stringformat:"s" %}selected{% endif %}>{{ store.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="city">City:</label>
+                    <select id="city" name="city">
+                        <option value="">All Cities</option>
+                        {% for city in cities %}
+                            <option value="{{ city }}" {% if filters.city == city %}selected{% endif %}>{{ city }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="state">State:</label>
+                    <select id="state" name="state">
+                        <option value="">All States</option>
+                        {% for state in states %}
+                            <option value="{{ state }}" {% if filters.state == state %}selected{% endif %}>{{ state }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="base">Military Installation:</label>
+                    <select id="base" name="base" onchange="onBaseChange()">
+                        <option value="">All Installations</option>
+                        {% for base in bases %}
+                            <option value="{{ base.id }}" {% if filters.base == base.id|stringformat:"s" %}selected{% endif %}>{{ base.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small>Shows stores within 15 miles of selected installation</small>
+                </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a href="{% url 'items' %}" class="btn btn-secondary">Clear Filters</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="bulk-actions" id="bulkActions" style="display: none;">
+        <div class="bulk-actions-content">
+            <span id="selectedCount">0 items selected</span>
+            <button type="button" class="btn btn-success" onclick="createPackingListFromSelected()">
+                Create Packing List from Selected
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="clearSelection()">
+                Clear Selection
+            </button>
+        </div>
+    </div>
+
+    <!-- Items Grid -->
+    <div id="itemsCardView" class="items-grid">
+        {% for item_data in items_with_data %}
+        <div class="item-card" data-item-id="{{ item_data.item.id }}">
+            <div class="item-header">
+                <label class="item-checkbox">
+                    <input type="checkbox" class="item-select" value="{{ item_data.item.id }}" onchange="updateSelection()">
+                    <span class="checkmark"></span>
+                </label>
+                <h3 class="item-name">{{ item_data.item.name }}</h3>
+            </div>
+            
+            <div class="item-content">
+                {% if item_data.item.description %}
+                    <p class="item-description">{{ item_data.item.description }}</p>
+                {% endif %}
+                
+                <!-- Price Information -->
+                <div class="price-section">
+                    {% if item_data.best_price %}
+                        <div class="best-price">
+                            <strong>Best Price:</strong> ${{ item_data.best_price.price_per_unit|floatformat:2 }}
+                            <span class="price-details">
+                                at {{ item_data.best_price.price.store.name }}
+                                {% if item_data.best_price.price.store.city %}
+                                    ({{ item_data.best_price.price.store.city }}, {{ item_data.best_price.price.store.state }})
+                                {% endif %}
+                                {% if item_data.best_price.vote_confidence > 0 %}
+                                    <span class="vote-confidence positive">✓</span>
+                                {% elif item_data.best_price.vote_confidence < 0 %}
+                                    <span class="vote-confidence negative">✗</span>
+                                {% endif %}
+                                <button type="button" class="edit-price-btn" title="Edit Price" onclick="openPriceModal({{ item_data.item.id }}, {{ item_data.best_price.price.id }})">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                </button>
+                            </span>
+                        </div>
+                        {% if item_data.price_range and item_data.total_prices > 1 %}
+                            <div class="price-range">
+                                <small>Range: {{ item_data.price_range }} ({{ item_data.total_prices }} prices)</small>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="no-price">
+                            <em>No pricing information available</em>
+                            <button type="button" class="add-price-btn" onclick="openPriceModal({{ item_data.item.id }}, null)">
+                                Add Price
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Packing List Appearances -->
+                {% if item_data.packing_list_appearances %}
+                    <div class="packing-lists-section">
+                        <h4>Appears in {{ item_data.total_packing_lists }} packing list{{ item_data.total_packing_lists|pluralize }}:</h4>
+                        <div class="packing-lists-list">
+                            {% for appearance in item_data.packing_list_appearances %}
+                                <div class="packing-list-appearance">
+                                    <a href="{% url 'view_packing_list' appearance.packing_list.id %}" class="packing-list-link">
+                                        {{ appearance.packing_list.name }}
+                                    </a>
+                                    <span class="quantity">({{ appearance.quantity }}x)</span>
+                                    {% if appearance.required %}
+                                        <span class="required-badge">Required</span>
+                                    {% endif %}
+                                    {% if appearance.section %}
+                                        <span class="section-badge">{{ appearance.section }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if appearance.notes %}
+                                    <div class="item-notes">
+                                        <small>{{ appearance.notes }}</small>
+                                    </div>
+                                {% endif %}
+                                {% if appearance.instructions %}
+                                    <div class="item-instructions">
+                                        <small><strong>Instructions:</strong> {{ appearance.instructions }}</small>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- All Prices (Collapsible) -->
+                {% if item_data.prices_with_votes|length > 1 %}
+                    <div class="all-prices-section">
+                        <button type="button" class="btn btn-sm btn-outline" onclick="togglePrices({{ item_data.item.id }})">
+                            Show All {{ item_data.total_prices }} Prices
+                        </button>
+                        <div class="all-prices" id="prices-{{ item_data.item.id }}" style="display: none;">
+                            {% for price_data in item_data.prices_with_votes %}
+                                <div class="price-item">
+                                    <div class="price-store">
+                                        <strong>{{ price_data.price.store.name }}</strong>
+                                        {% if price_data.price.store.city %}
+                                            <span class="store-city">({{ price_data.price.store.city }}, {{ price_data.price.store.state }})</span>
+                                        {% endif %}
+                                        {% if price_data.price.store.url %}
+                                            <a href="{{ price_data.price.store.url }}" target="_blank" class="store-link">🔗</a>
+                                        {% endif %}
+                                        <button type="button" class="edit-price-btn" title="Edit Price" onclick="openPriceModal({{ item_data.item.id }}, {{ price_data.price.id }})">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                        </button>
+                                    </div>
+                                    <div class="price-details">
+                                        ${{ price_data.price_per_unit|floatformat:2 }} 
+                                        {% if price_data.price.quantity > 1 %}
+                                            (for {{ price_data.price.quantity }})
+                                        {% endif %}
+                                    </div>
+                                    <div class="price-votes">
+                                        {% if price_data.total_votes > 0 %}
+                                            <span class="votes">
+                                                {{ price_data.upvotes }}↑ {{ price_data.downvotes }}↓
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="no-items">
+            <p>No items found matching your filters.</p>
+        </div>
+        {% endfor %}
+    </div>
+    <div id="itemsTableView" style="display:none;">
+        <div class="responsive-table-wrapper">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Best Price</th>
+                    <th>Packing Lists</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item_data in items_with_data %}
+                <tr>
+                    <td><strong>{{ item_data.item.name }}</strong></td>
+                    <td>{{ item_data.item.description|default:'—' }}</td>
+                    <td>
+                        {% if item_data.best_price %}
+                            ${{ item_data.best_price.price_per_unit|floatformat:2 }}<br>
+                            <small>at {{ item_data.best_price.price.store.name }}</small>
+                        {% else %}
+                            <em>No price</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item_data.packing_list_appearances %}
+                            <ul style="margin:0; padding-left:1em;">
+                            {% for appearance in item_data.packing_list_appearances %}
+                                <li>
+                                    <a href="{% url 'view_packing_list' appearance.packing_list.id %}">{{ appearance.packing_list.name }}</a>
+                                    ({{ appearance.quantity }}x)
+                                    {% if appearance.required %}<span class="required-badge">Required</span>{% endif %}
+                                    {% if appearance.section %}<span class="section-badge">{{ appearance.section }}</span>{% endif %}
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <em>—</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="openItemModal({{ item_data.item.id }})" title="Edit Item">
+                            <img src="{% static 'packing_lists/icons/edit.svg' %}" alt="Edit" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" /> Edit
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="openPriceModal({{ item_data.item.id }}, null)" title="Add Price">
+                            <img src="{% static 'packing_lists/icons/plus-database.svg' %}" alt="Add Price" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" /> Add Price
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+
+<!-- Price Modal -->
+<div id="price-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span id="close-price-modal" class="modal-close">&times;</span>
+        <div id="price-modal-body">
+            <!-- AJAX-loaded form will go here -->
+        </div>
+    </div>
+</div>
+
+<!-- Item Modal -->
+<div id="item-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div id="item-modal-body">
+            <!-- AJAX-loaded form will go here -->
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedItems = new Set();
+
+function updateSelection() {
+    const checkboxes = document.querySelectorAll('.item-select:checked');
+    selectedItems = new Set(Array.from(checkboxes).map(cb => cb.value));
+    
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    if (selectedItems.size > 0) {
+        bulkActions.style.display = 'block';
+        selectedCount.textContent = `${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} selected`;
+    } else {
+        bulkActions.style.display = 'none';
+    }
+}
+
+function clearSelection() {
+    document.querySelectorAll('.item-select').forEach(cb => cb.checked = false);
+    selectedItems.clear();
+    document.getElementById('bulkActions').style.display = 'none';
+}
+
+function createPackingListFromSelected() {
+    if (selectedItems.size === 0) {
+        alert('Please select at least one item.');
+        return;
+    }
+    
+    const params = new URLSearchParams();
+    selectedItems.forEach(itemId => {
+        params.append('selected_items', itemId);
+    });
+    
+    window.location.href = '/create_packing_list_from_items/?' + params.toString();
+}
+
+function togglePrices(itemId) {
+    const pricesDiv = document.getElementById(`prices-${itemId}`);
+    const button = pricesDiv.previousElementSibling;
+    
+    if (pricesDiv.style.display === 'none') {
+        pricesDiv.style.display = 'block';
+        button.textContent = 'Hide Prices';
+    } else {
+        pricesDiv.style.display = 'none';
+        button.textContent = `Show All Prices`;
+    }
+}
+
+function onBaseChange() {
+    const baseSelect = document.getElementById('base');
+    const citySelect = document.getElementById('city');
+    const stateSelect = document.getElementById('state');
+    if (baseSelect.value) {
+        citySelect.disabled = true;
+        stateSelect.disabled = true;
+    } else {
+        citySelect.disabled = false;
+        stateSelect.disabled = false;
+    }
+}
+
+function openPriceModal(itemId, priceId) {
+    console.log('Opening price modal for item:', itemId, 'price:', priceId);
+    const modal = document.getElementById('price-modal');
+    const modalBody = document.getElementById('price-modal-body');
+    modal.style.display = 'block';
+    modalBody.innerHTML = '<div style="padding:2em;text-align:center;">Loading...</div>';
+    let url = `/item/${itemId}/add_price_modal/`;
+    if (priceId) {
+        url += `?price_id=${priceId}`;
+    }
+    console.log('Fetching price modal from:', url);
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(response => {
+            console.log('Price modal response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Price modal data received, setting up handler');
+            modalBody.innerHTML = data.html;
+            // Set up form submission handler after content is loaded
+            setupPriceFormHandler();
+        })
+        .catch(error => {
+            console.error('Error loading price modal:', error);
+            modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;">Error loading form. Please try again.</div>';
+        });
+}
+
+function openItemModal() {
+    console.log('openItemModal called');
+    const modal = document.getElementById('item-modal');
+    const modalBody = document.getElementById('item-modal-body');
+    modal.style.display = 'block';
+    modalBody.innerHTML = '<div style="padding:2em;text-align:center;">Loading...</div>';
+    
+    fetch('{% url "add_item_modal" %}')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Modal data received');
+            modalBody.innerHTML = data.html;
+            // Set up form submission handler after content is loaded
+            setupItemFormHandler();
+        })
+        .catch(error => {
+            console.error('Error loading item modal:', error);
+            modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;">Error loading form. Please try again.</div>';
+        });
+}
+
+function setupPriceFormHandler() {
+    const priceForm = document.getElementById('price-form');
+    if (priceForm) {
+        // Remove any existing listeners by cloning
+        const newForm = priceForm.cloneNode(true);
+        priceForm.parentNode.replaceChild(newForm, priceForm);
+        
+        newForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            
+            // Show loading state
+            submitButton.textContent = 'Saving...';
+            submitButton.disabled = true;
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal and refresh page to show new price
+                    document.getElementById('price-modal').style.display = 'none';
+                    window.location.reload();
+                } else {
+                    // Replace modal content with error form
+                    document.getElementById('price-modal-body').innerHTML = data.html;
+                    setupPriceFormHandler(); // Re-setup handler for new form
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the price. Please try again.');
+            })
+            .finally(() => {
+                // Reset button state
+                submitButton.textContent = originalText;
+                submitButton.disabled = false;
+            });
+        });
+        
+        // Set up store selection handler
+        const storeSelect = document.getElementById('id_store');
+        const addStoreDiv = document.getElementById('inline-add-store');
+        const storeNameInput = document.getElementById('id_store_name');
+        
+        if (storeSelect && addStoreDiv) {
+            function toggleAddStoreSection() {
+                if (storeSelect.value === '__add_new__') {
+                    addStoreDiv.style.display = 'block';
+                    if (storeNameInput) {
+                        storeNameInput.required = true;
+                    }
+                } else {
+                    addStoreDiv.style.display = 'none';
+                    if (storeNameInput) {
+                        storeNameInput.required = false;
+                        storeNameInput.value = '';
+                    }
+                }
+            }
+            
+            storeSelect.addEventListener('change', toggleAddStoreSection);
+            toggleAddStoreSection(); // Initial state
+        }
+    }
+}
+
+function setupItemFormHandler() {
+    const itemForm = document.getElementById('item-form');
+    if (itemForm) {
+        // Remove any existing listeners by cloning
+        const newForm = itemForm.cloneNode(true);
+        itemForm.parentNode.replaceChild(newForm, itemForm);
+        
+        newForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            
+            // Show loading state
+            submitButton.textContent = 'Creating...';
+            submitButton.disabled = true;
+            
+            fetch('{% url "add_item_modal" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal and refresh page to show new item
+                    document.getElementById('item-modal').style.display = 'none';
+                    window.location.reload();
+                } else {
+                    // Replace modal content with error form
+                    document.getElementById('item-modal-body').innerHTML = data.html;
+                    setupItemFormHandler(); // Re-setup handler for new form
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while creating the item. Please try again.');
+            })
+            .finally(() => {
+                // Reset button state
+                submitButton.textContent = originalText;
+                submitButton.disabled = false;
+            });
+        });
+    }
+}
+
+document.getElementById('close-price-modal').onclick = function() {
+    document.getElementById('price-modal').style.display = 'none';
+};
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+    const priceModal = document.getElementById('price-modal');
+    const itemModal = document.getElementById('item-modal');
+    if (event.target === priceModal) {
+        priceModal.style.display = 'none';
+    }
+    if (event.target === itemModal) {
+        itemModal.style.display = 'none';
+    }
+};
+
+// Close modals with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        document.getElementById('price-modal').style.display = 'none';
+        document.getElementById('item-modal').style.display = 'none';
+    }
+});
+
+// Initialize selection on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateSelection();
+    onBaseChange();
+});
+
+function setItemsView(view) {
+    var card = document.getElementById('itemsCardView');
+    var table = document.getElementById('itemsTableView');
+    var cardBtn = document.getElementById('cardViewBtn');
+    var tableBtn = document.getElementById('tableViewBtn');
+    if (view === 'table') {
+        card.style.display = 'none';
+        table.style.display = '';
+        cardBtn.classList.remove('active');
+        cardBtn.setAttribute('aria-pressed', 'false');
+        tableBtn.classList.add('active');
+        tableBtn.setAttribute('aria-pressed', 'true');
+    } else {
+        card.style.display = '';
+        table.style.display = 'none';
+        cardBtn.classList.add('active');
+        cardBtn.setAttribute('aria-pressed', 'true');
+        tableBtn.classList.remove('active');
+        tableBtn.setAttribute('aria-pressed', 'false');
+    }
+}
+</script>
+
+<style>
+.items-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.add-item-section {
+    margin-bottom: 20px;
+    text-align: right;
+}
+
+.add-item-section .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.add-item-section .btn:hover {
+    background: var(--color-primary-dark);
+}
+
+.filters-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: var(--color-text-primary);
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    font-size: 14px;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.bulk-actions {
+    background: var(--color-primary);
+    color: white;
+    padding: 15px 20px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.bulk-actions-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.item-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    transition: box-shadow 0.2s ease;
+}
+
+.item-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.item-checkbox {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.item-checkbox input {
+    opacity: 0;
+    position: absolute;
+}
+
+.checkmark {
+    width: 20px;
+    height: 20px;
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: 4px;
+    display: inline-block;
+    position: relative;
+}
+
+.item-checkbox input:checked + .checkmark {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.item-checkbox input:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.item-name {
+    margin: 0;
+    font-size: 18px;
+    color: var(--color-text-primary);
+    flex: 1;
+}
+
+.item-description {
+    color: var(--color-text-secondary);
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.price-section {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: var(--color-background);
+    border-radius: var(--border-radius-sm);
+}
+
+.best-price {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.price-details {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.vote-confidence {
+    margin-left: 5px;
+    font-weight: bold;
+}
+
+.vote-confidence.positive {
+    color: var(--color-success);
+}
+
+.vote-confidence.negative {
+    color: var(--color-error);
+}
+
+.price-range {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.no-price {
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+.packing-lists-section {
+    margin-bottom: 15px;
+}
+
+.packing-lists-section h4 {
+    font-size: 14px;
+    margin-bottom: 10px;
+    color: var(--color-text-primary);
+}
+
+.packing-lists-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.packing-list-appearance {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.packing-list-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.packing-list-link:hover {
+    text-decoration: underline;
+}
+
+.quantity {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.required-badge {
+    background: var(--color-error);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.section-badge {
+    background: var(--color-secondary);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+}
+
+.item-notes,
+.item-instructions {
+    margin-left: 20px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.all-prices-section {
+    margin-top: 15px;
+}
+
+.all-prices {
+    margin-top: 10px;
+    padding: 10px;
+    background: var(--color-background);
+    border-radius: var(--border-radius-sm);
+}
+
+.price-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.price-item:last-child {
+    border-bottom: none;
+}
+
+.price-store {
+    flex: 1;
+}
+
+.store-link {
+    margin-left: 5px;
+    text-decoration: none;
+}
+
+.price-details {
+    font-weight: 500;
+    margin: 0 10px;
+}
+
+.price-votes {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.votes {
+    background: var(--color-surface);
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+.no-items {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px;
+    color: var(--color-text-secondary);
+}
+
+@media (max-width: 768px) {
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .items-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .bulk-actions-content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .price-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}
+
+/* Edit price button styling */
+.edit-price-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    margin-left: 8px;
+    border-radius: 4px;
+    color: var(--color-primary, #007bff);
+    transition: background-color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-price-btn:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    color: var(--color-primary-dark, #0056b3);
+}
+
+.edit-price-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Modal styling */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: #333;
+}
+
+/* Add price button for items without prices */
+.add-price-btn {
+    background: var(--color-primary, #007bff);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-top: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.add-price-btn:hover {
+    background: var(--color-primary-dark, #0056b3);
+}
+
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+        max-height: 90vh;
+    }
+}
+</style>
 {% endblock %} 
