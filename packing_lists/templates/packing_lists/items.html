@@ -57,6 +57,47 @@
                     <label for="price_max">Max Price:</label>
                     <input type="number" id="price_max" name="price_max" value="{{ filters.price_max }}" step="0.01" min="0" placeholder="Max $">
                 </div>
+                
+                <div class="filter-group">
+                    <label for="store">Store:</label>
+                    <select id="store" name="store">
+                        <option value="">All Stores</option>
+                        {% for store in stores %}
+                            <option value="{{ store.id }}" {% if filters.store == store.id|stringformat:"s" %}selected{% endif %}>{{ store.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="city">City:</label>
+                    <select id="city" name="city">
+                        <option value="">All Cities</option>
+                        {% for city in cities %}
+                            <option value="{{ city }}" {% if filters.city == city %}selected{% endif %}>{{ city }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="state">State:</label>
+                    <select id="state" name="state">
+                        <option value="">All States</option>
+                        {% for state in states %}
+                            <option value="{{ state }}" {% if filters.state == state %}selected{% endif %}>{{ state }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="base">Military Installation:</label>
+                    <select id="base" name="base" onchange="onBaseChange()">
+                        <option value="">All Installations</option>
+                        {% for base in bases %}
+                            <option value="{{ base.id }}" {% if filters.base == base.id|stringformat:"s" %}selected{% endif %}>{{ base.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small>Shows stores within 15 miles of selected installation</small>
+                </div>
             </div>
             
             <div class="filter-actions">
@@ -103,6 +144,9 @@
                             <strong>Best Price:</strong> ${{ item_data.best_price.price_per_unit|floatformat:2 }}
                             <span class="price-details">
                                 at {{ item_data.best_price.price.store.name }}
+                                {% if item_data.best_price.price.store.city %}
+                                    ({{ item_data.best_price.price.store.city }}, {{ item_data.best_price.price.store.state }})
+                                {% endif %}
                                 {% if item_data.best_price.vote_confidence > 0 %}
                                     <span class="vote-confidence positive">✓</span>
                                 {% elif item_data.best_price.vote_confidence < 0 %}
@@ -166,6 +210,9 @@
                                 <div class="price-item">
                                     <div class="price-store">
                                         <strong>{{ price_data.price.store.name }}</strong>
+                                        {% if price_data.price.store.city %}
+                                            <span class="store-city">({{ price_data.price.store.city }}, {{ price_data.price.store.state }})</span>
+                                        {% endif %}
                                         {% if price_data.price.store.url %}
                                             <a href="{{ price_data.price.store.url }}" target="_blank" class="store-link">🔗</a>
                                         {% endif %}
@@ -249,9 +296,23 @@ function togglePrices(itemId) {
     }
 }
 
+function onBaseChange() {
+    const baseSelect = document.getElementById('base');
+    const citySelect = document.getElementById('city');
+    const stateSelect = document.getElementById('state');
+    if (baseSelect.value) {
+        citySelect.disabled = true;
+        stateSelect.disabled = true;
+    } else {
+        citySelect.disabled = false;
+        stateSelect.disabled = false;
+    }
+}
+
 // Initialize selection on page load
 document.addEventListener('DOMContentLoaded', function() {
     updateSelection();
+    onBaseChange();
 });
 </script>
 

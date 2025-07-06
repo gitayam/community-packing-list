@@ -4,6 +4,7 @@ from django.contrib import messages # For feedback to the user
 from django.db import IntegrityError
 from .models import PackingList, Item, PackingListItem, School, Price, Vote, Store, Base
 from .forms import PackingListForm, PriceForm, VoteForm, PackingListItemForm, StoreForm
+from django.db.models import Q
 
 # Requires login for actions that modify data if user accounts are active
 # from django.contrib.auth.decorators import login_required
@@ -588,6 +589,7 @@ def items_page(request):
     """
     Comprehensive items page showing all items with prices, notes, and packing list associations.
     Users can checkmark items and create new packing lists from selected items.
+    Now supports filtering by store, city, state, and military installation (Base, within 15 miles).
     """
     # Get filter parameters
     search_query = request.GET.get('search', '').strip()
@@ -596,6 +598,10 @@ def items_page(request):
     price_max = request.GET.get('price_max', '')
     has_prices = request.GET.get('has_prices', '')
     in_packing_list = request.GET.get('in_packing_list', '')
+    store_filter = request.GET.get('store', '')
+    city_filter = request.GET.get('city', '')
+    state_filter = request.GET.get('state', '')
+    base_filter = request.GET.get('base', '')
     
     # Get all items with related data
     items = Item.objects.prefetch_related(
@@ -618,6 +624,41 @@ def items_page(request):
     if in_packing_list:
         items = items.filter(packing_list_items__packing_list_id=in_packing_list).distinct()
     
+    # Filtering by store/city/state/base
+    store_q = Q()
+    base_obj = None
+    if base_filter:
+        try:
+            base_obj = Base.objects.get(id=base_filter)
+        except Base.DoesNotExist:
+            base_obj = None
+    if base_obj and base_obj.latitude and base_obj.longitude:
+        # Find stores within 15 miles of the base
+        store_ids_near_base = []
+        for store in Store.objects.exclude(latitude__isnull=True).exclude(longitude__isnull=True):
+            from math import radians, sin, cos, sqrt, atan2
+            lat1, lon1 = radians(base_obj.latitude), radians(base_obj.longitude)
+            lat2, lon2 = radians(store.latitude), radians(store.longitude)
+            dlat = lat2 - lat1
+            dlon = lon2 - lon1
+            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+            c = 2 * atan2(sqrt(a), sqrt(1-a))
+            r = 3956
+            distance = c * r
+            if distance <= 15:
+                store_ids_near_base.append(store.id)
+        if store_ids_near_base:
+            store_q &= Q(prices__store_id__in=store_ids_near_base)
+    else:
+        if store_filter:
+            store_q &= Q(prices__store_id=store_filter)
+        if city_filter:
+            store_q &= Q(prices__store__city__iexact=city_filter)
+        if state_filter:
+            store_q &= Q(prices__store__state__iexact=state_filter)
+    if store_q:
+        items = items.filter(store_q).distinct()
+    
     # Get unique categories for filter dropdown
     categories = PackingListItem.objects.values_list('section', flat=True).exclude(
         section__isnull=True
@@ -626,28 +667,55 @@ def items_page(request):
     # Get packing lists for filter dropdown
     packing_lists = PackingList.objects.all().order_by('name')
     
+    # Get all stores, cities, states, and bases for filter dropdowns
+    stores = Store.objects.all().order_by('name')
+    cities = Store.objects.exclude(city__isnull=True).exclude(city='').values_list('city', flat=True).distinct().order_by('city')
+    states = Store.objects.exclude(state__isnull=True).exclude(state='').values_list('state', flat=True).distinct().order_by('state')
+    bases = Base.objects.all().order_by('name')
+    
     # Prepare items with comprehensive data
     items_with_data = []
     for item in items:
         # Get all prices for this item with vote data
         prices_with_votes = []
         for price in item.prices.all():
+            # Only include prices from stores matching the filter
+            if base_obj and base_obj.latitude and base_obj.longitude:
+                if not (price.store.latitude and price.store.longitude):
+                    continue
+                from math import radians, sin, cos, sqrt, atan2
+                lat1, lon1 = radians(base_obj.latitude), radians(base_obj.longitude)
+                lat2, lon2 = radians(price.store.latitude), radians(price.store.longitude)
+                dlat = lat2 - lat1
+                dlon = lon2 - lon1
+                a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+                c = 2 * atan2(sqrt(a), sqrt(1-a))
+                r = 3956
+                distance = c * r
+                if distance > 15:
+                    continue
+            if store_filter and str(price.store.id) != str(store_filter):
+                continue
+            if city_filter and (not price.store.city or price.store.city.lower() != city_filter.lower()):
+                continue
+            if state_filter and (not price.store.state or price.store.state.lower() != state_filter.lower()):
+                continue
             upvotes = price.votes.filter(is_correct_price=True).count()
             downvotes = price.votes.filter(is_correct_price=False).count()
             total_votes = upvotes + downvotes
             vote_confidence = (upvotes - downvotes) / max(total_votes, 1)
-            
             prices_with_votes.append({
                 'price': price,
                 'upvotes': upvotes,
                 'downvotes': downvotes,
                 'vote_confidence': vote_confidence,
-                'price_per_unit': float(price.price) / max(price.quantity, 1)
+                'price_per_unit': float(price.price) / max(price.quantity, 1),
+                'store_city': price.store.city,
+                'store_state': price.store.state,
+                'store_name': price.store.name
             })
-        
         # Sort prices by vote confidence and price
         prices_with_votes.sort(key=lambda x: (x['vote_confidence'], -x['price_per_unit']), reverse=True)
-        
         # Get all packing lists this item appears in
         packing_list_appearances = []
         for pli in item.packing_list_items.all():
@@ -660,25 +728,21 @@ def items_page(request):
                 'nsn_lin': pli.nsn_lin,
                 'instructions': pli.instructions
             })
-        
         # Calculate price range
         price_range = None
         if prices_with_votes:
             min_price = min(p['price_per_unit'] for p in prices_with_votes)
             max_price = max(p['price_per_unit'] for p in prices_with_votes)
             price_range = f"${min_price:.2f} - ${max_price:.2f}"
-        
         # Apply price filters
         if price_min and prices_with_votes:
             min_item_price = min(p['price_per_unit'] for p in prices_with_votes)
             if min_item_price < float(price_min):
                 continue
-        
         if price_max and prices_with_votes:
             min_item_price = min(p['price_per_unit'] for p in prices_with_votes)
             if min_item_price > float(price_max):
                 continue
-        
         items_with_data.append({
             'item': item,
             'prices_with_votes': prices_with_votes,
@@ -688,14 +752,16 @@ def items_page(request):
             'total_prices': len(prices_with_votes),
             'total_packing_lists': len(packing_list_appearances)
         })
-    
     # Sort items by name
     items_with_data.sort(key=lambda x: x['item'].name.lower())
-    
     context = {
         'items_with_data': items_with_data,
         'categories': categories,
         'packing_lists': packing_lists,
+        'stores': stores,
+        'cities': cities,
+        'states': states,
+        'bases': bases,
         'filters': {
             'search': search_query,
             'category': category_filter,
@@ -703,6 +769,10 @@ def items_page(request):
             'price_max': price_max,
             'has_prices': has_prices,
             'in_packing_list': in_packing_list,
+            'store': store_filter,
+            'city': city_filter,
+            'state': state_filter,
+            'base': base_filter,
         },
         'title': 'All Items'
     }
