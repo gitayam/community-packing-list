@@ -340,30 +340,21 @@ class PackingListDetailManager {
 
   private async handlePriceModalClick(event: Event): Promise<void> {
     const target = event.target as HTMLElement;
-    if (target.classList.contains('price-details-btn')) {
-      const itemId = (target as HTMLElement).dataset.itemId;
-      if (!itemId) return Promise.resolve();
-
-      const listId = (target as HTMLElement).dataset.listId;
-      
+    // Add Price: open add price modal
+    if (target.closest('.add-price-btn')) {
+      const btn = target.closest('.add-price-btn') as HTMLElement;
+      const itemId = btn.dataset.itemId;
+      const listId = btn.dataset.listId;
       if (!itemId || !listId) return Promise.resolve();
-
-      // Show loading state
-      UIUtils.showLoading(target as HTMLButtonElement);
-
+      UIUtils.showLoading(btn as HTMLButtonElement);
       try {
-        // Load the price form via AJAX
         const response = await apiClient.get(`/item/${itemId}/add_price_modal/`);
-        
         if (response.html) {
           const modal = DOMUtils.getElement<HTMLElement>('#price-modal');
           const modalBody = DOMUtils.getElement<HTMLElement>('#price-modal-body');
-          
           if (modal && modalBody) {
             modalBody.innerHTML = response.html;
             UIUtils.showModal('price-modal');
-            
-            // Handle form submission
             const form = modalBody.querySelector('form') as HTMLFormElement;
             if (form) {
               this.setupPriceFormSubmission(form, itemId, listId);
@@ -374,9 +365,15 @@ class PackingListDetailManager {
         console.error('Error loading price form:', error);
         UIUtils.showNotification('Error loading price form. Please try again.', 'error');
       } finally {
-        // Remove loading state
-        UIUtils.hideLoading(target as HTMLButtonElement, 'Add Price');
+        UIUtils.hideLoading(btn as HTMLButtonElement, 'Add Price');
       }
+    }
+    // Expand Price: open price details
+    else if (target.closest('.expand-price-btn')) {
+      const btn = target.closest('.expand-price-btn') as HTMLElement;
+      const itemId = btn.dataset.itemId;
+      if (!itemId) return Promise.resolve();
+      this.handlePriceDetailsClick(btn);
     }
     return Promise.resolve();
   }
@@ -422,28 +419,20 @@ class PackingListDetailManager {
 
   private async handleEditItemModalClick(event: Event): Promise<void> {
     const target = event.target as HTMLElement;
-    if (target.classList.contains('edit-item-btn')) {
-      const listId = (target as HTMLElement).dataset.listId;
-      const pliId = (target as HTMLElement).dataset.pliId;
-      
+    if (target.closest('.edit-item-btn')) {
+      const btn = target.closest('.edit-item-btn') as HTMLElement;
+      const listId = btn.dataset.listId;
+      const pliId = btn.dataset.pliId;
       if (!listId || !pliId) return Promise.resolve();
-
-      // Show loading state
-      UIUtils.showLoading(target as HTMLButtonElement);
-
+      UIUtils.showLoading(btn as HTMLButtonElement);
       try {
-        // Load the edit form via AJAX
         const response = await apiClient.get(`/list/${listId}/item/${pliId}/edit_modal/`);
-        
         if (response.html) {
           const modal = DOMUtils.getElement<HTMLElement>('#edit-item-modal');
           const modalBody = DOMUtils.getElement<HTMLElement>('#edit-item-modal-body');
-          
           if (modal && modalBody) {
             modalBody.innerHTML = response.html;
             UIUtils.showModal('edit-item-modal');
-            
-            // Handle form submission
             const form = modalBody.querySelector('form') as HTMLFormElement;
             if (form) {
               this.setupEditItemFormSubmission(form, listId, pliId);
@@ -454,8 +443,7 @@ class PackingListDetailManager {
         console.error('Error loading edit form:', error);
         UIUtils.showNotification('Error loading edit form. Please try again.', 'error');
       } finally {
-        // Remove loading state
-        UIUtils.hideLoading(target as HTMLButtonElement, 'Edit');
+        UIUtils.hideLoading(btn as HTMLButtonElement, 'Edit');
       }
     }
     return Promise.resolve();
