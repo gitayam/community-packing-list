@@ -987,6 +987,7 @@ def delete_packing_lists(request):
     """
     if request.method == 'POST':
         list_ids = request.POST.getlist('list_ids')
+        print('DEBUG: Received list_ids for deletion:', list_ids)
         
         if not list_ids:
             messages.error(request, "Please select at least one list to delete.")
