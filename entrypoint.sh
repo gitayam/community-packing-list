@@ -3,9 +3,28 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
+# Function to check if database tables exist
+check_tables_exist() {
+    python -c "
+import django
+import os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'community_packing_list.settings')
+django.setup()
+from django.db import connection
+cursor = connection.cursor()
+try:
+    cursor.execute(\"SELECT COUNT(*) FROM packing_lists_packinglist\")
+    print('Tables exist')
+    exit(0)
+except:
+    print('Tables do not exist')
+    exit(1)
+"
+}
+
 # Wait for the database to be ready
 echo "Waiting for postgres..."
-while ! pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER -q -d $DB_NAME; do
+while ! pg_isready -h ${DB_HOST:-db} -p ${DB_PORT:-5432} -U ${DB_USER:-packinglist_user} -q -d ${DB_NAME:-packinglist_dev}; do
   sleep 1
 done
 echo "PostgreSQL started"
@@ -14,9 +33,32 @@ echo "PostgreSQL started"
 echo "Applying database migrations..."
 python manage.py migrate --noinput
 
+# Check if we need to create example data
+echo "Checking if example data exists..."
+if ! check_tables_exist || [ "$(python manage.py shell -c "from packing_lists.models import PackingList; print(PackingList.objects.count())")" = "0" ]; then
+    echo "Creating example data..."
+    python manage.py create_example_data
+else
+    echo "Example data already exists, skipping creation."
+fi
+
 # Collect static files
 echo "Collecting static files..."
 python manage.py collectstatic --noinput --clear
+
+# Create superuser if it doesn't exist (for development)
+if [ "$DJANGO_SUPERUSER_USERNAME" ] && [ "$DJANGO_SUPERUSER_PASSWORD" ] && [ "$DJANGO_SUPERUSER_EMAIL" ]; then
+    echo "Creating superuser if it doesn't exist..."
+    python manage.py shell -c "
+from django.contrib.auth import get_user_model
+User = get_user_model()
+if not User.objects.filter(username='$DJANGO_SUPERUSER_USERNAME').exists():
+    User.objects.create_superuser('$DJANGO_SUPERUSER_USERNAME', '$DJANGO_SUPERUSER_EMAIL', '$DJANGO_SUPERUSER_PASSWORD')
+    print('Superuser created successfully')
+else:
+    print('Superuser already exists')
+"
+fi
 
 # Start server
 # The CMD in Dockerfile or command in docker-compose.yml will be executed after this script.
