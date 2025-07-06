@@ -72,6 +72,16 @@ function deleteLists() {
     if (selectedLists.size === 0) return;
     if (!confirm('Are you sure you want to delete the selected lists?')) return;
     const form = document.getElementById('bulkActionsForm');
+    // Remove any previous hidden inputs
+    Array.from(form.querySelectorAll('input[name="list_ids"]')).forEach(e => e.remove());
+    // Add hidden inputs for each selected list
+    selectedLists.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'list_ids';
+        input.value = id;
+        form.appendChild(input);
+    });
     form.action = '{% url "delete_packing_lists" %}';
     form.method = 'post';
     form.submit();
