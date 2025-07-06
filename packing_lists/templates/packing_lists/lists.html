@@ -12,32 +12,49 @@
     {% if packing_lists %}
         <form id="bulkActionsForm" method="post">
             {% csrf_token %}
-            <div class="bulk-actions" id="bulkActions" style="display: none;">
+            <div class="bulk-actions" id="bulkActions" style="display: none; margin-bottom: 1.5rem;">
                 <button type="button" class="btn btn-primary" id="mergeBtn" disabled onclick="mergeLists()">Merge</button>
                 <button type="button" class="btn btn-danger" id="deleteBtn" disabled onclick="deleteLists()">Delete</button>
                 <span id="selectedCount">0 selected</span>
             </div>
-            <ul class="packing-list-list">
-                {% for pl in packing_lists %}
-                    <li class="packing-list-row">
-                        <label class="list-checkbox">
-                            <input type="checkbox" class="list-select" value="{{ pl.id }}" onchange="updateBulkActions()">
-                            <span class="checkmark"></span>
-                        </label>
-                        <a href="{% url 'view_packing_list' pl.id %}">{{ pl.name }}</a>
-                        {% if pl.event_type %} ({{ pl.get_event_type_display }}){% endif %}
-                        {% if pl.last_updated %} - Last updated: {{ pl.last_updated }}{% endif %}
-                        <div class="list-actions">
-                            <a href="{% url 'clone_packing_list' pl.id %}" class="btn btn-sm btn-secondary">Clone</a>
-                            <a href="{% url 'export_packing_list_pdf' pl.id %}" class="btn btn-sm btn-outline">Export PDF</a>
+            <ul class="packing-lists-ul">
+                {% for plist in packing_lists %}
+                    <li class="packing-list-entry">
+                        <div class="list-entry-header">
+                            <div class="list-entry-title-group" style="display: flex; align-items: center; gap: 1rem;">
+                                <label class="list-checkbox" style="margin: 0;">
+                                    <input type="checkbox" class="list-select" value="{{ plist.id }}" onchange="updateBulkActions()">
+                                    <span class="checkmark"></span>
+                                </label>
+                                <h3 style="margin: 0;"><a href="{% url 'view_packing_list' plist.id %}">{{ plist.name }}</a></h3>
+                                {% if plist.school %}
+                                    <span class="school-tag">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-briefcase"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                                        {{ plist.school.name }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="list-actions">
+                                <a href="{% url 'view_packing_list' plist.id %}" class="button text-small">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    View
+                                </a>
+                                <a href="{% url 'clone_packing_list' plist.id %}" class="button text-small">Clone</a>
+                                <a href="{% url 'export_packing_list_pdf' plist.id %}" class="button text-small">Export PDF</a>
+                            </div>
                         </div>
+                        {% if plist.description %}
+                            <p class="item-notes mt-1">{{ plist.description|truncatewords:30 }}</p>
+                        {% else %}
+                            <p class="text-muted item-notes mt-1">No description provided.</p>
+                        {% endif %}
                     </li>
                 {% endfor %}
             </ul>
         </form>
     {% else %}
         <div class="info-box no-lists-box">
-            <p class="no-lists">No packing lists found. Click 'Create New List' to get started!</p>
+            <p class="no-lists">No packing lists found. Why not create or upload one to get started?</p>
         </div>
     {% endif %}
 
