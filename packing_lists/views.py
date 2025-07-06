@@ -1128,7 +1128,8 @@ def export_packing_list_pdf(request, list_id):
         details_data.append(['Base:', packing_list.base.name])
     if packing_list.event_type:
         details_data.append(['Event Type:', packing_list.event_type])
-    details_data.append(['Created:', packing_list.created_at.strftime('%B %d, %Y')])
+    if packing_list.last_updated:
+        details_data.append(['Last Updated:', packing_list.last_updated])
     
     if details_data:
         details_table = Table(details_data, colWidths=[1.5*inch, 4*inch])
