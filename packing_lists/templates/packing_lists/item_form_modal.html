@@ -44,51 +44,7 @@
     </form>
 </div>
 
-<script>
-document.getElementById('item-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const submitButton = this.querySelector('button[type="submit"]');
-    const originalText = submitButton.textContent;
-    
-    // Show loading state
-    submitButton.textContent = 'Creating...';
-    submitButton.disabled = true;
-    
-    fetch('{% url "add_item_modal" %}', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Close modal and refresh page to show new item
-            closeItemModal();
-            window.location.reload();
-        } else {
-            // Replace modal content with error form
-            document.getElementById('item-modal-body').innerHTML = data.html;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while creating the item. Please try again.');
-    })
-    .finally(() => {
-        // Reset button state
-        submitButton.textContent = originalText;
-        submitButton.disabled = false;
-    });
-});
 
-function closeItemModal() {
-    document.getElementById('item-modal').style.display = 'none';
-}
-</script>
 
 <style>
 .modal-header {
