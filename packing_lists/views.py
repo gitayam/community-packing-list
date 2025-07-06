@@ -899,22 +899,22 @@ def merge_packing_lists(request):
         
         if not list1_id or not list2_id:
             messages.error(request, "Please select two lists to merge.")
-            return redirect('lists_page')
+            return redirect('lists')
         
         if list1_id == list2_id:
             messages.error(request, "Cannot merge a list with itself.")
-            return redirect('lists_page')
+            return redirect('lists')
         
         if not new_list_name:
             messages.error(request, "Please provide a name for the merged list.")
-            return redirect('lists_page')
+            return redirect('lists')
         
         try:
             list1 = PackingList.objects.get(id=list1_id)
             list2 = PackingList.objects.get(id=list2_id)
         except PackingList.DoesNotExist:
             messages.error(request, "One or both lists not found.")
-            return redirect('lists_page')
+            return redirect('lists')
         
         # Create the merged list
         merged_list = PackingList.objects.create(
@@ -989,7 +989,7 @@ def delete_packing_lists(request):
         
         if not list_ids:
             messages.error(request, "Please select at least one list to delete.")
-            return redirect('lists_page')
+            return redirect('lists')
         
         deleted_count = 0
         deleted_names = []
@@ -1010,13 +1010,13 @@ def delete_packing_lists(request):
         else:
             messages.error(request, "No lists were deleted.")
         
-        return redirect('lists_page')
+        return redirect('lists')
     
     # GET request - show delete confirmation
     list_ids = request.GET.getlist('list_ids')
     if not list_ids:
         messages.error(request, "No lists selected for deletion.")
-        return redirect('lists_page')
+        return redirect('lists')
     
     packing_lists = PackingList.objects.filter(id__in=list_ids).order_by('name')
     if len(packing_lists) != len(list_ids):
@@ -1035,14 +1035,14 @@ def clone_packing_list(request, list_id):
         original_list = PackingList.objects.get(id=list_id)
     except PackingList.DoesNotExist:
         messages.error(request, "Packing list not found.")
-        return redirect('lists_page')
+        return redirect('lists')
     
     if request.method == 'POST':
         new_name = request.POST.get('new_name', '').strip()
         
         if not new_name:
             messages.error(request, "Please provide a name for the cloned list.")
-            return redirect('lists_page')
+            return redirect('lists')
         
         # Create the cloned list
         cloned_list = PackingList.objects.create(
@@ -1085,7 +1085,7 @@ def export_packing_list_pdf(request, list_id):
         packing_list = PackingList.objects.get(id=list_id)
     except PackingList.DoesNotExist:
         messages.error(request, "Packing list not found.")
-        return redirect('lists_page')
+        return redirect('lists')
     
     # Create the PDF response
     response = HttpResponse(content_type='application/pdf')
