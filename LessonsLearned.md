@@ -126,4 +126,15 @@ You are a senior developer. Identify the best method to accomplish the task with
 - Use proper field types and constraints
 - Implement proper relationships between models
 
+## GitHub Issue Creation Best Practice
+
+When creating a GitHub issue:
+- First, create a temporary markdown file to stage the issue content.
+- List all existing labels in the file and check if the needed labels exist.
+- Write and format the issue body clearly in markdown, including all relevant sections (description, steps to reproduce, expected/actual behavior, environment, etc.).
+- Use the markdown file to create the issue via the GitHub CLI, applying the correct labels.
+- After the issue is created, delete the temporary markdown file to keep the repo clean.
+
+This ensures issues are well-formatted, label-aware, and the process is repeatable and organized.
+
 ---
