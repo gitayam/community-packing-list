@@ -1,4 +1,5 @@
 {% extends "packing_lists/base.html" %}
+{% load static %}
 
 {% block title %}All Items{% endblock %}
 
@@ -6,6 +7,12 @@
 
 {% block content %}
 <div class="items-page">
+    <!-- View Toggle -->
+    <div class="view-toggle" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
+        <button type="button" id="cardViewBtn" class="btn btn-secondary active" aria-pressed="true" onclick="setItemsView('card')">Card View</button>
+        <button type="button" id="tableViewBtn" class="btn btn-secondary" aria-pressed="false" onclick="setItemsView('table')">Table View</button>
+    </div>
+
     <!-- Add Item Button -->
     <div class="add-item-section">
         <button type="button" class="btn btn-primary" onclick="openItemModal()">
@@ -128,7 +135,7 @@
     </div>
 
     <!-- Items Grid -->
-    <div class="items-grid">
+    <div id="itemsCardView" class="items-grid">
         {% for item_data in items_with_data %}
         <div class="item-card" data-item-id="{{ item_data.item.id }}">
             <div class="item-header">
@@ -258,6 +265,61 @@
             <p>No items found matching your filters.</p>
         </div>
         {% endfor %}
+    </div>
+    <div id="itemsTableView" style="display:none;">
+        <div class="responsive-table-wrapper">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Best Price</th>
+                    <th>Packing Lists</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item_data in items_with_data %}
+                <tr>
+                    <td><strong>{{ item_data.item.name }}</strong></td>
+                    <td>{{ item_data.item.description|default:'—' }}</td>
+                    <td>
+                        {% if item_data.best_price %}
+                            ${{ item_data.best_price.price_per_unit|floatformat:2 }}<br>
+                            <small>at {{ item_data.best_price.price.store.name }}</small>
+                        {% else %}
+                            <em>No price</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item_data.packing_list_appearances %}
+                            <ul style="margin:0; padding-left:1em;">
+                            {% for appearance in item_data.packing_list_appearances %}
+                                <li>
+                                    <a href="{% url 'view_packing_list' appearance.packing_list.id %}">{{ appearance.packing_list.name }}</a>
+                                    ({{ appearance.quantity }}x)
+                                    {% if appearance.required %}<span class="required-badge">Required</span>{% endif %}
+                                    {% if appearance.section %}<span class="section-badge">{{ appearance.section }}</span>{% endif %}
+                                </li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <em>—</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="openItemModal({{ item_data.item.id }})" title="Edit Item">
+                            <img src="{% static 'packing_lists/icons/edit.svg' %}" alt="Edit" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" /> Edit
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="openPriceModal({{ item_data.item.id }}, null)" title="Add Price">
+                            <img src="{% static 'packing_lists/icons/plus-database.svg' %}" alt="Add Price" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" /> Add Price
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
     </div>
 </div>
 
@@ -551,6 +613,28 @@ document.addEventListener('DOMContentLoaded', function() {
     updateSelection();
     onBaseChange();
 });
+
+function setItemsView(view) {
+    var card = document.getElementById('itemsCardView');
+    var table = document.getElementById('itemsTableView');
+    var cardBtn = document.getElementById('cardViewBtn');
+    var tableBtn = document.getElementById('tableViewBtn');
+    if (view === 'table') {
+        card.style.display = 'none';
+        table.style.display = '';
+        cardBtn.classList.remove('active');
+        cardBtn.setAttribute('aria-pressed', 'false');
+        tableBtn.classList.add('active');
+        tableBtn.setAttribute('aria-pressed', 'true');
+    } else {
+        card.style.display = '';
+        table.style.display = 'none';
+        cardBtn.classList.add('active');
+        cardBtn.setAttribute('aria-pressed', 'true');
+        tableBtn.classList.remove('active');
+        tableBtn.setAttribute('aria-pressed', 'false');
+    }
+}
 </script>
 
 <style>
