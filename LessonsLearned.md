@@ -2,7 +2,13 @@
 
 This document captures key lessons learned during the development and debugging of the Community Packing List Application. These insights will help streamline future development and troubleshooting.
 
-You are a senior developer. Identify the best method to accomplish the task with modern and secure code. Don't ask if i want to fix it , of course we need to fix it. 
+You are a senior developer. Identify the best method to accomplish the task with modern and secure code. Don't ask if i want to fix it , of course we need to fix it. This project uses docker containers don't install packages locally. See the section about git stage and commit as well. 
+
+## Docker-Only Development Workflow
+- All npm, Node.js, and Python commands must be run inside Docker containers.
+- Never install or run packages locally on your host.
+- Use `docker compose exec <service> <command>` for all development, builds, and dependency management.
+- See the section below for proper Git staging and commit practices.
 
 ## Common Issues and Solutions
 

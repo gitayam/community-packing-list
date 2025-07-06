@@ -21,6 +21,7 @@ class PackingListFormManager {
     this.cacheOptions();
     this.setupEventListeners();
     this.updateTypeOptions();
+    this.handleEventTypeChange();
   }
 
   private setupElements(): void {
@@ -70,6 +71,15 @@ class PackingListFormManager {
   private setupEventListeners(): void {
     if (this.branchField) {
       this.branchField.addEventListener('change', this.updateTypeOptions.bind(this));
+    }
+    // Add event listener for event_type changes
+    const eventTypeField = DOMUtils.getElement<HTMLSelectElement>('[name="event_type"]');
+    if (eventTypeField) {
+      eventTypeField.addEventListener('change', this.handleEventTypeChange.bind(this));
+    }
+    // Add event listener for assessment_type changes
+    if (this.assessmentTypeField) {
+      this.assessmentTypeField.addEventListener('change', this.handleAssessmentTypeChange.bind(this));
     }
   }
 
@@ -131,6 +141,29 @@ class PackingListFormManager {
     if (schoolRow && this.schoolTypeField) {
       const hasSchoolType = this.schoolTypeField.value && this.schoolTypeField.value !== '';
       schoolRow.style.display = hasSchoolType ? 'block' : 'none';
+    }
+  }
+
+  private handleEventTypeChange(): void {
+    this.updateTypeOptions();
+    // Show/hide custom event type input
+    const eventTypeField = DOMUtils.getElement<HTMLSelectElement>('[name="event_type"]');
+    const customEventTypeRow = document.querySelector('p:has([name="custom_event_type"])') as HTMLElement;
+    if (eventTypeField && customEventTypeRow) {
+      customEventTypeRow.style.display = eventTypeField.value === 'other' ? 'block' : 'none';
+      // Show/hide assessment type row if assessment selected
+      const assessmentTypeRow = DOMUtils.getElement<HTMLElement>('#assessment-type-row');
+      if (assessmentTypeRow) {
+        assessmentTypeRow.style.display = eventTypeField.value === 'assessment' ? 'block' : 'none';
+      }
+    }
+  }
+
+  private handleAssessmentTypeChange(): void {
+    // Show/hide custom event type input if 'other' is selected in assessment_type
+    const customEventTypeRow = document.querySelector('p:has([name="custom_event_type"])') as HTMLElement;
+    if (this.assessmentTypeField && customEventTypeRow) {
+      customEventTypeRow.style.display = this.assessmentTypeField.value === 'other' ? 'block' : 'none';
     }
   }
 }
