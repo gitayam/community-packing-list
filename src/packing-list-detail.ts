@@ -391,7 +391,7 @@ class PackingListDetailManager {
 
     try {
       // Load the price form via AJAX
-      const response = await apiClient.get(`/item/${itemId}/add_price_modal/to_list/${listId}/`);
+      const response = await apiClient.get(`/item/${itemId}/add_price_modal/`);
       
       if (response.html) {
         const modal = DOMUtils.getElement<HTMLElement>('#price-modal');
@@ -471,7 +471,7 @@ class PackingListDetailManager {
 
     try {
       // Load the edit form via AJAX
-      const response = await apiClient.get(`/list/${listId}/edit_item_modal/${pliId}/`);
+      const response = await apiClient.get(`/list/${listId}/item/${pliId}/edit_modal/`);
       
       if (response.html) {
         const modal = DOMUtils.getElement<HTMLElement>('#edit-item-modal');
