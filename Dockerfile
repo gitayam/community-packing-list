@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy package files and install Node.js dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --only=production
 
 # Copy TypeScript source files and configuration
 COPY tsconfig.json webpack.config.js postcss.config.js .prettierrc ./
@@ -16,7 +16,7 @@ COPY src/ ./src/
 RUN npm run build && npm run css:build
 
 # Python runtime stage
-FROM python:3.12-slim
+FROM python:3.12-slim AS production
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
