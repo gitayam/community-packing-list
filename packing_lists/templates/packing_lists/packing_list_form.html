@@ -101,5 +101,8 @@
         <button type="submit" class="button success">Save</button>
         <a href="{% if packing_list %}{% url 'view_packing_list' packing_list.id %}{% else %}{% url 'home' %}{% endif %}" class="button secondary">Cancel</a>
     </form>
-    <script src="{% static 'packing_lists/js/packing-list-form.js' %}"></script>
+    <div>
+        <script src="{% static 'packing_lists/js/shared.js' %}"></script>
+        <script src="{% static 'packing_lists/js/packing-list-form.js' %}"></script>
+    </div>
 {% endblock %}
