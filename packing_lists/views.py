@@ -513,7 +513,7 @@ def price_form_partial(request, item_id, list_id=None):
         except Price.DoesNotExist:
             pass
     
-    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+    if request.method == 'POST':
         if price_instance:
             form = PriceForm(request.POST, instance=price_instance)
         else:
@@ -523,35 +523,42 @@ def price_form_partial(request, item_id, list_id=None):
             price = form.save(commit=False)
             price.item = item
             price.save()
-            return JsonResponse({'success': True})
+            
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': True})
+            else:
+                messages.success(request, f"Price for '{item.name}' saved successfully!")
+                return redirect('items')
         else:
             print('DEBUG: PriceForm errors:', form.errors.as_json())  # Log form errors
-            context = {
-                'form': form,
-                'item': item,
-                'list_id': list_id,
-                'title': f"{'Edit' if price_instance else 'Add'} Price for {item.name}",
-                'is_modal': True,
-            }
-            html = render_to_string('packing_lists/price_form_modal.html', context, request=request)
-            return JsonResponse({'success': False, 'html': html})
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                context = {
+                    'form': form,
+                    'item': item,
+                    'list_id': list_id,
+                    'title': f"{'Edit' if price_instance else 'Add'} Price for {item.name}",
+                    'is_modal': True,
+                }
+                html = render_to_string('packing_lists/price_form_modal.html', context, request=request)
+                return JsonResponse({'success': False, 'html': html})
     else:
         if price_instance:
             form = PriceForm(instance=price_instance)
         else:
             form = PriceForm()
             
-        context = {
-            'form': form,
-            'item': item,
-            'list_id': list_id,
-            'title': f"{'Edit' if price_instance else 'Add'} Price for {item.name}",
-            'is_modal': True,
-        }
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            html = render_to_string('packing_lists/price_form_modal.html', context, request=request)
-            return JsonResponse({'html': html})
-        return render(request, 'packing_lists/price_form_modal.html', context)
+    context = {
+        'form': form,
+        'item': item,
+        'list_id': list_id,
+        'title': f"{'Edit' if price_instance else 'Add'} Price for {item.name}",
+        'is_modal': True,
+    }
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string('packing_lists/price_form_modal.html', context, request=request)
+        return JsonResponse({'html': html})
+    return render(request, 'packing_lists/price_form_modal.html', context)
 
 def add_store_modal(request):
     if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
