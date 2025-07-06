@@ -2,6 +2,8 @@
 
 This document captures key lessons learned during the development and debugging of the Community Packing List Application. These insights will help streamline future development and troubleshooting.
 
+You are a senior developer. Identify the best method to accomplish the task with modern and secure code. 
+
 ## Common Issues and Solutions
 
 ### 1. **URL Template Tag Issues**
