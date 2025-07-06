@@ -38,4 +38,9 @@ urlpatterns = [
 
     path('stores/add/modal/', views.add_store_modal, name='add_store_modal'),
     path('create_packing_list_from_items/', views.create_packing_list_from_items, name='create_packing_list_from_items'),
+
+    path('lists/merge/', views.merge_packing_lists, name='merge_packing_lists'),
+    path('lists/delete/', views.delete_packing_lists, name='delete_packing_lists'),
+    path('list/<int:list_id>/clone/', views.clone_packing_list, name='clone_packing_list'),
+    path('list/<int:list_id>/export_pdf/', views.export_packing_list_pdf, name='export_packing_list_pdf'),
 ]
