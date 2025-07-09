@@ -222,31 +222,13 @@ def add_price_for_item(request, item_id, list_id=None): # list_id is for redirec
                     'title': f"Add Price for {item.name}"
                 }
                 return render(request, 'packing_lists/price_form.html', context)
-            # Gather all store fields
-            store_data = {
-                'name': store_name,
-                'address_line1': post_data.get('store_address_line1', '').strip(),
-                'address_line2': post_data.get('store_address_line2', '').strip(),
-                'city': post_data.get('store_city', '').strip(),
-                'state': post_data.get('store_state', '').strip(),
-                'zip_code': post_data.get('store_zip_code', '').strip(),
-                'country': post_data.get('store_country', '').strip() or 'USA',
-                'url': post_data.get('store_url', '').strip(),
-                'is_online': bool(post_data.get('store_is_online')),
-                'is_in_person': bool(post_data.get('store_is_in_person', '1')),
-            }
-            store, _ = Store.objects.get_or_create(name=store_name, defaults=store_data)
-            # If store already exists, update its fields with new data
-            if not _:
-                for k, v in store_data.items():
-                    setattr(store, k, v)
-                store.save()
-            post_data['store'] = store.id
+            # Create store with just the name (form will handle this in its save method)
+            # The form's save method will create the store if store_name is provided
+            post_data['store'] = ''  # Clear store selection to force form to use store_name
         form = PriceForm(post_data)
         if form.is_valid():
             try:
-                price = form.save(commit=False, item_instance=item)
-                price.save()
+                price = form.save(commit=True, item_instance=item)
                 messages.success(request, f"Price for '{item.name}' at '{price.store.name}' added successfully.")
                 if list_id:
                     return redirect(reverse('view_packing_list', args=[list_id]))
@@ -514,21 +496,51 @@ def price_form_partial(request, item_id, list_id=None):
             pass
     
     if request.method == 'POST':
+        post_data = request.POST.copy()
+        store_value = post_data.get('store')
+        store_name = post_data.get('store_name', '').strip()
+        
+        # If user selected 'Add new store...'
+        if store_value == '__add_new__':
+            if not store_name:
+                form = PriceForm(post_data)
+                context = {
+                    'form': form,
+                    'item': item,
+                    'list_id': list_id,
+                    'title': f"{'Edit' if price_instance else 'Add'} Price for {item.name}",
+                    'is_modal': True,
+                }
+                html = render_to_string('packing_lists/price_form_modal.html', context, request=request)
+                return JsonResponse({'success': False, 'html': html})
+            
+            # Create store with just the name (form will handle this in its save method)
+            # The form's save method will create the store if store_name is provided
+            post_data['store'] = ''  # Clear store selection to force form to use store_name
+        
         if price_instance:
-            form = PriceForm(request.POST, instance=price_instance)
+            form = PriceForm(post_data, instance=price_instance)
         else:
-            form = PriceForm(request.POST)
+            form = PriceForm(post_data)
             
         if form.is_valid():
-            price = form.save(commit=False)
-            price.item = item
-            price.save()
-            
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({'success': True})
-            else:
-                messages.success(request, f"Price for '{item.name}' saved successfully!")
-                return redirect('items')
+            try:
+                price = form.save(commit=True, item_instance=item)
+                
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({'success': True})
+                else:
+                    messages.success(request, f"Price for '{item.name}' saved successfully!")
+                    return redirect('items')
+            except ValueError as e:
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': str(e)})
+                messages.error(request, str(e))
+            except IntegrityError:
+                error_msg = "There was an error saving the price. It might already exist or there's a data conflict."
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': error_msg})
+                messages.error(request, error_msg)
         else:
             print('DEBUG: PriceForm errors:', form.errors.as_json())  # Log form errors
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
