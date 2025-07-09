@@ -378,7 +378,7 @@ class PackingListDetailManager {
     return Promise.resolve();
   }
 
-  private setupPriceFormSubmission(form: HTMLFormElement, itemId: string, listId: string): void {
+  public setupPriceFormSubmission(form: HTMLFormElement, itemId: string, listId: string): void {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -590,7 +590,18 @@ class PackingListDetailManager {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+  // Existing initialization
   new PackingListDetailManager();
+
+  // Patch: Attach price form handler for static modal
+  const form = document.querySelector('#price-form') as HTMLFormElement;
+  if (form) {
+    // Try to get itemId and listId from data attributes or fallback to empty string
+    const itemId = form.dataset.itemId || '';
+    const listId = form.dataset.listId || '';
+    // Use the same handler as dynamic modal
+    new PackingListDetailManager().setupPriceFormSubmission(form, itemId, listId);
+  }
 });
 
 // Export for global access (if needed)
