@@ -239,9 +239,10 @@
                                 </td>
                                 <td class="actions-cell">
                                     <div class="action-buttons">
-                                        <button type="button" class="action-btn add-price-btn" data-item-id="{{ item_wp.item.id }}" data-list-id="{{ packing_list.id }}" title="Add Price">
+                                        {# Modal temporarily disabled: use full page form instead #}
+                                        <a href="{% url 'add_price_for_item' item_wp.item.id packing_list.id %}" class="action-btn add-price-btn" title="Add Price">
                                             <img src="{% static 'packing_lists/icons/plus-square.svg' %}" alt="Add Price" width="16" height="16" />
-                                        </button>
+                                        </a>
                                         <button type="button" class="action-btn expand-price-btn" data-item-id="{{ item_wp.item.id }}" title="Expand Price Details">
                                             <img src="{% static 'packing_lists/icons/plus-database.svg' %}" alt="Expand Price" width="16" height="16" />
                                         </button>
@@ -282,7 +283,8 @@
         </div>
     {% endif %}
 
-    <!-- Price Modal -->
+    {# Comment out the modal for now #}
+    {#
     <div id="price-modal" class="modal">
         <div id="price-modal-content" class="modal-content">
             <button id="close-price-modal" class="modal-close">&times;</button>
@@ -291,6 +293,7 @@
             </div>
         </div>
     </div>
+    #}
 
     <!-- Edit Item Modal -->
     <div id="edit-item-modal" class="modal">
