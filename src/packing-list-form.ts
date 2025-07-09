@@ -120,12 +120,19 @@ class PackingListFormManager {
     const assessmentTypeRow = DOMUtils.getElement<HTMLElement>('#assessment-type-row');
     const trainingTypeRow = DOMUtils.getElement<HTMLElement>('#training-type-row');
     const schoolRow = DOMUtils.getElement<HTMLElement>('#school-row');
+    // Robustly find the <p> containing the school_name input
+    let schoolNameRow: HTMLElement | null = null;
+    const pTags = document.querySelectorAll('form p');
+    pTags.forEach(p => {
+      if (p.querySelector('[name="school_name"]')) {
+        schoolNameRow = p as HTMLElement;
+      }
+    });
 
     // Show/hide type-specific rows based on event type
     const eventTypeField = DOMUtils.getElement<HTMLSelectElement>('[name="event_type"]');
     if (eventTypeField) {
       const eventType = eventTypeField.value;
-      
       if (schoolTypeRow) {
         schoolTypeRow.style.display = eventType === 'school' ? 'block' : 'none';
       }
@@ -135,12 +142,17 @@ class PackingListFormManager {
       if (trainingTypeRow) {
         trainingTypeRow.style.display = eventType === 'training' ? 'block' : 'none';
       }
-    }
-
-    // Show/hide school row based on whether a school type is selected
-    if (schoolRow && this.schoolTypeField) {
-      const hasSchoolType = this.schoolTypeField.value && this.schoolTypeField.value !== '';
-      schoolRow.style.display = hasSchoolType ? 'block' : 'none';
+      // School dropdown only for event_type 'school' and a school_type is selected
+      if (schoolRow && this.schoolTypeField) {
+        const hasSchoolType = this.schoolTypeField.value && this.schoolTypeField.value !== '';
+        schoolRow.style.display = (eventType === 'school' && hasSchoolType) ? 'block' : 'none';
+      } else if (schoolRow) {
+        schoolRow.style.display = 'none';
+      }
+      // School name input only for event_type 'school'
+      if (schoolNameRow !== null) {
+        (schoolNameRow as HTMLElement).style.display = eventType === 'school' ? 'block' : 'none';
+      }
     }
   }
 
