@@ -214,6 +214,14 @@ class PriceForm(forms.ModelForm):
         store = cleaned_data.get('store')
         store_name = cleaned_data.get('store_name')
 
+        # Handle the case where user selected "Add New Store"
+        if store == '__add_new__':
+            if not store_name:
+                raise forms.ValidationError("Please provide a name for the new store.")
+            # Clear the store field so the save method will create a new store
+            cleaned_data['store'] = ''
+            return cleaned_data
+
         if not store and not store_name:
             raise forms.ValidationError("Please select an existing store or provide a new store name.")
         if store and store_name:
