@@ -1,6 +1,10 @@
 from django import forms
 from .models import PackingList, School, Price, Store, Item, PackingListItem
 from datetime import date
+from decimal import Decimal, InvalidOperation
+from django.core.exceptions import ValidationError
+from django.db.models import Avg, Min, Max
+import re
 
 # School types for 'School' event type
 SCHOOL_TYPE_CHOICES = [
@@ -175,13 +179,11 @@ class PackingListForm(forms.ModelForm):
 
 class PriceForm(forms.ModelForm):
     """
-    Form for adding or editing a price for an item.
+    Enhanced form for adding or editing a price for an item with validation and smart features.
     """
     store_name = forms.CharField(max_length=200, required=False,
                                  help_text="If the store isn't listed, enter its name here to create it.")
-    # The 'item' field will be set in the view, not by the user directly in this form.
-    # So we might exclude it here, or make it a HiddenInput if needed for some reason.
-
+    
     date_purchased = forms.DateField(
         required=False,
         label="Date of Price Confirmation",
@@ -189,30 +191,145 @@ class PriceForm(forms.ModelForm):
         widget=forms.DateInput(attrs={'type': 'date'}),
         initial=date.today
     )
+    
+    price_confidence = forms.ChoiceField(
+        choices=[
+            ('high', 'High - Verified receipt/website'),
+            ('medium', 'Medium - Personal observation'),
+            ('low', 'Low - Estimated/heard from others')
+        ],
+        initial='medium',
+        required=False,
+        help_text="How confident are you in this price?",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
 
     class Meta:
         model = Price
-        fields = ['store', 'price', 'quantity', 'date_purchased']
-        # Or explicitly: fields = ['store', 'store_name', 'price', 'quantity', 'date_purchased']
-        # 'item' will be associated in the view.
+        fields = ['store', 'price', 'quantity', 'date_purchased', 'confidence']
         widgets = {
             'date_purchased': forms.DateInput(attrs={'type': 'date'}),
+            'price': forms.NumberInput(attrs={
+                'step': '0.01', 
+                'min': '0.01',
+                'class': 'form-control price-input',
+                'placeholder': 'Enter price (e.g., 19.99)'
+            }),
+            'quantity': forms.NumberInput(attrs={
+                'min': '1',
+                'class': 'form-control',
+                'placeholder': 'Quantity (e.g., 1 for single item, 3 for pack of 3)'
+            })
         }
 
     def __init__(self, *args, **kwargs):
-        # item_instance = kwargs.pop('item_instance', None) # If we were to pass item for context
+        self.item_instance = kwargs.pop('item_instance', None)
         super().__init__(*args, **kwargs)
-        # Add option to create new store
-        store_choices = [('', 'Select a store...')] + [(store.id, store.name) for store in Store.objects.all().order_by('name')]
+        
+        # Add option to create new store with smart suggestions
+        popular_stores = Store.objects.all().order_by('name')
+        store_choices = [('', 'Select a store...')] + [(store.id, store.name) for store in popular_stores]
         store_choices.append(('__add_new__', '➕ Add New Store...'))
         self.fields['store'].choices = store_choices
-        self.fields['store'].required = False # Allow creating a new store via store_name
+        self.fields['store'].required = False
         self.fields['date_purchased'].required = False
+        
+        # Add price per unit calculation in JavaScript
+        self.fields['price'].widget.attrs.update({
+            'data-toggle': 'price-calculator',
+            'onkeyup': 'calculatePricePerUnit()'
+        })
+        self.fields['quantity'].widget.attrs.update({
+            'onkeyup': 'calculatePricePerUnit()'
+        })
+        
+        # Add price suggestions if item exists
+        if self.item_instance:
+            self._add_price_suggestions()
+
+    def _add_price_suggestions(self):
+        """Add price suggestions based on historical data and similar items"""
+        try:
+            # Get recent prices for this item
+            recent_prices = Price.objects.filter(
+                item=self.item_instance,
+                date_purchased__isnull=False
+            ).order_by('-date_purchased')[:5]
+            
+            if recent_prices.exists():
+                avg_price = sum(p.price for p in recent_prices) / len(recent_prices)
+                self.fields['price'].help_text = f"Recent average: ${avg_price:.2f}. " + (self.fields['price'].help_text or "")
+                
+                # Add data attributes for JavaScript
+                self.fields['price'].widget.attrs['data-avg-price'] = str(avg_price)
+                self.fields['price'].widget.attrs['data-recent-prices'] = ','.join(str(p.price) for p in recent_prices)
+            
+            # Look for similar items (basic text matching)
+            similar_items = Item.objects.filter(
+                name__icontains=self.item_instance.name.split()[0]
+            ).exclude(id=self.item_instance.id)[:3]
+            
+            if similar_items.exists():
+                similar_prices = Price.objects.filter(
+                    item__in=similar_items
+                ).order_by('-date_purchased')[:10]
+                
+                if similar_prices.exists():
+                    similar_avg = sum(p.price for p in similar_prices) / len(similar_prices)
+                    self.fields['price'].widget.attrs['data-similar-avg'] = str(similar_avg)
+                    
+        except Exception:
+            # Silently fail if there are any issues with suggestions
+            pass
+
+    def clean_price(self):
+        price = self.cleaned_data.get('price')
+        
+        if price is None:
+            raise ValidationError("Price is required.")
+            
+        if price <= 0:
+            raise ValidationError("Price must be greater than zero.")
+            
+        # Check for reasonable price ranges
+        if price > 10000:
+            raise ValidationError("Price seems unusually high. Please verify this amount.")
+            
+        if price < 0.01:
+            raise ValidationError("Price cannot be less than $0.01.")
+            
+        # Check against historical data if item exists
+        if self.item_instance:
+            existing_prices = Price.objects.filter(item=self.item_instance)
+            if existing_prices.exists():
+                avg_price = existing_prices.aggregate(avg=Avg('price'))['avg']
+                min_price = existing_prices.aggregate(min=Min('price'))['min']
+                max_price = existing_prices.aggregate(max=Max('price'))['max']
+                
+                # Flag outliers (prices more than 5x average or less than 1/5 average)
+                if avg_price and (price > avg_price * 5 or price < avg_price / 5):
+                    # Don't block, just add a warning
+                    pass
+                    
+        return price
+    
+    def clean_quantity(self):
+        quantity = self.cleaned_data.get('quantity')
+        
+        if quantity is None or quantity <= 0:
+            raise ValidationError("Quantity must be a positive integer.")
+            
+        if quantity > 1000:
+            raise ValidationError("Quantity seems unusually high. Please verify this amount.")
+            
+        return quantity
 
     def clean(self):
         cleaned_data = super().clean()
         store = cleaned_data.get('store')
         store_name = cleaned_data.get('store_name')
+        price = cleaned_data.get('price')
+        quantity = cleaned_data.get('quantity')
 
         # Handle the case where user selected "Add New Store"
         if store == '__add_new__':
@@ -220,16 +337,15 @@ class PriceForm(forms.ModelForm):
                 raise forms.ValidationError("Please provide a name for the new store.")
             # Clear the store field so the save method will create a new store
             cleaned_data['store'] = ''
-            return cleaned_data
-
-        if not store and not store_name:
+            
+        elif not store and not store_name:
             raise forms.ValidationError("Please select an existing store or provide a new store name.")
-        if store and store_name:
-            # Prefer selected store if both are provided, or raise an error
-            # For now, let's assume if store is selected, store_name is ignored for creation.
-            # Alternatively, could be:
-            # self.add_error('store_name', "Provide a new store name only if you are not selecting an existing store.")
-            pass
+            
+        # Validate price per unit makes sense
+        if price and quantity:
+            price_per_unit = price / quantity
+            if price_per_unit < 0.01:
+                raise forms.ValidationError("Price per unit cannot be less than $0.01.")
 
         return cleaned_data
 
@@ -255,6 +371,170 @@ class PriceForm(forms.ModelForm):
         if commit:
             price_instance.save()
         return price_instance
+
+
+class BulkPriceForm(forms.Form):
+    """
+    Form for adding prices to multiple items at once from a single store.
+    """
+    store_name = forms.CharField(max_length=200, required=False,
+                                 help_text="If the store isn't listed, enter its name here to create it.")
+    store = forms.ModelChoiceField(
+        queryset=Store.objects.all(),
+        required=False,
+        empty_label="Select a store...",
+        help_text="Choose an existing store"
+    )
+    
+    date_purchased = forms.DateField(
+        required=False,
+        label="Date of Price Confirmation",
+        help_text="The date you confirmed these prices",
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        initial=date.today
+    )
+    
+    confidence = forms.ChoiceField(
+        choices=[
+            ('high', 'High - Verified receipt/website'),
+            ('medium', 'Medium - Personal observation'),
+            ('low', 'Low - Estimated/heard from others')
+        ],
+        initial='medium',
+        required=True,
+        help_text="How confident are you in these prices?"
+    )
+    
+    price_data = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'rows': 10,
+            'placeholder': 'Enter one item per line in format: Item Name, Price, Quantity\nExample:\nCompass, 19.99, 1\nSleeping Bag, 89.99, 1\nFirst Aid Kit, 24.99, 1',
+            'class': 'form-control'
+        }),
+        help_text="Enter items in CSV format: Item Name, Price, Quantity (one per line)"
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add option to create new store
+        store_choices = Store.objects.all().order_by('name')
+        self.fields['store'].queryset = store_choices
+
+    def clean_price_data(self):
+        price_data = self.cleaned_data.get('price_data', '')
+        if not price_data.strip():
+            raise ValidationError("Please enter at least one item with pricing data.")
+        
+        lines = [line.strip() for line in price_data.strip().split('\n') if line.strip()]
+        parsed_items = []
+        errors = []
+        
+        for i, line in enumerate(lines, 1):
+            try:
+                parts = [part.strip() for part in line.split(',')]
+                if len(parts) != 3:
+                    errors.append(f"Line {i}: Expected format 'Item Name, Price, Quantity' but got: {line}")
+                    continue
+                
+                item_name, price_str, quantity_str = parts
+                
+                if not item_name:
+                    errors.append(f"Line {i}: Item name cannot be empty")
+                    continue
+                
+                try:
+                    price = Decimal(price_str)
+                    if price <= 0:
+                        errors.append(f"Line {i}: Price must be greater than zero")
+                        continue
+                    if price > 10000:
+                        errors.append(f"Line {i}: Price seems unusually high ({price})")
+                        continue
+                except (ValueError, InvalidOperation):
+                    errors.append(f"Line {i}: Invalid price format: {price_str}")
+                    continue
+                
+                try:
+                    quantity = int(quantity_str)
+                    if quantity <= 0:
+                        errors.append(f"Line {i}: Quantity must be greater than zero")
+                        continue
+                    if quantity > 1000:
+                        errors.append(f"Line {i}: Quantity seems unusually high ({quantity})")
+                        continue
+                except ValueError:
+                    errors.append(f"Line {i}: Invalid quantity format: {quantity_str}")
+                    continue
+                
+                parsed_items.append({
+                    'name': item_name,
+                    'price': price,
+                    'quantity': quantity
+                })
+                
+            except Exception as e:
+                errors.append(f"Line {i}: Unexpected error processing line: {str(e)}")
+        
+        if errors:
+            raise ValidationError(errors)
+        
+        if not parsed_items:
+            raise ValidationError("No valid items found in the data.")
+        
+        return parsed_items
+
+    def clean(self):
+        cleaned_data = super().clean()
+        store = cleaned_data.get('store')
+        store_name = cleaned_data.get('store_name')
+        
+        if not store and not store_name:
+            raise ValidationError("Please select an existing store or provide a new store name.")
+        
+        return cleaned_data
+
+    def save(self, commit=True):
+        """
+        Process the bulk price data and create Price objects.
+        Returns a list of created Price objects and any items that were created.
+        """
+        if not commit:
+            return [], []
+        
+        store = self.cleaned_data.get('store')
+        store_name = self.cleaned_data.get('store_name')
+        date_purchased = self.cleaned_data.get('date_purchased')
+        confidence = self.cleaned_data.get('confidence')
+        price_data = self.cleaned_data.get('price_data')
+        
+        # Handle store creation
+        if store_name and not store:
+            store, created = Store.objects.get_or_create(name=store_name.strip())
+        
+        created_prices = []
+        created_items = []
+        
+        for item_data in price_data:
+            # Get or create item
+            item, item_created = Item.objects.get_or_create(
+                name__iexact=item_data['name'],
+                defaults={'name': item_data['name']}
+            )
+            if item_created:
+                created_items.append(item)
+            
+            # Create price
+            price = Price.objects.create(
+                item=item,
+                store=store,
+                price=item_data['price'],
+                quantity=item_data['quantity'],
+                date_purchased=date_purchased,
+                confidence=confidence
+            )
+            created_prices.append(price)
+        
+        return created_prices, created_items
 
 
 class VoteForm(forms.Form):
