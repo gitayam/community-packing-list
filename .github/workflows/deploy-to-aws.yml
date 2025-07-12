@@ -1,0 +1,230 @@
+name: Deploy to AWS Lambda
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  NODE_VERSION: 18
+  PYTHON_VERSION: 3.12
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Install Node.js dependencies
+      run: npm ci
+    
+    - name: Build TypeScript
+      run: npm run build
+    
+    - name: Build CSS
+      run: npm run css:build
+    
+    - name: Run Python tests
+      env:
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
+        SECRET_KEY: test-secret-key
+      run: |
+        python manage.py test
+    
+    - name: Run linting
+      run: |
+        npm run lint
+        # Add Python linting if configured
+
+  deploy-dev:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install Serverless Framework
+      run: npm install -g serverless
+    
+    - name: Install Serverless plugins
+      run: |
+        npm install serverless-python-requirements
+        npm install serverless-domain-manager
+        npm install serverless-plugin-warmup
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Install Node.js dependencies
+      run: npm ci
+    
+    - name: Build TypeScript
+      run: npm run build
+    
+    - name: Build CSS
+      run: npm run css:build
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Deploy to AWS Lambda (Development)
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY_DEV }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD_DEV }}
+      run: |
+        serverless deploy --stage dev --verbose
+    
+    - name: Run post-deployment migrations
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY_DEV }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD_DEV }}
+      run: |
+        serverless invoke --function migrate --stage dev
+
+  deploy-prod:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install Serverless Framework
+      run: npm install -g serverless
+    
+    - name: Install Serverless plugins
+      run: |
+        npm install serverless-python-requirements
+        npm install serverless-domain-manager
+        npm install serverless-plugin-warmup
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Install Node.js dependencies
+      run: npm ci
+    
+    - name: Build TypeScript
+      run: npm run build
+    
+    - name: Build CSS
+      run: npm run css:build
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Deploy to AWS Lambda (Production)
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY_PROD }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD_PROD }}
+        DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+        CERTIFICATE_NAME: ${{ secrets.CERTIFICATE_NAME }}
+      run: |
+        serverless deploy --stage prod --verbose
+    
+    - name: Run post-deployment migrations
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY_PROD }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD_PROD }}
+      run: |
+        serverless invoke --function migrate --stage prod
+    
+    - name: Warm up Lambda functions
+      run: |
+        # Warm up the main application function
+        curl -X GET "https://$(serverless info --stage prod --verbose | grep 'ServiceEndpoint' | cut -d' ' -f2)/health/"
+    
+    - name: Run smoke tests
+      run: |
+        # Add smoke tests here
+        echo "Running smoke tests..."
+        # curl -f https://your-domain.com/health/ || exit 1
+
+  security-scan:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run security scan
+      uses: securecodewarrior/github-action-add-sarif@v1
+      with:
+        sarif-file: 'security-scan-results.sarif'
+        # Configure security scanning tool
+    
+    - name: Check for secrets
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD 
