@@ -575,16 +575,8 @@ class PackingListDetailManager {
   }
 
   private injectActionButtonIcons(): void {
-    document.querySelectorAll<HTMLButtonElement>('.add-price-btn').forEach(btn => {
-      btn.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-      `;
-    });
-    document.querySelectorAll<HTMLButtonElement>('.edit-item-btn').forEach(btn => {
-      btn.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-3"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19.5 3 21l1.5-4L16.5 3.5z"></path></svg>
-      `;
-    });
+    // The template already has emoji icons, so we don't need to inject SVG icons
+    // This method is kept for potential future use
   }
 }
 
