@@ -234,6 +234,15 @@ class PriceForm(forms.ModelForm):
         self.fields['store'].required = False
         self.fields['date_purchased'].required = False
         
+        # Set default values if form is not bound (new form)
+        if not self.is_bound:
+            # Set default quantity to 1
+            self.fields['quantity'].initial = 1
+            
+            # Set default store to first available store if any exist
+            if popular_stores.exists():
+                self.fields['store'].initial = popular_stores.first().id
+        
         # Add price per unit calculation in JavaScript
         self.fields['price'].widget.attrs.update({
             'data-toggle': 'price-calculator',

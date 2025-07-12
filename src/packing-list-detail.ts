@@ -345,10 +345,16 @@ class PackingListDetailManager {
       const btn = target.closest('.add-price-btn') as HTMLElement;
       const itemId = btn.dataset.itemId;
       const listId = btn.dataset.listId;
-      if (!itemId || !listId) return Promise.resolve();
+      console.log('Debug: itemId =', itemId, 'listId =', listId);
+      if (!itemId || !listId) {
+        console.log('Debug: Missing itemId or listId, using fallback URL');
+        return Promise.resolve();
+      }
       UIUtils.showLoading(btn as HTMLButtonElement);
       try {
-        const response = await apiClient.get(`/item/${itemId}/add_price_modal/to_list/${listId}/`);
+        const url = `/item/${itemId}/add_price_modal/to_list/${listId}/`;
+        console.log('Debug: Making request to', url);
+        const response = await apiClient.get(url);
         if (response.html) {
           const modal = DOMUtils.getElement<HTMLElement>('#price-modal');
           const modalBody = DOMUtils.getElement<HTMLElement>('#price-modal-body');
@@ -379,22 +385,83 @@ class PackingListDetailManager {
   }
 
   private setDefaultFormValues(form: HTMLFormElement): void {
+    console.log('Setting default form values');
+    
     // Set default quantity to 1 if empty
     const quantityInput = form.querySelector('#id_quantity') as HTMLInputElement;
-    if (quantityInput && !quantityInput.value) {
-      quantityInput.value = '1';
+    if (quantityInput) {
+      if (!quantityInput.value) {
+        quantityInput.value = '1';
+        console.log('Set quantity to 1');
+      }
+      // Make sure it's required
+      quantityInput.required = true;
+    }
+    
+    // Set default price requirement
+    const priceInput = form.querySelector('#id_price') as HTMLInputElement;
+    if (priceInput) {
+      priceInput.required = true;
+      priceInput.placeholder = 'Enter price (e.g. 9.99)';
     }
     
     // Ensure a store is selected (select first available store if none selected)
     const storeSelect = form.querySelector('#id_store') as HTMLSelectElement;
-    if (storeSelect && !storeSelect.value) {
-      // Find first non-empty option
-      const options = storeSelect.querySelectorAll('option');
-      for (let i = 1; i < options.length; i++) { // Skip first empty option
-        if (options[i].value && options[i].value !== '__add_new__') {
-          storeSelect.value = options[i].value;
-          break;
+    if (storeSelect) {
+      console.log('Current store value:', storeSelect.value);
+      if (!storeSelect.value) {
+        // Find first non-empty option
+        const options = storeSelect.querySelectorAll('option') as NodeListOf<HTMLOptionElement>;
+        console.log('Available store options:', Array.from(options).map(opt => ({ value: opt.value, text: opt.text })));
+        
+        for (let i = 1; i < options.length; i++) { // Skip first empty option
+          if (options[i].value && options[i].value !== '__add_new__') {
+            storeSelect.value = options[i].value;
+            console.log('Set store to:', options[i].text, 'value:', options[i].value);
+            break;
+          }
         }
+      }
+    }
+    
+    // Set default date to today if empty
+    const dateInput = form.querySelector('#id_date_purchased') as HTMLInputElement;
+    if (dateInput && !dateInput.value) {
+      const today = new Date().toISOString().split('T')[0];
+      dateInput.value = today;
+    }
+    
+    console.log('Default values set');
+  }
+
+  private setupStoreSelection(form: HTMLFormElement): void {
+    const storeSelect = form.querySelector('#id_store') as HTMLSelectElement;
+    const addStoreDiv = form.querySelector('#inline-add-store') as HTMLElement;
+    const storeNameInput = form.querySelector('#id_store_name') as HTMLInputElement;
+
+    if (!storeSelect || !addStoreDiv) return;
+
+    storeSelect.addEventListener('change', () => {
+      if (storeSelect.value === '__add_new__') {
+        addStoreDiv.style.display = 'block';
+        if (storeNameInput) {
+          storeNameInput.required = true;
+          storeNameInput.focus();
+        }
+      } else {
+        addStoreDiv.style.display = 'none';
+        if (storeNameInput) {
+          storeNameInput.required = false;
+          storeNameInput.value = '';
+        }
+      }
+    });
+
+    // Initialize the correct state
+    if (storeSelect.value === '__add_new__') {
+      addStoreDiv.style.display = 'block';
+      if (storeNameInput) {
+        storeNameInput.required = true;
       }
     }
   }
@@ -402,6 +469,9 @@ class PackingListDetailManager {
   public setupPriceFormSubmission(form: HTMLFormElement, itemId: string, listId: string): void {
     // Set default values
     this.setDefaultFormValues(form);
+    
+    // Set up store selection change handler
+    this.setupStoreSelection(form);
     
     // Set up quick price buttons
     const quickPriceBtns = form.querySelectorAll('.quick-price-btn');
@@ -433,6 +503,14 @@ class PackingListDetailManager {
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      console.log('Form submission started');
+
+      // Check form validity first
+      if (!form.checkValidity()) {
+        console.log('Form validation failed');
+        form.reportValidity();
+        return;
+      }
 
       // Show loading state on submit button
       const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
@@ -444,16 +522,44 @@ class PackingListDetailManager {
         const formData = FormUtils.getFormData(form);
         
         // Debug: Log form data
-        console.log('Submitting form data:', Object.fromEntries(formData.entries()));
+        console.log('Form is valid, submitting data:', Object.fromEntries(formData.entries()));
+        console.log('Form action URL:', form.action);
+        
+        // Validate required fields manually
+        const price = formData.get('price');
+        const quantity = formData.get('quantity');
+        const store = formData.get('store');
+        const storeName = formData.get('store_name');
+        
+        console.log('Field values:', { price, quantity, store, storeName });
+        
+        if (!price) {
+          UIUtils.showNotification('Price is required', 'error');
+          return;
+        }
+        if (!quantity) {
+          UIUtils.showNotification('Quantity is required', 'error');
+          return;
+        }
+        if (!store && !storeName) {
+          UIUtils.showNotification('Please select a store or enter a new store name', 'error');
+          return;
+        }
         
         const response = await fetch(form.action, {
           method: 'POST',
           body: formData,
           headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+            'X-CSRFToken': (document.querySelector('[name=csrfmiddlewaretoken]') as HTMLInputElement)?.value || '',
           }
         });
+
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const data = await response.json();
         console.log('Response data:', data);
@@ -463,6 +569,7 @@ class PackingListDetailManager {
           UIUtils.showNotification('Price added successfully!', 'success');
           location.reload(); // Refresh to show new price
         } else if (data.html) {
+          console.log('Form has validation errors, reloading form');
           const modalBody = DOMUtils.getElement<HTMLElement>('#price-modal-body');
           if (modalBody) {
             modalBody.innerHTML = data.html;
@@ -473,9 +580,11 @@ class PackingListDetailManager {
           }
         } else if (data.message) {
           UIUtils.showNotification(data.message, 'error');
+        } else {
+          UIUtils.showNotification('Unknown error occurred', 'error');
         }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Form submission error:', error);
         UIUtils.showNotification('Error adding price. Please try again.', 'error');
       } finally {
         // Remove loading state
