@@ -378,7 +378,31 @@ class PackingListDetailManager {
     return Promise.resolve();
   }
 
+  private setDefaultFormValues(form: HTMLFormElement): void {
+    // Set default quantity to 1 if empty
+    const quantityInput = form.querySelector('#id_quantity') as HTMLInputElement;
+    if (quantityInput && !quantityInput.value) {
+      quantityInput.value = '1';
+    }
+    
+    // Ensure a store is selected (select first available store if none selected)
+    const storeSelect = form.querySelector('#id_store') as HTMLSelectElement;
+    if (storeSelect && !storeSelect.value) {
+      // Find first non-empty option
+      const options = storeSelect.querySelectorAll('option');
+      for (let i = 1; i < options.length; i++) { // Skip first empty option
+        if (options[i].value && options[i].value !== '__add_new__') {
+          storeSelect.value = options[i].value;
+          break;
+        }
+      }
+    }
+  }
+
   public setupPriceFormSubmission(form: HTMLFormElement, itemId: string, listId: string): void {
+    // Set default values
+    this.setDefaultFormValues(form);
+    
     // Set up quick price buttons
     const quickPriceBtns = form.querySelectorAll('.quick-price-btn');
     quickPriceBtns.forEach(btn => {
@@ -390,6 +414,19 @@ class PackingListDetailManager {
           priceInput.focus();
           // Trigger input event to update any validation or calculations
           priceInput.dispatchEvent(new Event('input'));
+        }
+      });
+    });
+    
+    // Set up quantity buttons
+    const quantityBtns = form.querySelectorAll('.set-quantity-btn');
+    quantityBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const quantity = (e.target as HTMLElement).dataset.quantity;
+        const quantityInput = form.querySelector('#id_quantity') as HTMLInputElement;
+        if (quantity && quantityInput) {
+          quantityInput.value = quantity;
+          quantityInput.dispatchEvent(new Event('input'));
         }
       });
     });
