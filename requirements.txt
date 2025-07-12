@@ -36,3 +36,11 @@ django-anymail[mailgun]>=10.3.0
 
 # Health check dependencies
 psutil>=5.9.0
+
+# AWS Lambda dependencies
+mangum>=0.17.0
+boto3>=1.34.0
+django-storages>=1.14.2
+
+# Database URL parsing
+dj-database-url>=2.1.0

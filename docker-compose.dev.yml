@@ -1,18 +1,28 @@
+version: '3.8'
+
 services:
   web:
     build:
       context: .
       target: production
     command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
     environment:
       - DEBUG=True
       - NODE_ENV=development
+      - DJANGO_SETTINGS_MODULE=community_packing_list.settings
+      - DATABASE_URL=sqlite:///db.sqlite3
+      - SECRET_KEY=demo-dev-secret-key-change-in-production
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_PASSWORD=admin123
+      - DJANGO_SUPERUSER_EMAIL=admin@example.com
     volumes:
       - .:/app
       - node_modules:/app/node_modules
     depends_on:
-      - db
       - typescript-dev
+      - css-dev
 
   typescript-dev:
     image: node:18-alpine

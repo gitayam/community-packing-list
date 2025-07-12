@@ -1,0 +1,91 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: community-packing-list
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        # Auto-scaling configuration
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "100"
+        autoscaling.knative.dev/targetConcurrencyUtilization: "70"
+        
+        # Resource allocation
+        run.googleapis.com/memory: "1Gi"
+        run.googleapis.com/cpu: "1000m"
+        
+        # Network configuration
+        run.googleapis.com/vpc-access-connector: projects/PROJECT_ID/locations/REGION/connectors/vpc-connector
+        
+        # Security
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/sandbox: gvisor
+        
+        # Monitoring
+        run.googleapis.com/cpu-throttling: "false"
+        
+    spec:
+      serviceAccountName: cloud-run-service-account@PROJECT_ID.iam.gserviceaccount.com
+      timeoutSeconds: 300
+      containerConcurrency: 80
+      containers:
+      - image: gcr.io/PROJECT_ID/community-packing-list:latest
+        ports:
+        - name: http1
+          containerPort: 8080
+        env:
+        - name: GOOGLE_CLOUD_PROJECT
+          value: "PROJECT_ID"
+        - name: ENVIRONMENT
+          value: "production"
+        - name: USE_GCS
+          value: "true"
+        - name: PORT
+          value: "8080"
+        - name: DJANGO_SETTINGS_MODULE
+          value: "community_packing_list.settings_gcp"
+        
+        # Resource limits
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health/
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          
+        readinessProbe:
+          httpGet:
+            path: /readiness/
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+          
+        startupProbe:
+          httpGet:
+            path: /health/
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+  
+  traffic:
+  - percent: 100
+    latestRevision: true 
