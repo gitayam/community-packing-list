@@ -348,7 +348,7 @@ class PackingListDetailManager {
       if (!itemId || !listId) return Promise.resolve();
       UIUtils.showLoading(btn as HTMLButtonElement);
       try {
-        const response = await apiClient.get(`/item/${itemId}/add_price_modal/`);
+        const response = await apiClient.get(`/item/${itemId}/add_price_modal/to_list/${listId}/`);
         if (response.html) {
           const modal = DOMUtils.getElement<HTMLElement>('#price-modal');
           const modalBody = DOMUtils.getElement<HTMLElement>('#price-modal-body');

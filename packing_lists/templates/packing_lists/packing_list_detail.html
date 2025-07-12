@@ -199,8 +199,8 @@
                                     {% if item_wp.prices_with_votes %}
                                         <div class="price-display">
                                             <span class="best-price">${{ item_wp.prices_with_votes.0.price.price }}</span>
-                                            <button type="button" class="price-details-btn" data-item-id="{{ item_wp.item.id }}">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-info"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6"></path></svg>
+                                            <button type="button" class="price-details-btn" data-item-id="{{ item_wp.item.id }}" title="View Price Details">
+                                                ℹ️
                                             </button>
                                         </div>
                                         <div class="price-details" id="price-details-{{ item_wp.item.id }}" style="display: none;">
@@ -242,8 +242,7 @@
                                         <button type="button" class="action-btn add-price-btn" 
                                                 data-item-id="{{ item_wp.item.id }}" 
                                                 data-list-id="{{ packing_list.id }}" 
-                                                title="Add Price"
-                                                onclick="openPriceModal('{{ item_wp.item.id }}', '{{ packing_list.id }}')">
+                                                title="Add Price">
                                             💰
                                         </button>
                                         <button type="button" class="action-btn expand-price-btn" data-item-id="{{ item_wp.item.id }}" title="View All Prices">
@@ -286,7 +285,15 @@
         </div>
     {% endif %}
 
-    <!-- Price Modal will be created dynamically by TypeScript -->
+    <!-- Price Modal -->
+    <div id="price-modal" class="modal">
+        <div id="price-modal-content" class="modal-content">
+            <button id="close-price-modal" class="modal-close">&times;</button>
+            <div id="price-modal-body">
+                <!-- AJAX-loaded form will go here -->
+            </div>
+        </div>
+    </div>
 
     <!-- Edit Item Modal -->
     <div id="edit-item-modal" class="modal">
@@ -300,5 +307,4 @@
 
     <script src="{% static 'packing_lists/js/shared.js' %}"></script>
     <script src="{% static 'packing_lists/js/packing-list-detail.js' %}"></script>
-    <script src="{% static 'packing_lists/js/price-form-modal.js' %}"></script>
 {% endblock %}
