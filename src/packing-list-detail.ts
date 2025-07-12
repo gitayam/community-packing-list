@@ -379,6 +379,21 @@ class PackingListDetailManager {
   }
 
   public setupPriceFormSubmission(form: HTMLFormElement, itemId: string, listId: string): void {
+    // Set up quick price buttons
+    const quickPriceBtns = form.querySelectorAll('.quick-price-btn');
+    quickPriceBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const price = (e.target as HTMLElement).dataset.price;
+        const priceInput = form.querySelector('#id_price') as HTMLInputElement;
+        if (price && priceInput) {
+          priceInput.value = price;
+          priceInput.focus();
+          // Trigger input event to update any validation or calculations
+          priceInput.dispatchEvent(new Event('input'));
+        }
+      });
+    });
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -390,20 +405,37 @@ class PackingListDetailManager {
 
       try {
         const formData = FormUtils.getFormData(form);
-        const response = await apiClient.post(form.action, formData);
+        
+        // Debug: Log form data
+        console.log('Submitting form data:', Object.fromEntries(formData.entries()));
+        
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+          }
+        });
 
-        if (response.success) {
+        const data = await response.json();
+        console.log('Response data:', data);
+
+        if (data.success) {
           UIUtils.hideModal('price-modal');
+          UIUtils.showNotification('Price added successfully!', 'success');
           location.reload(); // Refresh to show new price
-        } else if (response.html) {
+        } else if (data.html) {
           const modalBody = DOMUtils.getElement<HTMLElement>('#price-modal-body');
           if (modalBody) {
-            modalBody.innerHTML = response.html;
+            modalBody.innerHTML = data.html;
             const newForm = modalBody.querySelector('form') as HTMLFormElement;
             if (newForm) {
               this.setupPriceFormSubmission(newForm, itemId, listId);
             }
           }
+        } else if (data.message) {
+          UIUtils.showNotification(data.message, 'error');
         }
       } catch (error) {
         console.error('Error:', error);

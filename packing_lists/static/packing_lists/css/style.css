@@ -2458,3 +2458,128 @@ a:focus {
   border-radius: 4px;
   padding: 0.1em 0.5em;
 }
+
+/* Mobile responsive improvements for table */
+@media (max-width: 768px) {
+  .modern-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -1rem;
+  }
+  
+  .modern-table {
+    min-width: 800px; /* Ensure table doesn't get too compressed */
+    font-size: 0.85rem;
+  }
+  
+  .modern-table th,
+  .modern-table td {
+    padding: var(--spacing-sm) var(--spacing-xs);
+    white-space: nowrap;
+  }
+  
+  .item-name-cell {
+    max-width: 150px;
+    white-space: normal;
+    word-wrap: break-word;
+    min-width: 120px;
+  }
+  
+  .store-cell {
+    max-width: 120px;
+  }
+  
+  .actions-cell {
+    min-width: 140px;
+  }
+  
+  .action-buttons {
+    gap: 2px;
+  }
+  
+  .action-btn {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 4px;
+    font-size: 14px;
+  }
+  
+  /* Hide less important columns on mobile by default */
+  .modern-table .hidden-column {
+    display: none !important;
+  }
+  
+  /* Show scroll hint */
+  .modern-table-wrapper::after {
+    content: "← Scroll for more →";
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    pointer-events: none;
+    opacity: 0.7;
+  }
+}
+
+/* Desktop layout improvements */
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1400px;
+    width: 95%;
+  }
+  
+  .modern-table-wrapper {
+    margin: 0;
+  }
+  
+  .modern-table th,
+  .modern-table td {
+    padding: var(--spacing-md);
+  }
+}
+
+/* Container width fixes */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 992px) {
+  .container {
+    max-width: 1200px;
+    width: 90%;
+  }
+}
+
+/* Additional mobile optimizations */
+@media (max-width: 480px) {
+  .modern-table {
+    min-width: 700px;
+    font-size: 0.8rem;
+  }
+  
+  .actions-cell {
+    min-width: 120px;
+  }
+  
+  .action-btn {
+    min-width: 28px;
+    min-height: 28px;
+    font-size: 12px;
+  }
+  
+  .container {
+    padding: 0 0.5rem;
+  }
+  
+  .modern-table-wrapper {
+    margin: 0 -0.5rem;
+    border-radius: 0;
+  }
+}
