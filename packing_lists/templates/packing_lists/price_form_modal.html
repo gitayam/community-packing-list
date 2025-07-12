@@ -101,17 +101,17 @@
 
         <!-- Price Confidence Field -->
         <div class="form-group">
-            {{ form.price_confidence.label_tag }}
-            {{ form.price_confidence }}
-            {% if form.price_confidence.errors %}
+            {{ form.confidence.label_tag }}
+            {{ form.confidence }}
+            {% if form.confidence.errors %}
               <div class="text-danger">
-                {% for error in form.price_confidence.errors %}
+                {% for error in form.confidence.errors %}
                   <div>{{ error }}</div>
                 {% endfor %}
               </div>
             {% endif %}
-            {% if form.price_confidence.help_text %}
-              <small class="form-text text-muted">{{ form.price_confidence.help_text }}</small>
+            {% if form.confidence.help_text %}
+              <small class="form-text text-muted">{{ form.confidence.help_text }}</small>
             {% endif %}
         </div>
 

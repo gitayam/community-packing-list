@@ -7,15 +7,27 @@ interface PriceData {
   date: string;
 }
 
+interface QuickPriceSettings {
+  lastStore: string;
+  recentPrices: number[];
+  autoFillConfidence: string;
+}
+
 class PriceFormModalManager {
+  private modal: HTMLElement | null = null;
   private addStoreDiv: HTMLElement | null = null;
   private storeSelect: HTMLSelectElement | null = null;
   private storeNameInput: HTMLInputElement | null = null;
   private priceInput: HTMLInputElement | null = null;
   private quantityInput: HTMLInputElement | null = null;
+  private confidenceSelect: HTMLSelectElement | null = null;
   private pricePerUnitDisplay: HTMLElement | null = null;
   private priceValidationMessage: HTMLElement | null = null;
+  private submitButton: HTMLButtonElement | null = null;
   private historicalPrices: PriceData[] = [];
+  private currentItemId: string | null = null;
+  private currentListId: string | null = null;
+  private settings: QuickPriceSettings;
 
   constructor() {
     this.initialize();

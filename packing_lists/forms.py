@@ -192,7 +192,7 @@ class PriceForm(forms.ModelForm):
         initial=date.today
     )
     
-    price_confidence = forms.ChoiceField(
+    confidence = forms.ChoiceField(
         choices=[
             ('high', 'High - Verified receipt/website'),
             ('medium', 'Medium - Personal observation'),

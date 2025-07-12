@@ -127,10 +127,16 @@ class Item(models.Model):
     
     def get_best_prices(self, limit=5):
         """Get the best (lowest) prices with confidence weighting"""
-        return self.prices.all().extra(
-            select={
-                'weighted_price': 'price / (CASE confidence WHEN "high" THEN 1.0 WHEN "medium" THEN 1.1 WHEN "low" THEN 1.2 ELSE 1.1 END)'
-            }
+        from django.db.models import Case, When, Value, F, FloatField
+        
+        return self.prices.annotate(
+            weighted_price=Case(
+                When(confidence='high', then=F('price') / Value(1.0)),
+                When(confidence='medium', then=F('price') / Value(1.1)),
+                When(confidence='low', then=F('price') / Value(1.2)),
+                default=F('price') / Value(1.1),
+                output_field=FloatField()
+            )
         ).order_by('weighted_price', '-created_at')[:limit]
     
     def get_price_statistics(self):
@@ -185,8 +191,8 @@ class Price(models.Model):
     date_purchased = models.DateField(null=True, blank=True)
     confidence = models.CharField(max_length=10, choices=CONFIDENCE_CHOICES, default='medium',
                                   help_text="Confidence level in price accuracy")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     # user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) # Who reported this price
 
     class Meta:
