@@ -479,7 +479,8 @@ a:hover {
   justify-content: center;
   padding: var(--space-4);
   background: rgb(0 0 0 / 0.5);
-  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+          backdrop-filter: blur(4px);
 }
 .modal--open {
   display: flex;
