@@ -566,8 +566,8 @@ class PriceFormModalManager {
     try {
       // Load form content via AJAX
       const url = listId 
-        ? `/packing_lists/items/${itemId}/add_price/${listId}/`
-        : `/packing_lists/items/${itemId}/add_price/`;
+        ? `/item/${itemId}/add_price_modal/to_list/${listId}/`
+        : `/item/${itemId}/add_price_modal/`;
       
       const response = await fetch(url, {
         headers: {

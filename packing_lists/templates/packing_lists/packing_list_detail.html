@@ -158,9 +158,9 @@
                                 <td class="packed-cell">
                                     <button type="submit" name="toggle_packed_item_id" value="{{ item_wp.pli.id }}" class="pack-button {% if item_wp.pli.packed %}packed{% else %}unpacked{% endif %}">
                                         {% if item_wp.pli.packed %}
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-circle"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                            ✅
                                         {% else %}
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-circle"><circle cx="12" cy="12" r="10"></circle></svg>
+                                            ⭕
                                         {% endif %}
                                     </button>
                                 </td>
@@ -183,7 +183,7 @@
                                 <td class="store-cell">
                                     {% if item_wp.prices_with_votes and item_wp.prices_with_votes.0.price.store %}
                                         <div class="store-info">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-award"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 17 17 23 15.79 13.88"></polyline></svg>
+                                            🏪
                                             <div class="store-details">
                                                 <span class="store-name">{{ item_wp.prices_with_votes.0.price.store.name }}</span>
                                                 {% if base_filter_active and item_wp.prices_with_votes.0.distance_from_base %}
@@ -239,18 +239,21 @@
                                 </td>
                                 <td class="actions-cell">
                                     <div class="action-buttons">
-                                        {# Modal temporarily disabled: use full page form instead #}
-                                        <a href="{% url 'add_price_for_item' item_wp.item.id packing_list.id %}" class="action-btn add-price-btn" title="Add Price">
-                                            <img src="{% static 'packing_lists/icons/plus-square.svg' %}" alt="Add Price" width="16" height="16" />
-                                        </a>
-                                        <button type="button" class="action-btn expand-price-btn" data-item-id="{{ item_wp.item.id }}" title="Expand Price Details">
-                                            <img src="{% static 'packing_lists/icons/plus-database.svg' %}" alt="Expand Price" width="16" height="16" />
+                                        <button type="button" class="action-btn add-price-btn" 
+                                                data-item-id="{{ item_wp.item.id }}" 
+                                                data-list-id="{{ packing_list.id }}" 
+                                                title="Add Price"
+                                                onclick="openPriceModal('{{ item_wp.item.id }}', '{{ packing_list.id }}')">
+                                            💰
+                                        </button>
+                                        <button type="button" class="action-btn expand-price-btn" data-item-id="{{ item_wp.item.id }}" title="View All Prices">
+                                            📊
                                         </button>
                                         <button type="button" class="action-btn edit-btn edit-item-btn" data-list-id="{{ packing_list.id }}" data-pli-id="{{ item_wp.pli.id }}" title="Edit Item">
-                                            <img src="{% static 'packing_lists/icons/edit.svg' %}" alt="Edit Item" width="16" height="16" />
+                                            ✏️
                                         </button>
-                                        <button type="button" class="action-btn review-btn" title="Review item brand">
-                                            <img src="{% static 'packing_lists/icons/review.svg' %}" alt="Review" width="16" height="16" />
+                                        <button type="button" class="action-btn review-btn" title="Review & Rate">
+                                            ⭐
                                         </button>
                                     </div>
                                 </td>
@@ -283,17 +286,7 @@
         </div>
     {% endif %}
 
-    {# Comment out the modal for now #}
-    {#
-    <div id="price-modal" class="modal">
-        <div id="price-modal-content" class="modal-content">
-            <button id="close-price-modal" class="modal-close">&times;</button>
-            <div id="price-modal-body">
-                <!-- AJAX-loaded form will go here -->
-            </div>
-        </div>
-    </div>
-    #}
+    <!-- Price Modal will be created dynamically by TypeScript -->
 
     <!-- Edit Item Modal -->
     <div id="edit-item-modal" class="modal">
@@ -307,4 +300,5 @@
 
     <script src="{% static 'packing_lists/js/shared.js' %}"></script>
     <script src="{% static 'packing_lists/js/packing-list-detail.js' %}"></script>
+    <script src="{% static 'packing_lists/js/price-form-modal.js' %}"></script>
 {% endblock %}
