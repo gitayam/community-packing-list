@@ -1,0 +1,126 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: community-packing-list
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/execution-environment: gen2
+    run.googleapis.com/cpu-throttling: "false"
+spec:
+  template:
+    metadata:
+      annotations:
+        # CPU and memory allocation
+        run.googleapis.com/cpu: "1"
+        run.googleapis.com/memory: "1Gi"
+        
+        # Scaling configuration
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "10"
+        
+        # Cloud SQL connection
+        run.googleapis.com/cloudsql-instances: PROJECT_ID:REGION:DB_INSTANCE_NAME
+        
+        # Service account
+        run.googleapis.com/service-account: SERVICE_NAME-sa@PROJECT_ID.iam.gserviceaccount.com
+        
+        # Startup and request timeout
+        run.googleapis.com/timeout: "300s"
+        run.googleapis.com/startup-cpu-boost: "true"
+        
+    spec:
+      # Container concurrency (requests per instance)
+      containerConcurrency: 80
+      
+      # Request timeout
+      timeoutSeconds: 300
+      
+      containers:
+      - name: community-packing-list
+        image: REGION-docker.pkg.dev/PROJECT_ID/SERVICE_NAME/SERVICE_NAME:latest
+        
+        ports:
+        - name: http1
+          containerPort: 8080
+          
+        env:
+        - name: PORT
+          value: "8080"
+        - name: GOOGLE_CLOUD_PROJECT
+          value: PROJECT_ID
+        - name: ENVIRONMENT
+          value: "production"
+          
+        # Secrets from Secret Manager
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: database-url
+        - name: DJANGO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: django-secret-key
+        - name: GS_BUCKET_NAME
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: static-bucket-name
+        - name: GS_MEDIA_BUCKET_NAME
+          valueFrom:
+            secretKeyRef:
+              key: latest
+              name: media-bucket-name
+              
+        # Resource limits
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+          requests:
+            cpu: "0.5"
+            memory: "512Mi"
+            
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health/
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 30
+          failureThreshold: 3
+          
+        readinessProbe:
+          httpGet:
+            path: /health/
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 3
+          
+        # Startup probe for longer initialization
+        startupProbe:
+          httpGet:
+            path: /health/
+            port: 8080
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 12  # 2 minutes total
+          
+        # Security context
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+            
+  traffic:
+  - percent: 100
+    latestRevision: true

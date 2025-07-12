@@ -1,59 +1,108 @@
-#!/bin/sh
+#!/bin/bash
 
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-# Function to check if database tables exist
-check_tables_exist() {
+# Enable debug mode if needed
+if [ "$DEBUG_ENTRYPOINT" = "true" ]; then
+    set -x
+fi
+
+# Determine which settings module to use
+if [ "$GOOGLE_CLOUD_PROJECT" ]; then
+    export DJANGO_SETTINGS_MODULE="community_packing_list.settings_gcp"
+    echo "Using Google Cloud settings"
+else
+    export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-community_packing_list.settings}"
+    echo "Using local/default settings"
+fi
+
+# Function to check if database is accessible
+check_database() {
     python -c "
 import django
 import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'community_packing_list.settings')
 django.setup()
 from django.db import connection
-cursor = connection.cursor()
 try:
-    cursor.execute(\"SELECT COUNT(*) FROM packing_lists_packinglist\")
-    print('Tables exist')
+    with connection.cursor() as cursor:
+        cursor.execute('SELECT 1')
+    print('Database connection successful')
     exit(0)
-except:
-    print('Tables do not exist')
+except Exception as e:
+    print(f'Database connection failed: {e}')
     exit(1)
 "
 }
 
-# Wait for the database to be ready
-echo "Waiting for postgres..."
-while ! pg_isready -h ${DB_HOST:-db} -p ${DB_PORT:-5432} -U ${DB_USER:-packinglist_user} -q -d ${DB_NAME:-packinglist_dev}; do
-  sleep 1
+# Function to check if tables exist
+check_tables_exist() {
+    python -c "
+import django
+import os
+django.setup()
+from django.db import connection
+try:
+    with connection.cursor() as cursor:
+        cursor.execute(\"SELECT COUNT(*) FROM packing_lists_packinglist\")
+    print('Tables exist')
+    exit(0)
+except Exception as e:
+    print('Tables do not exist or error occurred')
+    exit(1)
+"
+}
+
+# Wait for database to be ready (with timeout)
+echo "Waiting for database to be ready..."
+TIMEOUT=60
+COUNTER=0
+
+while [ $COUNTER -lt $TIMEOUT ]; do
+    if check_database; then
+        echo "Database is ready!"
+        break
+    fi
+    echo "Database not ready, waiting... ($COUNTER/$TIMEOUT)"
+    sleep 2
+    COUNTER=$((COUNTER + 2))
 done
-echo "PostgreSQL started"
+
+if [ $COUNTER -ge $TIMEOUT ]; then
+    echo "Database connection timeout after ${TIMEOUT} seconds"
+    exit 1
+fi
 
 # Apply database migrations
 echo "Applying database migrations..."
 python manage.py migrate --noinput
 
-# Clean up any existing demo data and recreate properly
-echo "Cleaning up and recreating demo data..."
-python manage.py shell -c "
+# Only set up demo data in development/non-production environments
+if [ "$ENVIRONMENT" != "production" ] && [ "$SKIP_DEMO_DATA" != "true" ]; then
+    echo "Setting up demo data (non-production environment)..."
+    
+    # Clean up any existing demo data and recreate properly
+    echo "Cleaning up and recreating demo data..."
+    python manage.py shell -c "
 from packing_lists.models import PackingList, PackingListItem
 # Remove any existing demo lists
 PackingList.objects.filter(name__in=['Ranger School Packing List V10', 'Ranger School Packing List']).delete()
 print('Cleaned up existing demo lists')
 "
 
-# Check if we need to create example data
-echo "Checking if example data exists..."
-if ! check_tables_exist || [ "$(python manage.py shell -c "from packing_lists.models import PackingList; print(PackingList.objects.count())")" = "0" ]; then
-    echo "Creating example data..."
-    python manage.py create_example_data
-else
-    echo "Example data already exists, skipping creation."
-fi
+    # Check if we need to create example data
+    echo "Checking if example data exists..."
+    DATA_COUNT=$(python manage.py shell -c "from packing_lists.models import PackingList; print(PackingList.objects.count())" 2>/dev/null || echo "0")
+    if [ "$DATA_COUNT" = "0" ]; then
+        echo "Creating example data..."
+        python manage.py create_example_data
+    else
+        echo "Example data already exists, skipping creation."
+    fi
 
-# Ensure demo packing list has the correct description
-echo "Updating demo packing list description..."
-python manage.py shell -c "
+    # Ensure demo packing list has the correct description
+    echo "Updating demo packing list description..."
+    python manage.py shell -c "
 from packing_lists.models import PackingList
 demo_list = PackingList.objects.filter(name='Ranger School Packing List V10').first()
 if demo_list and '(DEMO)' not in demo_list.description:
@@ -63,10 +112,17 @@ if demo_list and '(DEMO)' not in demo_list.description:
 else:
     print('Demo list already has correct description or does not exist')
 "
+else
+    echo "Skipping demo data setup (production environment or explicitly disabled)"
+fi
 
-# Collect static files
-echo "Collecting static files..."
-python manage.py collectstatic --noinput --clear
+# Collect static files (only if not using Cloud Storage)
+if [ "$USE_GCS" != "true" ] && [ "$GS_BUCKET_NAME" = "" ]; then
+    echo "Collecting static files..."
+    python manage.py collectstatic --noinput --clear
+else
+    echo "Using Cloud Storage for static files, skipping local collection"
+fi
 
 # Create superuser if it doesn't exist (for development)
 if [ "$DJANGO_SUPERUSER_USERNAME" ] && [ "$DJANGO_SUPERUSER_PASSWORD" ] && [ "$DJANGO_SUPERUSER_EMAIL" ]; then
@@ -82,17 +138,29 @@ else:
 "
 fi
 
-# Start server
-# The CMD in Dockerfile or command in docker-compose.yml will be executed after this script.
-# If you want this script to be the final command, you can start Gunicorn or runserver here.
-# For example:
-# exec gunicorn community_packing_list.wsgi:application --bind 0.0.0.0:8000 --workers 3
+# Health check before starting server
+echo "Performing pre-startup health check..."
+python -c "
+import django
+django.setup()
+from django.db import connection
+from django.core.management import execute_from_command_line
+try:
+    # Test database connection
+    with connection.cursor() as cursor:
+        cursor.execute('SELECT 1')
+    print('✓ Database connection healthy')
+    
+    # Test Django setup
+    execute_from_command_line(['manage.py', 'check', '--deploy'])
+    print('✓ Django deployment check passed')
+    
+except Exception as e:
+    print(f'✗ Health check failed: {e}')
+    exit(1)
+"
 
-# If CMD is used in Dockerfile/docker-compose.yml to start the server,
-# this script just needs to prepare the environment (like migrations).
-echo "Entrypoint script finished. Docker CMD will now run."
+echo "Entrypoint script completed successfully. Starting application..."
 
-# The `exec "$@"` line allows Docker to pass the CMD from the Dockerfile or docker-compose.yml
-# to this script, and this script will execute it as the main process (PID 1).
-# This is useful if you want to run migrations and then start the server using the CMD.
+# Execute the CMD instruction from Dockerfile
 exec "$@"

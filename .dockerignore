@@ -1,6 +1,18 @@
 # Git
 .git
 .gitignore
+.github
+
+# Documentation
+*.md
+LessonsLearned.md
+
+# Development files
+.env
+.env.*
+.vscode
+.idea
+*.log
 
 # Python
 __pycache__
@@ -18,20 +30,12 @@ pip-delete-this-directory.txt
 nosetests.xml
 coverage.xml
 *.cover
-*.log
-.git
+*.py,cover
+.hypothesis/
+.pytest_cache/
 .mypy_cache
-.pytest_cache
-.hypothesis
 
-# Django
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-media
-
-# Node.js (for TypeScript build)
+# Node.js
 node_modules
 npm-debug.log*
 yarn-debug.log*
@@ -39,19 +43,35 @@ yarn-error.log*
 .npm
 .eslintcache
 
-# Build outputs
-dist
-build
+# Build artifacts (exclude from image since built in multi-stage)
+build/
+dist/
+src/
+tsconfig.json
+webpack.config.js
+postcss.config.js
+.prettierrc
 *.tsbuildinfo
 
-# IDE
-.vscode
-.idea
-*.swp
-*.swo
-*~
+# Database
+*.sqlite3
+*.db
+db.sqlite3-journal
 
-# OS
+# Media files (will be handled by Cloud Storage)
+mediafiles/
+uploads/
+media/
+
+# Test files
+.coverage
+htmlcov/
+.pytest_cache/
+test_*.py
+*_test.py
+tests/
+
+# OS files
 .DS_Store
 .DS_Store?
 ._*
@@ -60,13 +80,13 @@ build
 ehthumbs.db
 Thumbs.db
 
-# Environment files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Docker
+Dockerfile.dev
+docker-compose*.yml
 
-# Documentation
-README.md
-*.md 
+# Misc
+cookies.txt
+*.swp
+*.swo
+*~
+local_settings.py 

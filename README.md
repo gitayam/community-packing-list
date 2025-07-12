@@ -42,6 +42,37 @@ The application includes a comprehensive Ranger School packing list example with
 - Python 3.8+ (for local development)
 - Node.js 18+ (for local development)
 
+## ☁️ Cloud Deployment
+
+### Google Cloud Serverless Deployment
+For production deployment on Google Cloud using serverless technologies (Cloud Run, Cloud SQL, Cloud Storage), see the comprehensive [Google Cloud Deployment Guide](GOOGLE_CLOUD_DEPLOYMENT.md).
+
+**Key Benefits:**
+- **Serverless**: Automatically scales to zero when not in use
+- **Managed Database**: Cloud SQL PostgreSQL with automatic backups
+- **Static File Hosting**: Cloud Storage with CDN capabilities  
+- **CI/CD Pipeline**: GitHub Actions with automated testing and deployment
+- **Security**: Secret Manager for sensitive data, IAM for access control
+- **Monitoring**: Built-in logging and health checks
+
+**Quick Cloud Setup:**
+```bash
+# 1. Set up Google Cloud project and APIs (see full guide)
+# 2. Configure GitHub repository secrets:
+#    - GCP_PROJECT_ID
+#    - GCP_REGION  
+#    - GCP_SERVICE_NAME
+#    - GCP_SA_KEY
+# 3. Push to main branch - GitHub Actions handles the rest!
+```
+
+### Other Cloud Platforms
+The application is containerized and can be deployed to any cloud platform supporting Docker containers:
+- **AWS**: ECS Fargate, App Runner, or EKS
+- **Azure**: Container Instances, App Service, or AKS  
+- **Digital Ocean**: App Platform or Kubernetes
+- **Heroku**: Container Registry and Runtime
+
 ### Environment Setup
 
 - **Do NOT commit your `.env` file to version control.**

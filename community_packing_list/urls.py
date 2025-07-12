@@ -19,9 +19,12 @@ from django.contrib import admin
 from django.urls import path, include # Import include
 from django.conf import settings
 from django.conf.urls.static import static
+from health_check import health_check, readiness_check
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("health/", health_check, name="health_check"),
+    path("readiness/", readiness_check, name="readiness_check"),
     path("", include("packing_lists.urls")), # Include your app's URLs
 ]
 
