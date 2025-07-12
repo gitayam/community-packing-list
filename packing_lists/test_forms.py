@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from decimal import Decimal
 
 from .models import School, Store, Item, PackingList
-from .forms import PackingListForm, PriceForm
+from .forms import PackingListForm, PriceForm, BulkPriceForm
 
 
 class PackingListFormTests(TestCase):
@@ -138,10 +138,143 @@ class PriceFormTests(TestCase):
         }
         form = PriceForm(data=form_data)
         self.assertFalse(form.is_valid())
-        self.assertIn('__all__', form.errors)
+        self.assertIn('Please select an existing store or provide a new store name.', str(form.errors))
     
-    def test_price_form_invalid_price(self):
-        """Test form with invalid price"""
+    def test_price_form_enhanced_validation(self):
+        """Test enhanced price validation"""
+        # Test negative price
+        form_data = {
+            'store': self.store.id,
+            'price': '-5.00',
+            'quantity': 1
+        }
+        form = PriceForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('price', form.errors)
+        
+        # Test very high price
+        form_data['price'] = '15000.00'
+        form = PriceForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('price', form.errors)
+        
+        # Test zero quantity
+        form_data['price'] = '19.99'
+        form_data['quantity'] = 0
+        form = PriceForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('quantity', form.errors)
+    
+    def test_price_form_with_confidence(self):
+        """Test form with confidence field"""
+        form_data = {
+            'store': self.store.id,
+            'price': '19.99',
+            'quantity': 1,
+            'confidence': 'high'
+        }
+        form = PriceForm(data=form_data, item_instance=self.item)
+        self.assertTrue(form.is_valid())
+        price = form.save(item_instance=self.item)
+        self.assertEqual(price.confidence, 'high')
+    
+    def test_price_form_price_per_unit_validation(self):
+        """Test price per unit validation"""
+        form_data = {
+            'store': self.store.id,
+            'price': '0.05',  # 5 cents for 10 items = 0.5 cents per unit (less than 1 cent)
+            'quantity': 10
+        }
+        form = PriceForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('Price per unit cannot be less than $0.01', str(form.errors))
+
+
+class BulkPriceFormTests(TestCase):
+    """Test BulkPriceForm functionality"""
+    
+    def setUp(self):
+        self.store = Store.objects.create(name="Test Store")
+    
+    def test_bulk_price_form_valid(self):
+        """Test form with valid bulk data"""
+        form_data = {
+            'store': self.store.id,
+            'confidence': 'medium',
+            'price_data': 'Compass, 19.99, 1\nSleeping Bag, 89.99, 1\nFirst Aid Kit, 24.99, 1'
+        }
+        form = BulkPriceForm(data=form_data)
+        self.assertTrue(form.is_valid())
+    
+    def test_bulk_price_form_invalid_format(self):
+        """Test form with invalid CSV format"""
+        form_data = {
+            'store': self.store.id,
+            'confidence': 'medium',
+            'price_data': 'Compass, 19.99\nSleeping Bag, 89.99, 1, extra'  # Wrong number of fields
+        }
+        form = BulkPriceForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('price_data', form.errors)
+    
+    def test_bulk_price_form_invalid_prices(self):
+        """Test form with invalid price values"""
+        form_data = {
+            'store': self.store.id,
+            'confidence': 'medium',
+            'price_data': 'Compass, -19.99, 1\nSleeping Bag, not_a_price, 1'
+        }
+        form = BulkPriceForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('price_data', form.errors)
+    
+    def test_bulk_price_form_save(self):
+        """Test saving bulk price data"""
+        form_data = {
+            'store': self.store.id,
+            'confidence': 'high',
+            'price_data': 'Compass, 19.99, 1\nSleeping Bag, 89.99, 1'
+        }
+        form = BulkPriceForm(data=form_data)
+        self.assertTrue(form.is_valid())
+        
+        created_prices, created_items = form.save()
+        
+        self.assertEqual(len(created_prices), 2)
+        self.assertEqual(len(created_items), 2)
+        
+        # Check that items were created
+        self.assertTrue(Item.objects.filter(name='Compass').exists())
+        self.assertTrue(Item.objects.filter(name='Sleeping Bag').exists())
+        
+        # Check that prices were created
+        compass_price = Price.objects.get(item__name='Compass')
+        self.assertEqual(compass_price.price, Decimal('19.99'))
+        self.assertEqual(compass_price.confidence, 'high')
+        self.assertEqual(compass_price.store, self.store)
+    
+    def test_bulk_price_form_with_new_store(self):
+        """Test bulk form with new store creation"""
+        form_data = {
+            'store_name': 'New Bulk Store',
+            'confidence': 'medium',
+            'price_data': 'Test Item, 9.99, 1'
+        }
+        form = BulkPriceForm(data=form_data)
+        self.assertTrue(form.is_valid())
+        
+        created_prices, created_items = form.save()
+        
+        self.assertEqual(len(created_prices), 1)
+        self.assertEqual(len(created_items), 1)
+        
+        # Check that new store was created
+        self.assertTrue(Store.objects.filter(name='New Bulk Store').exists())
+        new_store = Store.objects.get(name='New Bulk Store')
+        
+        # Check that price is associated with new store
+        test_price = Price.objects.get(item__name='Test Item')
+        self.assertEqual(test_price.store, new_store)
         form_data = {
             'store': self.store.id,
             'price': 'invalid_price',

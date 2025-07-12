@@ -246,6 +246,147 @@ class PriceModelTests(TestCase):
             price=Decimal("15.50")
         )
         self.assertEqual(str(price), "Test Item at Test Store: 15.50 for 1")
+    
+    def test_price_confidence_field(self):
+        """Test the confidence field functionality"""
+        price = Price.objects.create(
+            item=self.item,
+            store=self.store,
+            price=Decimal("19.99"),
+            confidence='high'
+        )
+        self.assertEqual(price.confidence, 'high')
+        self.assertEqual(price.confidence_score, 3)
+        
+        # Test default confidence
+        price_default = Price.objects.create(
+            item=self.item,
+            store=self.store,
+            price=Decimal("29.99")
+        )
+        self.assertEqual(price_default.confidence, 'medium')
+        self.assertEqual(price_default.confidence_score, 2)
+    
+    def test_price_per_unit_property(self):
+        """Test the price_per_unit property"""
+        price = Price.objects.create(
+            item=self.item,
+            store=self.store,
+            price=Decimal("19.99"),
+            quantity=2
+        )
+        self.assertEqual(price.price_per_unit, Decimal("9.995"))
+        
+        # Test with quantity of 1
+        price_single = Price.objects.create(
+            item=self.item,
+            store=self.store,
+            price=Decimal("10.00"),
+            quantity=1
+        )
+        self.assertEqual(price_single.price_per_unit, Decimal("10.00"))
+    
+    def test_price_is_recent_property(self):
+        """Test the is_recent property"""
+        from datetime import date, timedelta
+        
+        # Recent price
+        recent_price = Price.objects.create(
+            item=self.item,
+            store=self.store,
+            price=Decimal("19.99"),
+            date_purchased=date.today() - timedelta(days=15)
+        )
+        self.assertTrue(recent_price.is_recent)
+        
+        # Old price
+        old_price = Price.objects.create(
+            item=self.item,
+            store=self.store,
+            price=Decimal("19.99"),
+            date_purchased=date.today() - timedelta(days=45)
+        )
+        self.assertFalse(old_price.is_recent)
+        
+        # No date price
+        no_date_price = Price.objects.create(
+            item=self.item,
+            store=self.store,
+            price=Decimal("19.99")
+        )
+        self.assertFalse(no_date_price.is_recent)
+
+
+class ItemModelEnhancedTests(TestCase):
+    """Test enhanced Item model functionality"""
+    
+    def setUp(self):
+        self.item = Item.objects.create(name="Test Item")
+        self.store1 = Store.objects.create(name="Store 1")
+        self.store2 = Store.objects.create(name="Store 2")
+        
+        # Create some test prices
+        from datetime import date, timedelta
+        
+        Price.objects.create(
+            item=self.item,
+            store=self.store1,
+            price=Decimal("19.99"),
+            confidence='high',
+            date_purchased=date.today() - timedelta(days=5)
+        )
+        Price.objects.create(
+            item=self.item,
+            store=self.store2,
+            price=Decimal("24.99"),
+            confidence='medium',
+            date_purchased=date.today() - timedelta(days=10)
+        )
+        Price.objects.create(
+            item=self.item,
+            store=self.store1,
+            price=Decimal("17.99"),
+            confidence='low',
+            date_purchased=date.today() - timedelta(days=100)  # Old price
+        )
+    
+    def test_get_price_statistics(self):
+        """Test get_price_statistics method"""
+        stats = self.item.get_price_statistics()
+        
+        self.assertEqual(stats['count'], 3)
+        self.assertEqual(stats['min_price'], Decimal('17.99'))
+        self.assertEqual(stats['max_price'], Decimal('24.99'))
+        self.assertAlmostEqual(float(stats['avg_price']), 20.99, places=2)
+        
+        # Check confidence breakdown
+        self.assertEqual(stats['confidence_breakdown']['high'], 1)
+        self.assertEqual(stats['confidence_breakdown']['medium'], 1)
+        self.assertEqual(stats['confidence_breakdown']['low'], 1)
+    
+    def test_get_best_prices(self):
+        """Test get_best_prices method with confidence weighting"""
+        best_prices = self.item.get_best_prices(limit=3)
+        
+        # Should return all 3 prices, ordered by weighted price
+        self.assertEqual(len(best_prices), 3)
+        
+        # High confidence price should be weighted best
+        # (even though it's not the absolute lowest)
+        first_price = best_prices[0]
+        self.assertEqual(first_price.confidence, 'high')
+        self.assertEqual(first_price.price, Decimal('19.99'))
+    
+    def test_get_price_history(self):
+        """Test get_price_history method"""
+        history = self.item.get_price_history(days=30)
+        
+        # Should return 2 prices (excluding the old one from 100 days ago)
+        self.assertEqual(len(history), 2)
+        
+        # Check that data is ordered by date
+        dates = [entry['date_purchased'] for entry in history]
+        self.assertEqual(dates, sorted(dates))
 
 
 class VoteModelTests(TestCase):

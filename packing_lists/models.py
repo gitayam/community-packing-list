@@ -105,6 +105,53 @@ class Item(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def get_price_history(self, days=90):
+        """Get price history for the last N days with aggregated data"""
+        from django.utils import timezone
+        from datetime import timedelta
+        from django.db.models import Avg, Min, Max, Count
+        
+        cutoff_date = timezone.now().date() - timedelta(days=days)
+        
+        return self.prices.filter(
+            date_purchased__gte=cutoff_date
+        ).values(
+            'date_purchased'
+        ).annotate(
+            avg_price=Avg('price'),
+            min_price=Min('price'),
+            max_price=Max('price'),
+            count=Count('id')
+        ).order_by('date_purchased')
+    
+    def get_best_prices(self, limit=5):
+        """Get the best (lowest) prices with confidence weighting"""
+        return self.prices.all().extra(
+            select={
+                'weighted_price': 'price / (CASE confidence WHEN "high" THEN 1.0 WHEN "medium" THEN 1.1 WHEN "low" THEN 1.2 ELSE 1.1 END)'
+            }
+        ).order_by('weighted_price', '-created_at')[:limit]
+    
+    def get_price_statistics(self):
+        """Get comprehensive price statistics for this item"""
+        from django.db.models import Avg, Min, Max, Count, StdDev
+        
+        stats = self.prices.aggregate(
+            avg_price=Avg('price'),
+            min_price=Min('price'),
+            max_price=Max('price'),
+            count=Count('id'),
+            std_dev=StdDev('price')
+        )
+        
+        # Add confidence breakdown
+        confidence_breakdown = {}
+        for confidence, _ in Price.CONFIDENCE_CHOICES:
+            confidence_breakdown[confidence] = self.prices.filter(confidence=confidence).count()
+        
+        stats['confidence_breakdown'] = confidence_breakdown
+        return stats
 
 class PackingListItem(models.Model):
     packing_list = models.ForeignKey(PackingList, on_delete=models.CASCADE, related_name='items')
@@ -125,15 +172,52 @@ class PackingListItem(models.Model):
         return f"{self.quantity} x {self.item.name} for {self.packing_list.name}"
 
 class Price(models.Model):
+    CONFIDENCE_CHOICES = [
+        ('high', 'High - Verified receipt/website'),
+        ('medium', 'Medium - Personal observation'),
+        ('low', 'Low - Estimated/heard from others')
+    ]
+    
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='prices')
     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='prices')
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField(default=1) # e.g. price for 1 item, or a pack of 3
     date_purchased = models.DateField(null=True, blank=True)
+    confidence = models.CharField(max_length=10, choices=CONFIDENCE_CHOICES, default='medium',
+                                  help_text="Confidence level in price accuracy")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     # user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) # Who reported this price
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['item', 'store']),
+            models.Index(fields=['item', 'created_at']),
+            models.Index(fields=['confidence']),
+        ]
 
     def __str__(self):
         return f"{self.item.name} at {self.store.name}: {self.price} for {self.quantity}"
+
+    @property
+    def price_per_unit(self):
+        """Calculate price per individual unit"""
+        return self.price / self.quantity if self.quantity > 0 else self.price
+
+    @property
+    def confidence_score(self):
+        """Return numeric confidence score for sorting/comparison"""
+        return {'high': 3, 'medium': 2, 'low': 1}.get(self.confidence, 2)
+
+    @property
+    def is_recent(self):
+        """Check if price is from within the last 30 days"""
+        from django.utils import timezone
+        from datetime import timedelta
+        if not self.date_purchased:
+            return False
+        return self.date_purchased >= timezone.now().date() - timedelta(days=30)
 
     def save(self, *args, **kwargs):
         if self.price is not None:
