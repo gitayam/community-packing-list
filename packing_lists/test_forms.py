@@ -3,7 +3,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
 from decimal import Decimal
 
-from .models import School, Store, Item, PackingList
+from .models import School, Store, Item, PackingList, Price
 from .forms import PackingListForm, PriceForm, BulkPriceForm
 
 
@@ -96,7 +96,8 @@ class PriceFormTests(TestCase):
         form_data = {
             'store': self.store.id,
             'price': '19.99',
-            'quantity': 1
+            'quantity': 1,
+            'confidence': 'medium'
         }
         form = PriceForm(data=form_data)
         self.assertTrue(form.is_valid())
@@ -106,7 +107,8 @@ class PriceFormTests(TestCase):
         form_data = {
             'store_name': 'New Store Name',
             'price': '15.50',
-            'quantity': 2
+            'quantity': 2,
+            'confidence': 'medium'
         }
         form = PriceForm(data=form_data)
         self.assertTrue(form.is_valid())
@@ -121,7 +123,8 @@ class PriceFormTests(TestCase):
             'store': self.store.id,
             'store_name': 'New Store Name',
             'price': '10.00',
-            'quantity': 1
+            'quantity': 1,
+            'confidence': 'medium'
         }
         form = PriceForm(data=form_data)
         self.assertTrue(form.is_valid())

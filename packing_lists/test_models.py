@@ -371,11 +371,16 @@ class ItemModelEnhancedTests(TestCase):
         # Should return all 3 prices, ordered by weighted price
         self.assertEqual(len(best_prices), 3)
         
-        # High confidence price should be weighted best
-        # (even though it's not the absolute lowest)
+        # Low confidence price ($17.99 / 1.2 = $14.99 equivalent) should be best
+        # because even with the penalty, it's still the lowest
         first_price = best_prices[0]
-        self.assertEqual(first_price.confidence, 'high')
-        self.assertEqual(first_price.price, Decimal('19.99'))
+        self.assertEqual(first_price.confidence, 'low')
+        self.assertEqual(first_price.price, Decimal('17.99'))
+        
+        # High confidence price should be second
+        second_price = best_prices[1]
+        self.assertEqual(second_price.confidence, 'high')
+        self.assertEqual(second_price.price, Decimal('19.99'))
     
     def test_get_price_history(self):
         """Test get_price_history method"""
