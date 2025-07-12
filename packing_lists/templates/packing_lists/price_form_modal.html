@@ -55,6 +55,16 @@
         <div class="form-group">
             {{ form.price.label_tag }}
             {{ form.price }}
+            <!-- Quick Price Actions -->
+            <div class="quick-price-actions mt-2">
+                <small class="text-muted d-block mb-1">Quick amounts:</small>
+                <div class="quick-price-buttons">
+                    <button type="button" class="quick-price-btn" data-price="9.99">$9.99</button>
+                    <button type="button" class="quick-price-btn" data-price="19.99">$19.99</button>
+                    <button type="button" class="quick-price-btn" data-price="29.99">$29.99</button>
+                    <button type="button" class="quick-price-btn" data-price="49.99">$49.99</button>
+                </div>
+            </div>
             {% if form.price.errors %}
               <div class="text-danger">
                 {% for error in form.price.errors %}
@@ -70,7 +80,10 @@
         <!-- Quantity Field -->
         <div class="form-group">
             {{ form.quantity.label_tag }}
-            {{ form.quantity }}
+            <div class="quantity-wrapper">
+                {{ form.quantity }}
+                <button type="button" class="set-quantity-btn" data-quantity="1" title="Set quantity to 1">1</button>
+            </div>
             {% if form.quantity.errors %}
               <div class="text-danger">
                 {% for error in form.quantity.errors %}
@@ -115,18 +128,6 @@
             {% endif %}
         </div>
 
-        <!-- Quick Actions -->
-        <div class="form-group">
-            <div class="quick-actions">
-                <small class="text-muted">Quick actions:</small>
-                <div class="btn-group btn-group-sm mt-1" role="group">
-                    <button type="button" class="btn btn-outline-secondary btn-sm quick-price-btn" data-price="9.99">$9.99</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm quick-price-btn" data-price="19.99">$19.99</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm quick-price-btn" data-price="29.99">$29.99</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm quick-price-btn" data-price="49.99">$49.99</button>
-                </div>
-            </div>
-        </div>
 
         <div class="form-actions">
             <button type="submit" class="button success">Save Price</button>
