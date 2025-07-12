@@ -1,0 +1,388 @@
+service: community-packing-list
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  memorySize: 1024
+  timeout: 30
+  
+  environment:
+    DJANGO_SETTINGS_MODULE: community_packing_list.settings_aws
+    STAGE: ${self:provider.stage}
+    DB_NAME: ${self:custom.dbName}
+    DB_HOST: 
+      Fn::GetAtt: [AuroraCluster, Endpoint.Address]
+    DB_PORT: 
+      Fn::GetAtt: [AuroraCluster, Endpoint.Port]
+    DB_USER: ${self:custom.dbUser}
+    DB_PASSWORD: ${env:DB_PASSWORD}
+    SECRET_KEY: ${env:SECRET_KEY}
+    STATIC_BUCKET: ${self:custom.staticBucket}
+    MEDIA_BUCKET: ${self:custom.mediaBucket}
+    CLOUDFRONT_DOMAIN: 
+      Fn::GetAtt: [CloudFrontDistribution, DomainName]
+    
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - rds-data:*
+            - secretsmanager:GetSecretValue
+            - secretsmanager:DescribeSecret
+          Resource: "*"
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+          Resource: 
+            - "arn:aws:s3:::${self:custom.staticBucket}/*"
+            - "arn:aws:s3:::${self:custom.mediaBucket}/*"
+
+custom:
+  dbName: packinglist_${self:provider.stage}
+  dbUser: packinglist_user
+  staticBucket: ${self:service}-static-${self:provider.stage}
+  mediaBucket: ${self:service}-media-${self:provider.stage}
+  
+  pythonRequirements:
+    dockerizePip: true
+    slim: true
+    strip: false
+    
+  customDomain:
+    domainName: ${env:DOMAIN_NAME, ''}
+    certificateName: ${env:CERTIFICATE_NAME, ''}
+    createRoute53Record: true
+    endpointType: 'regional'
+
+functions:
+  app:
+    handler: lambda_handler.handler
+    events:
+      - http:
+          path: /
+          method: ANY
+      - http:
+          path: /{proxy+}
+          method: ANY
+    vpc:
+      securityGroupIds:
+        - Ref: LambdaSecurityGroup
+      subnetIds:
+        - Ref: PrivateSubnet1
+        - Ref: PrivateSubnet2
+
+  migrate:
+    handler: lambda_migrate.handler
+    timeout: 300
+    events:
+      - schedule: rate(24 hours)
+    vpc:
+      securityGroupIds:
+        - Ref: LambdaSecurityGroup
+      subnetIds:
+        - Ref: PrivateSubnet1
+        - Ref: PrivateSubnet2
+
+plugins:
+  - serverless-python-requirements
+  - serverless-domain-manager
+  - serverless-plugin-warmup
+
+resources:
+  Resources:
+    # VPC Configuration
+    VPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: 10.0.0.0/16
+        EnableDnsHostnames: true
+        EnableDnsSupport: true
+        Tags:
+          - Key: Name
+            Value: ${self:service}-vpc-${self:provider.stage}
+
+    # Internet Gateway
+    InternetGateway:
+      Type: AWS::EC2::InternetGateway
+      Properties:
+        Tags:
+          - Key: Name
+            Value: ${self:service}-igw-${self:provider.stage}
+
+    InternetGatewayAttachment:
+      Type: AWS::EC2::VPCGatewayAttachment
+      Properties:
+        InternetGatewayId:
+          Ref: InternetGateway
+        VpcId:
+          Ref: VPC
+
+    # Public Subnets
+    PublicSubnet1:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: VPC
+        AvailabilityZone: ${self:provider.region}a
+        CidrBlock: 10.0.1.0/24
+        MapPublicIpOnLaunch: true
+        Tags:
+          - Key: Name
+            Value: ${self:service}-public-subnet-1-${self:provider.stage}
+
+    PublicSubnet2:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: VPC
+        AvailabilityZone: ${self:provider.region}b
+        CidrBlock: 10.0.2.0/24
+        MapPublicIpOnLaunch: true
+        Tags:
+          - Key: Name
+            Value: ${self:service}-public-subnet-2-${self:provider.stage}
+
+    # Private Subnets
+    PrivateSubnet1:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: VPC
+        AvailabilityZone: ${self:provider.region}a
+        CidrBlock: 10.0.3.0/24
+        Tags:
+          - Key: Name
+            Value: ${self:service}-private-subnet-1-${self:provider.stage}
+
+    PrivateSubnet2:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: VPC
+        AvailabilityZone: ${self:provider.region}b
+        CidrBlock: 10.0.4.0/24
+        Tags:
+          - Key: Name
+            Value: ${self:service}-private-subnet-2-${self:provider.stage}
+
+    # NAT Gateways
+    NatGateway1EIP:
+      Type: AWS::EC2::EIP
+      DependsOn: InternetGatewayAttachment
+      Properties:
+        Domain: vpc
+
+    NatGateway1:
+      Type: AWS::EC2::NatGateway
+      Properties:
+        AllocationId: !GetAtt NatGateway1EIP.AllocationId
+        SubnetId:
+          Ref: PublicSubnet1
+
+    # Route Tables
+    PrivateRouteTable1:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId:
+          Ref: VPC
+        Tags:
+          - Key: Name
+            Value: ${self:service}-private-routes-1-${self:provider.stage}
+
+    DefaultPrivateRoute1:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId:
+          Ref: PrivateRouteTable1
+        DestinationCidrBlock: 0.0.0.0/0
+        NatGatewayId:
+          Ref: NatGateway1
+
+    PrivateSubnet1RouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId:
+          Ref: PrivateRouteTable1
+        SubnetId:
+          Ref: PrivateSubnet1
+
+    PrivateSubnet2RouteTableAssociation:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        RouteTableId:
+          Ref: PrivateRouteTable1
+        SubnetId:
+          Ref: PrivateSubnet2
+
+    # Security Groups
+    LambdaSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Security group for Lambda functions
+        VpcId:
+          Ref: VPC
+        SecurityGroupEgress:
+          - IpProtocol: -1
+            CidrIp: 0.0.0.0/0
+
+    DatabaseSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Security group for RDS database
+        VpcId:
+          Ref: VPC
+        SecurityGroupIngress:
+          - IpProtocol: tcp
+            FromPort: 5432
+            ToPort: 5432
+            SourceSecurityGroupId:
+              Ref: LambdaSecurityGroup
+
+    # RDS Aurora Serverless v2
+    DBSubnetGroup:
+      Type: AWS::RDS::DBSubnetGroup
+      Properties:
+        DBSubnetGroupDescription: Subnet group for RDS database
+        SubnetIds:
+          - Ref: PrivateSubnet1
+          - Ref: PrivateSubnet2
+        Tags:
+          - Key: Name
+            Value: ${self:service}-db-subnet-group-${self:provider.stage}
+
+    AuroraCluster:
+      Type: AWS::RDS::DBCluster
+      Properties:
+        DBClusterIdentifier: ${self:service}-cluster-${self:provider.stage}
+        Engine: aurora-postgresql
+        EngineVersion: '15.4'
+        EngineMode: provisioned
+        ServerlessV2ScalingConfiguration:
+          MinCapacity: 0.5
+          MaxCapacity: 16
+        MasterUsername: ${self:custom.dbUser}
+        MasterUserPassword: ${env:DB_PASSWORD}
+        DatabaseName: ${self:custom.dbName}
+        DBSubnetGroupName:
+          Ref: DBSubnetGroup
+        VpcSecurityGroupIds:
+          - Ref: DatabaseSecurityGroup
+        BackupRetentionPeriod: 7
+        PreferredBackupWindow: "03:00-04:00"
+        PreferredMaintenanceWindow: "sun:04:00-sun:05:00"
+        DeletionProtection: false
+        Tags:
+          - Key: Name
+            Value: ${self:service}-aurora-cluster-${self:provider.stage}
+
+    AuroraInstance:
+      Type: AWS::RDS::DBInstance
+      Properties:
+        DBInstanceIdentifier: ${self:service}-instance-${self:provider.stage}
+        DBClusterIdentifier:
+          Ref: AuroraCluster
+        DBInstanceClass: db.serverless
+        Engine: aurora-postgresql
+        PubliclyAccessible: false
+
+    # S3 Buckets
+    StaticFilesBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.staticBucket}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders: ['*']
+              AllowedMethods: [GET, HEAD]
+              AllowedOrigins: ['*']
+              MaxAge: 3600
+
+    MediaFilesBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.mediaBucket}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+        VersioningConfiguration:
+          Status: Enabled
+
+    # CloudFront Distribution
+    CloudFrontDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Origins:
+            - DomainName: ${self:custom.staticBucket}.s3.amazonaws.com
+              Id: S3Origin
+              S3OriginConfig:
+                OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
+          Enabled: true
+          DefaultCacheBehavior:
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad  # CachingOptimized
+            Compress: true
+          PriceClass: PriceClass_100
+          ViewerCertificate:
+            CloudFrontDefaultCertificate: true
+
+    CloudFrontOriginAccessIdentity:
+      Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+      Properties:
+        CloudFrontOriginAccessIdentityConfig:
+          Comment: !Sub 'OAI for ${self:service}-${self:provider.stage}'
+
+    # S3 Bucket Policy
+    StaticFilesBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: StaticFilesBucket
+        PolicyDocument:
+          Statement:
+            - Sid: AllowCloudFrontAccess
+              Effect: Allow
+              Principal:
+                AWS: !Sub 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}'
+              Action: s3:GetObject
+              Resource: !Sub '${StaticFilesBucket}/*'
+
+  Outputs:
+    ApiGatewayRestApiId:
+      Value:
+        Ref: ApiGatewayRestApi
+      Export:
+        Name: ${self:service}-${self:provider.stage}-restApiId
+
+    ApiGatewayRestApiRootResourceId:
+      Value:
+        Fn::GetAtt: [ApiGatewayRestApi, RootResourceId]
+      Export:
+        Name: ${self:service}-${self:provider.stage}-rootResourceId
+
+    DatabaseEndpoint:
+      Value:
+        Fn::GetAtt: [AuroraCluster, Endpoint.Address]
+      Export:
+        Name: ${self:service}-${self:provider.stage}-db-endpoint
+
+    CloudFrontDomain:
+      Value:
+        Fn::GetAtt: [CloudFrontDistribution, DomainName]
+      Export:
+        Name: ${self:service}-${self:provider.stage}-cloudfront-domain 

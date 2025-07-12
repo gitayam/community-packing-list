@@ -1,0 +1,59 @@
+[build]
+include = [
+    "*.py",
+    "*.txt",
+    "*.toml",
+    "*.yaml",
+    "*.yml",
+    "*.json",
+    "*.js",
+    "*.ts",
+    "*.css",
+    "*.html",
+    "*.svg",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "*.gif",
+    "*.ico",
+    "manage.py",
+    "entrypoint.sh",
+    "community_packing_list/",
+    "packing_lists/",
+    "src/",
+    "staticfiles/",
+]
+
+exclude = [
+    "*.pyc",
+    "__pycache__/",
+    ".git/",
+    ".github/",
+    ".pytest_cache/",
+    ".mypy_cache/",
+    "node_modules/",
+    "*.log",
+    ".env*",
+    "*.md",
+    "test_*.py",
+    "*_test.py",
+    "tests/",
+    ".vscode/",
+    ".idea/",
+    "*.swp",
+    "*.swo",
+    "*~",
+    ".DS_Store",
+    "db.sqlite3",
+]
+
+[[build.buildpacks]]
+uri = "gcr.io/buildpacks/nodejs"
+
+[[build.buildpacks]]
+uri = "gcr.io/buildpacks/python"
+
+[build.env]
+NODE_ENV = "production"
+PYTHONUNBUFFERED = "1"
+PYTHONDONTWRITEBYTECODE = "1" 
