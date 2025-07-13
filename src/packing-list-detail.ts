@@ -80,6 +80,9 @@ class PackingListDetailManager {
     // Edit item modal functionality
     document.addEventListener('click', this.handleEditItemModalClick.bind(this));
 
+    // Anonymous indicator functionality
+    document.addEventListener('click', this.handleAnonymousIndicatorClick.bind(this));
+
     // Close modal functionality
     const closePriceModalBtn = DOMUtils.getElement<HTMLButtonElement>('#close-price-modal');
     if (closePriceModalBtn) {
@@ -335,25 +338,142 @@ class PackingListDetailManager {
   private handleKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       this.hidePriceDetails();
+      this.hideAnonymousPopup();
+    }
+  }
+
+  private async handleAnonymousIndicatorClick(event: Event): Promise<void> {
+    const target = event.target as HTMLElement;
+    
+    if (target.closest('.anonymous-indicator')) {
+      const indicator = target.closest('.anonymous-indicator') as HTMLElement;
+      const priceId = indicator.dataset.priceId;
+      
+      if (!priceId) return;
+      
+      try {
+        const response = await apiClient.get(`/api/price/${priceId}/anonymous-info/`);
+        
+        if (response.success && response.data) {
+          this.showAnonymousPopup(indicator, response.data);
+        }
+      } catch (error) {
+        console.error('Error loading anonymous info:', error);
+      }
+    }
+  }
+
+  private showAnonymousPopup(triggerElement: HTMLElement, data: any): void {
+    const popup = DOMUtils.getElement<HTMLElement>('#anonymous-popup');
+    if (!popup) return;
+
+    // Update popup content
+    const trustFill = popup.querySelector('#trust-fill') as HTMLElement;
+    const trustPercentage = popup.querySelector('#trust-percentage') as HTMLElement;
+    const trustLevel = popup.querySelector('#trust-level') as HTMLElement;
+    const confidenceLevel = popup.querySelector('#confidence-level') as HTMLElement;
+    const submitterId = popup.querySelector('#submitter-id') as HTMLElement;
+    const verificationBadges = popup.querySelector('#verification-badges') as HTMLElement;
+    const warningBadges = popup.querySelector('#warning-badges') as HTMLElement;
+
+    if (trustFill) {
+      trustFill.style.width = `${data.trust_score * 100}%`;
+      trustFill.className = `trust-fill ${data.trust_color}`;
+    }
+    
+    if (trustPercentage) {
+      trustPercentage.textContent = `${Math.round(data.trust_score * 100)}%`;
+    }
+    
+    if (trustLevel) {
+      trustLevel.textContent = data.trust_level;
+    }
+    
+    if (confidenceLevel) {
+      confidenceLevel.textContent = data.confidence_adjusted.charAt(0).toUpperCase() + data.confidence_adjusted.slice(1);
+    }
+    
+    if (submitterId) {
+      submitterId.textContent = `...${data.ip_hash}`;
+    }
+
+    // Clear previous badges
+    if (verificationBadges) {
+      verificationBadges.innerHTML = '';
+      if (data.is_verified) {
+        verificationBadges.innerHTML = '<span class="verified-badge">✓ Verified</span>';
+      }
+    }
+
+    if (warningBadges) {
+      warningBadges.innerHTML = '';
+      if (data.flagged_count > 0) {
+        warningBadges.innerHTML = `<span class="flagged-warning">⚠ ${data.flagged_count} flags</span>`;
+      }
+    }
+
+    // Position popup
+    const rect = triggerElement.getBoundingClientRect();
+    const viewport = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    };
+
+    // Check if we're on mobile
+    if (viewport.width <= 768) {
+      // Center on mobile
+      popup.style.position = 'fixed';
+      popup.style.top = '50%';
+      popup.style.left = '50%';
+      popup.style.transform = 'translate(-50%, -50%)';
+    } else {
+      // Desktop positioning
+      popup.style.position = 'absolute';
+      popup.style.transform = 'none';
+      
+      let top = rect.bottom + 8;
+      let left = rect.left - 125; // Approximate center of popup width
+
+      // Keep popup in viewport
+      if (top + 200 > viewport.height) {
+        top = rect.top - 200 - 8;
+      }
+      if (left < 10) {
+        left = 10;
+      }
+      if (left + 250 > viewport.width - 10) {
+        left = viewport.width - 260;
+      }
+
+      popup.style.top = top + 'px';
+      popup.style.left = left + 'px';
+    }
+
+    // Show popup
+    popup.classList.add('show');
+  }
+
+  private hideAnonymousPopup(): void {
+    const popup = DOMUtils.getElement<HTMLElement>('#anonymous-popup');
+    if (popup) {
+      popup.classList.remove('show');
     }
   }
 
   private async handlePriceModalClick(event: Event): Promise<void> {
     const target = event.target as HTMLElement;
+    
     // Add Price: open add price modal
     if (target.closest('.add-price-btn')) {
       const btn = target.closest('.add-price-btn') as HTMLElement;
       const itemId = btn.dataset.itemId;
       const listId = btn.dataset.listId;
-      console.log('Debug: itemId =', itemId, 'listId =', listId);
       if (!itemId || !listId) {
-        console.log('Debug: Missing itemId or listId, using fallback URL');
         return Promise.resolve();
       }
       UIUtils.showLoading(btn as HTMLButtonElement);
       try {
         const url = `/item/${itemId}/add_price_modal/to_list/${listId}/`;
-        console.log('Debug: Making request to', url);
         const response = await apiClient.get(url);
         if (response.html) {
           const modal = DOMUtils.getElement<HTMLElement>('#price-modal');
@@ -385,16 +505,12 @@ class PackingListDetailManager {
   }
 
   private setDefaultFormValues(form: HTMLFormElement): void {
-    console.log('Setting default form values');
-    
     // Set default quantity to 1 if empty
     const quantityInput = form.querySelector('#id_quantity') as HTMLInputElement;
     if (quantityInput) {
       if (!quantityInput.value) {
         quantityInput.value = '1';
-        console.log('Set quantity to 1');
       }
-      // Make sure it's required
       quantityInput.required = true;
     }
     
@@ -408,16 +524,13 @@ class PackingListDetailManager {
     // Ensure a store is selected (select first available store if none selected)
     const storeSelect = form.querySelector('#id_store') as HTMLSelectElement;
     if (storeSelect) {
-      console.log('Current store value:', storeSelect.value);
       if (!storeSelect.value) {
         // Find first non-empty option
         const options = storeSelect.querySelectorAll('option') as NodeListOf<HTMLOptionElement>;
-        console.log('Available store options:', Array.from(options).map(opt => ({ value: opt.value, text: opt.text })));
         
         for (let i = 1; i < options.length; i++) { // Skip first empty option
           if (options[i].value && options[i].value !== '__add_new__') {
             storeSelect.value = options[i].value;
-            console.log('Set store to:', options[i].text, 'value:', options[i].value);
             break;
           }
         }
@@ -430,8 +543,6 @@ class PackingListDetailManager {
       const today = new Date().toISOString().split('T')[0];
       dateInput.value = today;
     }
-    
-    console.log('Default values set');
   }
 
   private setupStoreSelection(form: HTMLFormElement): void {
@@ -439,16 +550,28 @@ class PackingListDetailManager {
     const addStoreDiv = form.querySelector('#inline-add-store') as HTMLElement;
     const storeNameInput = form.querySelector('#id_store_name') as HTMLInputElement;
 
-    if (!storeSelect || !addStoreDiv) return;
+    console.log('Setting up store selection:', { storeSelect, addStoreDiv, storeNameInput });
+
+    if (!storeSelect || !addStoreDiv) {
+      console.log('Missing store selection elements');
+      return;
+    }
+
+    // Log all available options
+    const options = Array.from(storeSelect.options);
+    console.log('Store dropdown options:', options.map(opt => ({ value: opt.value, text: opt.text })));
 
     storeSelect.addEventListener('change', () => {
+      console.log('Store selection changed to:', storeSelect.value);
       if (storeSelect.value === '__add_new__') {
+        console.log('Showing add store section');
         addStoreDiv.style.display = 'block';
         if (storeNameInput) {
           storeNameInput.required = true;
           storeNameInput.focus();
         }
       } else {
+        console.log('Hiding add store section');
         addStoreDiv.style.display = 'none';
         if (storeNameInput) {
           storeNameInput.required = false;
@@ -459,6 +582,7 @@ class PackingListDetailManager {
 
     // Initialize the correct state
     if (storeSelect.value === '__add_new__') {
+      console.log('Initializing add store section as visible');
       addStoreDiv.style.display = 'block';
       if (storeNameInput) {
         storeNameInput.required = true;
@@ -467,6 +591,7 @@ class PackingListDetailManager {
   }
 
   public setupPriceFormSubmission(form: HTMLFormElement, itemId: string, listId: string): void {
+    
     // Set default values
     this.setDefaultFormValues(form);
     
@@ -503,11 +628,9 @@ class PackingListDetailManager {
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      console.log('Form submission started');
 
       // Check form validity first
       if (!form.checkValidity()) {
-        console.log('Form validation failed');
         form.reportValidity();
         return;
       }
@@ -521,17 +644,11 @@ class PackingListDetailManager {
       try {
         const formData = FormUtils.getFormData(form);
         
-        // Debug: Log form data
-        console.log('Form is valid, submitting data:', Object.fromEntries(formData.entries()));
-        console.log('Form action URL:', form.action);
-        
         // Validate required fields manually
         const price = formData.get('price');
         const quantity = formData.get('quantity');
         const store = formData.get('store');
         const storeName = formData.get('store_name');
-        
-        console.log('Field values:', { price, quantity, store, storeName });
         
         if (!price) {
           UIUtils.showNotification('Price is required', 'error');
@@ -554,22 +671,18 @@ class PackingListDetailManager {
             'X-CSRFToken': (document.querySelector('[name=csrfmiddlewaretoken]') as HTMLInputElement)?.value || '',
           }
         });
-
-        console.log('Response status:', response.status);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log('Response data:', data);
 
         if (data.success) {
           UIUtils.hideModal('price-modal');
           UIUtils.showNotification('Price added successfully!', 'success');
           location.reload(); // Refresh to show new price
         } else if (data.html) {
-          console.log('Form has validation errors, reloading form');
           const modalBody = DOMUtils.getElement<HTMLElement>('#price-modal-body');
           if (modalBody) {
             modalBody.innerHTML = data.html;
@@ -584,7 +697,6 @@ class PackingListDetailManager {
           UIUtils.showNotification('Unknown error occurred', 'error');
         }
       } catch (error) {
-        console.error('Form submission error:', error);
         UIUtils.showNotification('Error adding price. Please try again.', 'error');
       } finally {
         // Remove loading state
@@ -622,7 +734,6 @@ class PackingListDetailManager {
           }
         }
       } catch (error) {
-        console.error('Error loading edit form:', error);
         UIUtils.showNotification('Error loading edit form. Please try again.', 'error');
       } finally {
         UIUtils.hideLoading(btn as HTMLButtonElement, 'Edit');
@@ -659,7 +770,6 @@ class PackingListDetailManager {
           }
         }
       } catch (error) {
-        console.error('Error:', error);
         UIUtils.showNotification('Error updating item. Please try again.', 'error');
       } finally {
         // Remove loading state
@@ -708,7 +818,6 @@ class PackingListDetailManager {
           UIUtils.showNotification(response.message || 'Error voting. Please try again.', 'error');
         }
       } catch (error) {
-        console.error('Error:', error);
         UIUtils.showNotification('Error voting. Please try again.', 'error');
       } finally {
         // Re-enable button
@@ -760,8 +869,10 @@ class PackingListDetailManager {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  // Existing initialization
-  new PackingListDetailManager();
+  const manager = new PackingListDetailManager();
+  
+  // Store manager reference for global access
+  (window as any).packingListManager = manager;
 
   // Patch: Attach price form handler for static modal
   const form = document.querySelector('#price-form') as HTMLFormElement;
@@ -770,7 +881,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemId = form.dataset.itemId || '';
     const listId = form.dataset.listId || '';
     // Use the same handler as dynamic modal
-    new PackingListDetailManager().setupPriceFormSubmission(form, itemId, listId);
+    manager.setupPriceFormSubmission(form, itemId, listId);
   }
 });
 
@@ -779,5 +890,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const manager = (window as any).packingListManager;
   if (manager) {
     manager.hidePriceDetails();
+  }
+};
+
+(window as any).hideAnonymousPopup = function(): void {
+  const manager = (window as any).packingListManager;
+  if (manager) {
+    manager.hideAnonymousPopup();
   }
 }; 
