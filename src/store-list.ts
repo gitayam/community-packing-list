@@ -95,7 +95,7 @@ class StoreListManager {
     this.storeModalBody.innerHTML = '<p>Loading...</p>';
 
     try {
-      const response = await apiClient.get('/add_store_modal/');
+      const response = await apiClient.get('/stores/add/modal/');
       
       if (response.html) {
         this.storeModalBody.innerHTML = response.html;
