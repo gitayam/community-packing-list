@@ -193,6 +193,12 @@ class Price(models.Model):
                                   help_text="Confidence level in price accuracy")
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    
+    # Security and accountability fields for anonymous submissions
+    ip_address = models.GenericIPAddressField(null=True, blank=True, help_text="IP address of submitter for abuse prevention")
+    is_verified = models.BooleanField(default=False, help_text="Verified by trusted source or repeat contributor")
+    flagged_count = models.PositiveIntegerField(default=0, help_text="Number of times flagged as suspicious")
+    
     # user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) # Who reported this price
 
     class Meta:
@@ -201,6 +207,8 @@ class Price(models.Model):
             models.Index(fields=['item', 'store']),
             models.Index(fields=['item', 'created_at']),
             models.Index(fields=['confidence']),
+            models.Index(fields=['ip_address', 'created_at']),  # For rate limiting
+            models.Index(fields=['flagged_count']),  # For abuse detection
         ]
 
     def __str__(self):
@@ -224,6 +232,61 @@ class Price(models.Model):
         if not self.date_purchased:
             return False
         return self.date_purchased >= timezone.now().date() - timedelta(days=30)
+
+    @property
+    def is_anonymous(self):
+        """Check if this price was submitted anonymously (has IP but no user)"""
+        return bool(self.ip_address and not hasattr(self, 'user'))
+
+    @property
+    def trust_score(self):
+        """Get trust score for this price's IP address"""
+        if not self.ip_address:
+            return 0.5  # Default for no IP
+        from .security import calculate_trust_score
+        return calculate_trust_score(self.ip_address)
+
+    @property
+    def trust_level(self):
+        """Get human-readable trust level"""
+        score = self.trust_score
+        if score >= 0.8:
+            return "High Trust"
+        elif score >= 0.6:
+            return "Medium Trust" 
+        elif score >= 0.4:
+            return "Low Trust"
+        else:
+            return "Very Low Trust"
+
+    @property
+    def trust_color(self):
+        """Get CSS color class for trust level"""
+        score = self.trust_score
+        if score >= 0.8:
+            return "trust-high"
+        elif score >= 0.6:
+            return "trust-medium"
+        elif score >= 0.4:
+            return "trust-low"
+        else:
+            return "trust-very-low"
+
+    def get_anonymity_info(self):
+        """Get detailed anonymity and trust information"""
+        if not self.is_anonymous:
+            return None
+            
+        return {
+            'is_anonymous': True,
+            'trust_score': self.trust_score,
+            'trust_level': self.trust_level,
+            'trust_color': self.trust_color,
+            'is_verified': self.is_verified,
+            'flagged_count': self.flagged_count,
+            'confidence_adjusted': self.confidence,
+            'ip_hash': self.ip_address[-4:] if self.ip_address else "****"  # Show last 4 chars for identification
+        }
 
     def save(self, *args, **kwargs):
         if self.price is not None:

@@ -204,9 +204,26 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 # @login_required (if user accounts are implemented)
 def add_price_for_item(request, item_id, list_id=None): # list_id is for redirecting back
+    from .security import should_block_submission, get_client_ip
+    
     item = get_object_or_404(Item, id=item_id)
 
     if request.method == 'POST':
+        # Security: Check if submission should be blocked
+        ip_address = get_client_ip(request)
+        is_blocked, block_reason = should_block_submission(ip_address)
+        
+        if is_blocked:
+            messages.error(request, f"Submission blocked: {block_reason}")
+            form = PriceForm()
+            context = {
+                'form': form,
+                'item': item,
+                'list_id': list_id,
+                'title': f"Add Price for {item.name}"
+            }
+            return render(request, 'packing_lists/price_form.html', context)
+        
         post_data = request.POST.copy()
         store_value = post_data.get('store')
         store_name = post_data.get('store_name', '').strip()
@@ -228,7 +245,8 @@ def add_price_for_item(request, item_id, list_id=None): # list_id is for redirec
         form = PriceForm(post_data)
         if form.is_valid():
             try:
-                price = form.save(commit=True, item_instance=item)
+                # Pass request for IP tracking and security
+                price = form.save(commit=True, item_instance=item, request=request)
                 messages.success(request, f"Price for '{item.name}' at '{price.store.name}' added successfully.")
                 if list_id:
                     return redirect(reverse('view_packing_list', args=[list_id]))
@@ -484,6 +502,8 @@ def store_edit(request, store_id):
     return render(request, 'packing_lists/store_form.html', {'form': form, 'store': store, 'title': f"Edit Store: {store.name}"})
 
 def price_form_partial(request, item_id, list_id=None):
+    from .security import should_block_submission, get_client_ip
+    
     item = get_object_or_404(Item, id=item_id)
     
     # Check if we're editing an existing price
@@ -496,6 +516,18 @@ def price_form_partial(request, item_id, list_id=None):
             pass
     
     if request.method == 'POST':
+        # Security: Check if submission should be blocked (only for new prices)
+        if not price_instance:  # Allow editing existing prices
+            ip_address = get_client_ip(request)
+            is_blocked, block_reason = should_block_submission(ip_address)
+            
+            if is_blocked:
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': f"Submission blocked: {block_reason}"})
+                else:
+                    messages.error(request, f"Submission blocked: {block_reason}")
+                    return redirect('items')
+        
         post_data = request.POST.copy()
         store_value = post_data.get('store')
         store_name = post_data.get('store_name', '').strip()
@@ -525,7 +557,8 @@ def price_form_partial(request, item_id, list_id=None):
             
         if form.is_valid():
             try:
-                price = form.save(commit=True, item_instance=item)
+                # Pass request for IP tracking and security
+                price = form.save(commit=True, item_instance=item, request=request)
                 
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                     return JsonResponse({'success': True})
@@ -631,6 +664,25 @@ def lists_page(request):
     return render(request, 'packing_lists/lists.html', {
         'packing_lists': packing_lists,
     })
+
+
+def anonymous_price_info(request, price_id):
+    """API endpoint to get anonymous price submission details"""
+    try:
+        price = Price.objects.get(id=price_id)
+        
+        if not price.is_anonymous:
+            return JsonResponse({'error': 'Price is not anonymous'}, status=400)
+        
+        anonymity_info = price.get_anonymity_info()
+        
+        return JsonResponse({
+            'success': True,
+            'data': anonymity_info
+        })
+        
+    except Price.DoesNotExist:
+        return JsonResponse({'error': 'Price not found'}, status=404)
 
 def items_page(request):
     """
