@@ -544,23 +544,32 @@ function setupPriceFormHandler() {
         const storeSelect = document.getElementById('id_store');
         const addStoreDiv = document.getElementById('inline-add-store');
         const storeNameInput = document.getElementById('id_store_name');
+        const storeCityInput = document.getElementById('id_store_city');
+        const storeStateInput = document.getElementById('id_store_state');
         
         if (storeSelect && addStoreDiv) {
             function toggleAddStoreSection() {
                 if (storeSelect.value === '__add_new__') {
                     addStoreDiv.style.display = 'block';
-                    if (storeNameInput) {
-                        storeNameInput.required = true;
-                    }
+                    if (storeNameInput) storeNameInput.required = true;
+                    if (storeCityInput) storeCityInput.required = true;
+                    if (storeStateInput) storeStateInput.required = true;
                 } else {
                     addStoreDiv.style.display = 'none';
                     if (storeNameInput) {
                         storeNameInput.required = false;
                         storeNameInput.value = '';
                     }
+                    if (storeCityInput) {
+                        storeCityInput.required = false;
+                        storeCityInput.value = '';
+                    }
+                    if (storeStateInput) {
+                        storeStateInput.required = false;
+                        storeStateInput.value = '';
+                    }
                 }
             }
-            
             storeSelect.addEventListener('change', toggleAddStoreSection);
             toggleAddStoreSection(); // Initial state
         }
