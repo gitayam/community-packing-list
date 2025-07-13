@@ -4,7 +4,7 @@
 </div>
 
 <div class="modal-body">
-    <form method="post" id="item-form" action="{% url 'add_item_modal' %}">
+    <form method="post" id="item-form" action="{% url 'add_item_modal' %}" enctype="multipart/form-data">
         {% csrf_token %}
         
         <div class="form-group">
@@ -42,6 +42,27 @@
             {% if form.description.errors %}
                 <div class="error-message">
                     {% for error in form.description.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.image.id_for_label }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                    <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
+                </svg>
+                {{ form.image.label }}
+            </label>
+            {{ form.image }}
+            {% if form.image.help_text %}
+                <small class="form-help">{{ form.image.help_text }}</small>
+            {% endif %}
+            {% if form.image.errors %}
+                <div class="error-message">
+                    {% for error in form.image.errors %}
                         <span>{{ error }}</span>
                     {% endfor %}
                 </div>

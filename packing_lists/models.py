@@ -102,6 +102,7 @@ class PackingList(models.Model):
 class Item(models.Model):
     name = models.CharField(max_length=200, unique=True) # Ensure item names are unique
     description = models.TextField(blank=True, null=True, default="")
+    image = models.ImageField(upload_to='item_images/', blank=True, null=True, help_text="Upload an image of the item")
 
     def __str__(self):
         return self.name

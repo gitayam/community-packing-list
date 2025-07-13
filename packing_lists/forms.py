@@ -640,7 +640,7 @@ class ItemForm(forms.ModelForm):
     """
     class Meta:
         model = Item
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'image']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Item Name',
@@ -651,14 +651,20 @@ class ItemForm(forms.ModelForm):
                 'rows': 3,
                 'class': 'form-control'
             }),
+            'image': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
         }
         labels = {
             'name': 'Item Name',
             'description': 'Description',
+            'image': 'Item Image',
         }
         help_texts = {
             'name': 'Enter the name of the item (e.g., "Compass", "Sleeping Bag", "First Aid Kit")',
             'description': 'Optional description to help identify the item',
+            'image': 'Upload an image of the item (optional)',
         }
 
     def clean_name(self):
