@@ -12,10 +12,8 @@ class PackingListDetailManager {
 
   constructor() {
     this.initialize();
-    // Inject SVG icons into action buttons after DOM is ready
-    document.addEventListener('DOMContentLoaded', () => {
-      this.injectActionButtonIcons();
-    });
+    // Inject SVG icons into action buttons (DOM is already ready)
+    this.injectActionButtonIcons();
   }
 
   private initialize(): void {
@@ -867,8 +865,8 @@ class PackingListDetailManager {
   }
 }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize when DOM is loaded or immediately if already loaded
+function initializePackingListDetail() {
   const manager = new PackingListDetailManager();
   
   // Store manager reference for global access
@@ -883,7 +881,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Use the same handler as dynamic modal
     manager.setupPriceFormSubmission(form, itemId, listId);
   }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializePackingListDetail);
+} else {
+  // DOM is already loaded
+  initializePackingListDetail();
+}
 
 // Export for global access (if needed)
 (window as any).hidePriceDetails = function(): void {
