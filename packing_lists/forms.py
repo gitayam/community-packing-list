@@ -358,7 +358,7 @@ class PriceForm(forms.ModelForm):
 
         return cleaned_data
 
-    def save(self, commit=True, item_instance=None):
+    def save(self, commit=True, item_instance=None, request=None):
         price_instance = super().save(commit=False)
 
         # Associate the item if provided
@@ -369,13 +369,29 @@ class PriceForm(forms.ModelForm):
              # If 'item' was in fields and hidden, self.cleaned_data.get('item') would be used.
             raise ValueError("Item instance must be provided to save the price.")
 
-
         # Handle creation of new store if store_name is provided and no store selected
         store = self.cleaned_data.get('store')
         store_name = self.cleaned_data.get('store_name')
         if store_name and not store:
             store, created = Store.objects.get_or_create(name=store_name.strip())
             price_instance.store = store
+
+        # Security: Add IP tracking and trust scoring for anonymous submissions
+        if request:
+            from .security import get_client_ip, get_recommended_confidence, calculate_trust_score
+            
+            ip_address = get_client_ip(request)
+            price_instance.ip_address = ip_address
+            
+            # Adjust confidence level based on IP trust score
+            if ip_address:
+                trust_score = calculate_trust_score(ip_address)
+                user_confidence = self.cleaned_data.get('confidence', 'medium')
+                recommended_confidence = get_recommended_confidence(ip_address, user_confidence)
+                price_instance.confidence = recommended_confidence
+                
+                # Mark as verified if high trust score
+                price_instance.is_verified = trust_score >= 0.8
 
         if commit:
             price_instance.save()
