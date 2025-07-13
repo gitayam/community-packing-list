@@ -1,0 +1,55 @@
+<div class="form-container">
+  <h3>{{ title }}</h3>
+  <form method="post" id="store-form">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="id_name">Store Name:</label>
+      {{ form.name }}
+      {% if form.name.help_text %}<div class="helptext">{{ form.name.help_text }}</div>{% endif %}
+    </div>
+    <div class="form-group">
+      <label for="id_address_line1">Street Address:</label>
+      {{ form.address_line1 }}
+      {% if form.address_line1.help_text %}<div class="helptext">{{ form.address_line1.help_text }}</div>{% endif %}
+    </div>
+    <div class="form-group">
+      <label for="id_address_line2">Address Line 2:</label>
+      {{ form.address_line2 }}
+      {% if form.address_line2.help_text %}<div class="helptext">{{ form.address_line2.help_text }}</div>{% endif %}
+    </div>
+    <div class="form-group">
+      <label for="id_city">City:</label>
+      {{ form.city }}
+      {% if form.city.help_text %}<div class="helptext">{{ form.city.help_text }}</div>{% endif %}
+    </div>
+    <div class="form-group">
+      <label for="id_state">State:</label>
+      {{ form.state }}
+      {% if form.state.help_text %}<div class="helptext">{{ form.state.help_text }}</div>{% endif %}
+    </div>
+    <div class="form-group">
+      <label for="id_zip_code">ZIP Code:</label>
+      {{ form.zip_code }}
+      {% if form.zip_code.help_text %}<div class="helptext">{{ form.zip_code.help_text }}</div>{% endif %}
+    </div>
+    <div class="form-group">
+      <label for="id_country">Country:</label>
+      {{ form.country }}
+      {% if form.country.help_text %}<div class="helptext">{{ form.country.help_text }}</div>{% endif %}
+    </div>
+    <div class="form-group">
+      <label for="id_url">Store URL:</label>
+      {{ form.url }}
+      <div class="helptext">Link to the store's website (e.g. https://www.example.com)</div>
+    </div>
+    <div class="form-group">
+      {{ form.is_online }} <label for="id_is_online">Is this store online?</label>
+      {% if form.is_online.help_text %}<div class="helptext">{{ form.is_online.help_text }}</div>{% endif %}
+    </div>
+    <div class="form-group">
+      {{ form.is_in_person }} <label for="id_is_in_person">Is this store a physical location?</label>
+      {% if form.is_in_person.help_text %}<div class="helptext">{{ form.is_in_person.help_text }}</div>{% endif %}
+    </div>
+    <button type="submit" class="button success">Save Store</button>
+  </form>
+</div>

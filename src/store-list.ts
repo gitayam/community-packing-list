@@ -160,7 +160,14 @@ class StoreListManager {
   }
 }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize when DOM is loaded or immediately if already loaded
+function initializeStoreList() {
   new StoreListManager();
-}); 
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeStoreList);
+} else {
+  // DOM is already loaded
+  initializeStoreList();
+} 

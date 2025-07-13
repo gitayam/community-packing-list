@@ -612,11 +612,11 @@ def add_store_modal(request):
             form.save()
             return JsonResponse({'success': True})
         else:
-            html = render_to_string('packing_lists/store_form.html', {'form': form, 'title': 'Add Store', 'is_modal': True}, request=request)
+            html = render_to_string('packing_lists/store_form_modal.html', {'form': form, 'title': 'Add Store'}, request=request)
             return JsonResponse({'success': False, 'html': html})
     else:
         form = StoreForm()
-        html = render_to_string('packing_lists/store_form.html', {'form': form, 'title': 'Add Store', 'is_modal': True}, request=request)
+        html = render_to_string('packing_lists/store_form_modal.html', {'form': form, 'title': 'Add Store'}, request=request)
         return JsonResponse({'html': html})
 
 def edit_item_modal(request, list_id, pli_id):
