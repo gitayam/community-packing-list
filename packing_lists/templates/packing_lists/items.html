@@ -15,7 +15,7 @@
 
     <!-- Add Item Button -->
     <div class="add-item-section">
-        <button type="button" class="btn btn-primary" onclick="openItemModal()">
+        <button type="button" class="btn btn-primary" onclick="event.stopPropagation(); openItemModal()">
             ➕ Add New Item
         </button>
     </div>
@@ -166,7 +166,7 @@
                                 {% elif item_data.best_price.vote_confidence < 0 %}
                                     <span class="vote-confidence negative">✗</span>
                                 {% endif %}
-                                <button type="button" class="edit-price-btn" title="Edit Price" onclick="openPriceModal({{ item_data.item.id }}, {{ item_data.best_price.price.id }})">
+                                <button type="button" class="edit-price-btn" title="Edit Price" onclick="event.stopPropagation(); openPriceModal({{ item_data.item.id }}, {{ item_data.best_price.price.id }})">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                 </button>
                             </span>
@@ -179,7 +179,7 @@
                     {% else %}
                         <div class="no-price">
                             <em>No pricing information available</em>
-                            <button type="button" class="add-price-btn" onclick="openPriceModal({{ item_data.item.id }}, null)">
+                            <button type="button" class="add-price-btn" onclick="event.stopPropagation(); openPriceModal({{ item_data.item.id }}, null)">
                                 Add Price
                             </button>
                         </div>
@@ -236,7 +236,7 @@
                                         {% if price_data.price.store.url %}
                                             <a href="{{ price_data.price.store.url }}" target="_blank" class="store-link">🔗</a>
                                         {% endif %}
-                                        <button type="button" class="edit-price-btn" title="Edit Price" onclick="openPriceModal({{ item_data.item.id }}, {{ price_data.price.id }})">
+                                        <button type="button" class="edit-price-btn" title="Edit Price" onclick="event.stopPropagation(); openPriceModal({{ item_data.item.id }}, {{ price_data.price.id }})">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                         </button>
                                     </div>
@@ -308,10 +308,10 @@
                         {% endif %}
                     </td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline" onclick="openItemModal({{ item_data.item.id }})" title="Edit Item">
+                        <button type="button" class="btn btn-sm btn-outline" onclick="event.stopPropagation(); openItemModal({{ item_data.item.id }})" title="Edit Item">
                             <img src="{% static 'packing_lists/icons/edit.svg' %}" alt="Edit" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" /> Edit
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline" onclick="openPriceModal({{ item_data.item.id }}, null)" title="Add Price">
+                        <button type="button" class="btn btn-sm btn-outline" onclick="event.stopPropagation(); openPriceModal({{ item_data.item.id }}, null)" title="Add Price">
                             <img src="{% static 'packing_lists/icons/plus-database.svg' %}" alt="Add Price" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" /> Add Price
                         </button>
                     </td>
@@ -410,13 +410,17 @@ function openPriceModal(itemId, priceId) {
     console.log('Opening price modal for item:', itemId, 'price:', priceId);
     const modal = document.getElementById('price-modal');
     const modalBody = document.getElementById('price-modal-body');
-    modal.style.display = 'block';
-    modalBody.innerHTML = '<div class="loading-spinner" style="padding:2em;text-align:center;"><div class="spinner"></div>Loading...</div>';
-    let url = `/item/${itemId}/add_price_modal/`;
-    if (priceId) {
-        url += `?price_id=${priceId}`;
-    }
-    console.log('Fetching price modal from:', url);
+    
+    // Use a small delay to ensure the click event has finished processing
+    setTimeout(function() {
+        modal.style.display = 'block';
+        modalBody.innerHTML = '<div class="loading-spinner" style="padding:2em;text-align:center;"><div class="spinner"></div>Loading...</div>';
+        
+        let url = `/item/${itemId}/add_price_modal/`;
+        if (priceId) {
+            url += `?price_id=${priceId}`;
+        }
+        console.log('Fetching price modal from:', url);
     fetch(url, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
@@ -439,6 +443,7 @@ function openPriceModal(itemId, priceId) {
             console.error('Error loading price modal:', error);
             modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;"><strong>Error loading form.</strong><br>Please try again or contact support if the issue persists.</div>';
         });
+    }, 50); // Small delay to prevent event propagation issues
 }
 
 function openItemModal() {
@@ -641,10 +646,12 @@ document.getElementById('close-price-modal').onclick = function() {
 window.onclick = function(event) {
     const priceModal = document.getElementById('price-modal');
     const itemModal = document.getElementById('item-modal');
-    if (event.target === priceModal) {
+    
+    // Only close if clicking directly on the modal backdrop, not on buttons that open modals
+    if (event.target === priceModal && !event.target.closest('.add-price-btn, .edit-price-btn')) {
         priceModal.style.display = 'none';
     }
-    if (event.target === itemModal) {
+    if (event.target === itemModal && !event.target.closest('.btn')) {
         itemModal.style.display = 'none';
     }
 };
