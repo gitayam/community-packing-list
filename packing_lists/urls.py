@@ -48,4 +48,7 @@ urlpatterns = [
     path('list/<int:list_id>/export_pdf/', views.export_packing_list_pdf, name='export_packing_list_pdf'),
 
     path('list/<int:list_id>/item/<int:pli_id>/edit_modal/', views.edit_item_modal, name='edit_item_modal'),
+    
+    # Anonymous price info API
+    path('api/price/<int:price_id>/anonymous-info/', views.anonymous_price_info, name='anonymous_price_info'),
 ]
