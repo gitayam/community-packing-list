@@ -199,6 +199,14 @@
                                     {% if item_wp.prices_with_votes %}
                                         <div class="price-display">
                                             <span class="best-price">${{ item_wp.prices_with_votes.0.price.price }}</span>
+                                            {% if item_wp.prices_with_votes.0.price.is_anonymous %}
+                                                <span class="anonymous-indicator" 
+                                                      data-price-id="{{ item_wp.prices_with_votes.0.price.id }}"
+                                                      title="Anonymous submission - click for details">
+                                                    <span class="trust-indicator {{ item_wp.prices_with_votes.0.price.trust_color }}"></span>
+                                                    👤
+                                                </span>
+                                            {% endif %}
                                             <button type="button" class="price-details-btn" data-item-id="{{ item_wp.item.id }}" title="View Price Details">
                                                 ℹ️
                                             </button>
@@ -218,6 +226,14 @@
                                                         <div class="price-meta">
                                                             ${{ price_data.price_per_unit|floatformat:2 }}/unit
                                                             {% if price_data.price.date_purchased %}• {{ price_data.price.date_purchased|date:"M d, Y" }}{% endif %}
+                                                            {% if price_data.price.is_anonymous %}
+                                                                • <span class="anonymous-indicator" 
+                                                                        data-price-id="{{ price_data.price.id }}"
+                                                                        title="Anonymous submission">
+                                                                    <span class="trust-indicator {{ price_data.price.trust_color }}"></span>
+                                                                    Anonymous ({{ price_data.price.trust_level }})
+                                                                </span>
+                                                            {% endif %}
                                                         </div>
                                                         <div class="price-actions">
                                                             <button type="button" class="vote-btn upvote" data-price-id="{{ price_data.price.id }}">
@@ -303,6 +319,36 @@
                 <!-- AJAX-loaded form will go here -->
             </div>
         </div>
+    </div>
+
+    <!-- Anonymous Info Popup -->
+    <div id="anonymous-popup" class="anonymous-popup">
+        <button class="close-btn" onclick="hideAnonymousPopup()">&times;</button>
+        <h4>Anonymous Submission</h4>
+        <div class="trust-score">
+            <span>Trust Level:</span>
+            <div class="trust-bar">
+                <div class="trust-fill" id="trust-fill"></div>
+            </div>
+            <span id="trust-percentage"></span>
+        </div>
+        <div class="info-row">
+            <span>Trust Level:</span>
+            <span id="trust-level"></span>
+        </div>
+        <div class="info-row">
+            <span>Confidence:</span>
+            <span id="confidence-level"></span>
+        </div>
+        <div class="info-row">
+            <span>Submitter ID:</span>
+            <span id="submitter-id"></span>
+        </div>
+        <div id="verification-badges"></div>
+        <div id="warning-badges"></div>
+        <small style="margin-top: 8px; display: block; color: #666;">
+            Anonymous submissions are tracked by IP for abuse prevention while maintaining privacy.
+        </small>
     </div>
 
     <script src="{% static 'packing_lists/js/shared.js' %}"></script>
