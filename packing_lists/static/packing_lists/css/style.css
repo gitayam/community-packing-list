@@ -950,6 +950,157 @@ footer.main-footer {
   }
 }
 
+/* Anonymous Submission Indicators */
+.anonymous-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  padding: 2px 6px;
+  border-radius: var(--border-radius-sm);
+  background: var(--background-light);
+  border: 1px solid var(--border-color);
+  cursor: help;
+  transition: all 0.2s ease;
+}
+
+.anonymous-indicator:hover {
+  background: var(--background-white);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.trust-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.trust-high {
+  background-color: #28a745;
+}
+
+.trust-medium {
+  background-color: #17a2b8;
+}
+
+.trust-low {
+  background-color: #ffc107;
+}
+
+.trust-very-low {
+  background-color: #dc3545;
+}
+
+/* Anonymous Info Popup */
+.anonymous-popup {
+  position: absolute;
+  background: var(--background-white);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  min-width: 250px;
+  max-width: 300px;
+  font-size: var(--font-size-sm);
+  display: none;
+}
+
+.anonymous-popup.show {
+  display: block;
+}
+
+.anonymous-popup h4 {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--military-navy);
+  font-size: var(--font-size-base);
+}
+
+.anonymous-popup .trust-score {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin: var(--spacing-xs) 0;
+}
+
+.anonymous-popup .trust-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--background-light);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.anonymous-popup .trust-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.anonymous-popup .info-row {
+  display: flex;
+  justify-content: space-between;
+  margin: var(--spacing-xs) 0;
+}
+
+.anonymous-popup .verified-badge {
+  display: inline-block;
+  background: var(--military-olive);
+  color: white;
+  padding: 2px 6px;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.anonymous-popup .flagged-warning {
+  display: inline-block;
+  background: var(--error-color);
+  color: white;
+  padding: 2px 6px;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.anonymous-popup .close-btn {
+  position: absolute;
+  top: var(--spacing-xs);
+  right: var(--spacing-xs);
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.anonymous-popup .close-btn:hover {
+  background: var(--background-light);
+  color: var(--text-primary);
+}
+
+/* Price cell enhancements for anonymous indicators */
+.price-cell {
+  position: relative;
+}
+
+.price-display {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.best-price {
+  font-weight: 600;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .container {
