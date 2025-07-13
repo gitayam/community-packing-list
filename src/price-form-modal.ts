@@ -27,7 +27,7 @@ class PriceFormModalManager {
   private historicalPrices: PriceData[] = [];
   private currentItemId: string | null = null;
   private currentListId: string | null = null;
-  private settings: QuickPriceSettings;
+  private settings!: QuickPriceSettings;
 
   constructor() {
     this.loadSettings();
@@ -732,7 +732,14 @@ class PriceFormModalManager {
   }
 }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize when DOM is loaded or immediately if already loaded
+function initializePriceFormModal() {
   new PriceFormModalManager();
-}); 
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializePriceFormModal);
+} else {
+  // DOM is already loaded
+  initializePriceFormModal();
+} 

@@ -180,7 +180,14 @@ class PackingListFormManager {
   }
 }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize when DOM is loaded or immediately if already loaded
+function initializePackingListForm() {
   new PackingListFormManager();
-}); 
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializePackingListForm);
+} else {
+  // DOM is already loaded
+  initializePackingListForm();
+} 
