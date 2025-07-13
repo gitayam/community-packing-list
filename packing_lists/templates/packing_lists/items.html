@@ -411,7 +411,7 @@ function openPriceModal(itemId, priceId) {
     const modal = document.getElementById('price-modal');
     const modalBody = document.getElementById('price-modal-body');
     modal.style.display = 'block';
-    modalBody.innerHTML = '<div style="padding:2em;text-align:center;">Loading...</div>';
+    modalBody.innerHTML = '<div class="loading-spinner" style="padding:2em;text-align:center;"><div class="spinner"></div>Loading...</div>';
     let url = `/item/${itemId}/add_price_modal/`;
     if (priceId) {
         url += `?price_id=${priceId}`;
@@ -424,6 +424,9 @@ function openPriceModal(itemId, priceId) {
     })
         .then(response => {
             console.log('Price modal response status:', response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
             return response.json();
         })
         .then(data => {
@@ -434,7 +437,7 @@ function openPriceModal(itemId, priceId) {
         })
         .catch(error => {
             console.error('Error loading price modal:', error);
-            modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;">Error loading form. Please try again.</div>';
+            modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;"><strong>Error loading form.</strong><br>Please try again or contact support if the issue persists.</div>';
         });
 }
 
@@ -563,7 +566,8 @@ function setupItemFormHandler() {
             .then(data => {
                 if (data.success) {
                     // Close modal and refresh page to show new item
-                    document.getElementById('item-modal').style.display = 'none';
+                    closeItemModal();
+                    showSuccessMessage('Item created successfully!');
                     window.location.reload();
                 } else {
                     // Replace modal content with error form
@@ -573,7 +577,7 @@ function setupItemFormHandler() {
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while creating the item. Please try again.');
+                showErrorMessage('An error occurred while creating the item. Please try again.');
             })
             .finally(() => {
                 // Reset button state
@@ -582,6 +586,51 @@ function setupItemFormHandler() {
             });
         });
     }
+}
+
+function closeItemModal() {
+    const modal = document.getElementById('item-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function showSuccessMessage(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success';
+    alertDiv.textContent = message;
+    alertDiv.style.position = 'fixed';
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.background = '#28a745';
+    alertDiv.style.color = 'white';
+    alertDiv.style.padding = '15px 20px';
+    alertDiv.style.borderRadius = '5px';
+    alertDiv.style.zIndex = '1001';
+    alertDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+    document.body.appendChild(alertDiv);
+    setTimeout(function() {
+        alertDiv.remove();
+    }, 3000);
+}
+
+function showErrorMessage(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-error';
+    alertDiv.textContent = message;
+    alertDiv.style.position = 'fixed';
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.background = '#dc3545';
+    alertDiv.style.color = 'white';
+    alertDiv.style.padding = '15px 20px';
+    alertDiv.style.borderRadius = '5px';
+    alertDiv.style.zIndex = '1001';
+    alertDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+    document.body.appendChild(alertDiv);
+    setTimeout(function() {
+        alertDiv.remove();
+    }, 5000);
 }
 
 document.getElementById('close-price-modal').onclick = function() {
@@ -633,6 +682,21 @@ function setItemsView(view) {
         cardBtn.setAttribute('aria-pressed', 'true');
         tableBtn.classList.remove('active');
         tableBtn.setAttribute('aria-pressed', 'false');
+    }
+}
+
+function togglePrices(itemId) {
+    const pricesDiv = document.getElementById('prices-' + itemId);
+    const button = event.target;
+    
+    if (pricesDiv.style.display === 'none' || pricesDiv.style.display === '') {
+        pricesDiv.style.display = 'block';
+        button.textContent = 'Hide Prices';
+        button.classList.add('active');
+    } else {
+        pricesDiv.style.display = 'none';
+        button.textContent = 'Show All Prices';
+        button.classList.remove('active');
     }
 }
 </script>
@@ -1068,6 +1132,237 @@ function setItemsView(view) {
         width: 95%;
         margin: 10px;
         max-height: 90vh;
+    }
+}
+
+/* Loading spinner */
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--color-primary, #007bff);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Enhanced modal animations */
+.modal {
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Enhanced button styles */
+.btn-primary {
+    background: linear-gradient(135deg, var(--color-primary, #007bff), var(--color-primary-dark, #0056b3));
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+/* Enhanced card hover effects */
+.item-card {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.item-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.item-card:hover::before {
+    left: 100%;
+}
+
+.item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Enhanced price section */
+.price-section {
+    border-left: 4px solid var(--color-primary, #007bff);
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    transition: all 0.3s ease;
+}
+
+.price-section:hover {
+    border-left-color: var(--color-primary-dark, #0056b3);
+}
+
+/* Enhanced filter section */
+.filters-section {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced table view */
+.modern-table {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.modern-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.modern-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Enhanced bulk actions */
+.bulk-actions {
+    background: linear-gradient(135deg, var(--color-primary, #007bff), var(--color-primary-dark, #0056b3));
+    box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3);
+}
+
+/* Enhanced alerts */
+.alert {
+    animation: slideIn 0.3s ease;
+}
+
+/* Enhanced buttons */
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* Enhanced edit price button */
+.edit-price-btn {
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.edit-price-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Enhanced toggle buttons */
+.btn.active {
+    background: var(--color-primary, #007bff);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Enhanced checkboxes */
+.item-checkbox {
+    transition: all 0.3s ease;
+}
+
+.item-checkbox:hover .checkmark {
+    border-color: var(--color-primary, #007bff);
+    transform: scale(1.1);
+}
+
+.checkmark {
+    transition: all 0.3s ease;
+}
+
+.item-checkbox input:checked + .checkmark {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
+}
+
+/* Enhanced price item */
+.price-item {
+    transition: all 0.3s ease;
+}
+
+.price-item:hover {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 8px;
+    margin: -3px;
+}
+
+/* Enhanced responsive design */
+@media (max-width: 1024px) {
+    .items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .add-item-section {
+        text-align: center;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .filter-actions .btn {
+        width: 100%;
     }
 }
 </style>
