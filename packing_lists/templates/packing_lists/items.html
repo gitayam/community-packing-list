@@ -8,145 +8,164 @@
 {% block content %}
 <div class="items-page">
     <!-- View Toggle -->
-    <div class="view-toggle" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
-        <button type="button" id="cardViewBtn" class="btn btn-secondary active" aria-pressed="true" onclick="setItemsView('card')">Card View</button>
-        <button type="button" id="tableViewBtn" class="btn btn-secondary" aria-pressed="false" onclick="setItemsView('table')">Table View</button>
+    <div class="card mb-6">
+        <div class="card__content">
+            <div class="flex items-center gap-4">
+                <label class="form-label mb-0">View:</label>
+                <div class="flex gap-2">
+                    <button type="button" id="cardViewBtn" class="btn btn--secondary" aria-pressed="true" onclick="setItemsView('card')">Card View</button>
+                    <button type="button" id="tableViewBtn" class="btn btn--secondary" aria-pressed="false" onclick="setItemsView('table')">Table View</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Add Item Button -->
-    <div class="add-item-section">
-        <button type="button" class="btn btn-primary" onclick="openItemModal()">
-            ➕ Add New Item
+    <div class="mb-6">
+        <button type="button" class="btn btn--primary add-item-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add New Item
         </button>
     </div>
 
     <!-- Filters Section -->
-    <div class="filters-section">
-        <form method="GET" class="filters-form">
-            <div class="filters-grid">
-                <div class="filter-group">
-                    <label for="search">Search Items:</label>
-                    <input type="text" id="search" name="search" value="{{ filters.search }}" placeholder="Search by item name...">
+    <div class="card mb-6">
+        <div class="card__header">
+            <h3 class="card__title">Filter Items</h3>
+        </div>
+        <div class="card__content">
+            <form method="GET" class="filters-form">
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4);">
+                    <div class="form-group">
+                        <label for="search" class="form-label">Search Items:</label>
+                        <input type="text" id="search" name="search" value="{{ filters.search }}" placeholder="Search by item name..." class="form-input">
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="category" class="form-label">Category:</label>
+                        <select id="category" name="category" class="form-select">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                                <option value="{{ category }}" {% if filters.category == category %}selected{% endif %}>
+                                    {{ category }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="has_prices" class="form-label">Has Prices:</label>
+                        <select id="has_prices" name="has_prices" class="form-select">
+                            <option value="">All Items</option>
+                            <option value="yes" {% if filters.has_prices == 'yes' %}selected{% endif %}>With Prices</option>
+                            <option value="no" {% if filters.has_prices == 'no' %}selected{% endif %}>Without Prices</option>
+                        </select>
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="in_packing_list" class="form-label">In Packing List:</label>
+                        <select id="in_packing_list" name="in_packing_list" class="form-select">
+                            <option value="">All Items</option>
+                            {% for pl in packing_lists %}
+                                <option value="{{ pl.id }}" {% if filters.in_packing_list == pl.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ pl.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="price_min" class="form-label">Min Price:</label>
+                        <input type="number" id="price_min" name="price_min" value="{{ filters.price_min }}" step="0.01" min="0" placeholder="Min $" class="form-input">
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="price_max" class="form-label">Max Price:</label>
+                        <input type="number" id="price_max" name="price_max" value="{{ filters.price_max }}" step="0.01" min="0" placeholder="Max $" class="form-input">
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="store" class="form-label">Store:</label>
+                        <select id="store" name="store" class="form-select">
+                            <option value="">All Stores</option>
+                            {% for store in stores %}
+                                <option value="{{ store.id }}" {% if filters.store == store.id|stringformat:"s" %}selected{% endif %}>{{ store.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="city" class="form-label">City:</label>
+                        <select id="city" name="city" class="form-select">
+                            <option value="">All Cities</option>
+                            {% for city in cities %}
+                                <option value="{{ city }}" {% if filters.city == city %}selected{% endif %}>{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="state" class="form-label">State:</label>
+                        <select id="state" name="state" class="form-select">
+                            <option value="">All States</option>
+                            {% for state in states %}
+                                <option value="{{ state }}" {% if filters.state == state %}selected{% endif %}>{{ state }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="base" class="form-label">Military Installation:</label>
+                        <select id="base" name="base" onchange="onBaseChange()" class="form-select">
+                            <option value="">All Installations</option>
+                            {% for base in bases %}
+                                <option value="{{ base.id }}" {% if filters.base == base.id|stringformat:"s" %}selected{% endif %}>{{ base.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-help">Shows stores within 15 miles of selected installation</div>
+                    </div>
                 </div>
                 
-                <div class="filter-group">
-                    <label for="category">Category:</label>
-                    <select id="category" name="category">
-                        <option value="">All Categories</option>
-                        {% for category in categories %}
-                            <option value="{{ category }}" {% if filters.category == category %}selected{% endif %}>
-                                {{ category }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                <div class="flex gap-4 mt-6">
+                    <button type="submit" class="btn btn--primary">Apply Filters</button>
+                    <a href="{% url 'items' %}" class="btn btn--secondary">Clear Filters</a>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="has_prices">Has Prices:</label>
-                    <select id="has_prices" name="has_prices">
-                        <option value="">All Items</option>
-                        <option value="yes" {% if filters.has_prices == 'yes' %}selected{% endif %}>With Prices</option>
-                        <option value="no" {% if filters.has_prices == 'no' %}selected{% endif %}>Without Prices</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="in_packing_list">In Packing List:</label>
-                    <select id="in_packing_list" name="in_packing_list">
-                        <option value="">All Items</option>
-                        {% for pl in packing_lists %}
-                            <option value="{{ pl.id }}" {% if filters.in_packing_list == pl.id|stringformat:"s" %}selected{% endif %}>
-                                {{ pl.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="price_min">Min Price:</label>
-                    <input type="number" id="price_min" name="price_min" value="{{ filters.price_min }}" step="0.01" min="0" placeholder="Min $">
-                </div>
-                
-                <div class="filter-group">
-                    <label for="price_max">Max Price:</label>
-                    <input type="number" id="price_max" name="price_max" value="{{ filters.price_max }}" step="0.01" min="0" placeholder="Max $">
-                </div>
-                
-                <div class="filter-group">
-                    <label for="store">Store:</label>
-                    <select id="store" name="store">
-                        <option value="">All Stores</option>
-                        {% for store in stores %}
-                            <option value="{{ store.id }}" {% if filters.store == store.id|stringformat:"s" %}selected{% endif %}>{{ store.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="city">City:</label>
-                    <select id="city" name="city">
-                        <option value="">All Cities</option>
-                        {% for city in cities %}
-                            <option value="{{ city }}" {% if filters.city == city %}selected{% endif %}>{{ city }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="state">State:</label>
-                    <select id="state" name="state">
-                        <option value="">All States</option>
-                        {% for state in states %}
-                            <option value="{{ state }}" {% if filters.state == state %}selected{% endif %}>{{ state }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="base">Military Installation:</label>
-                    <select id="base" name="base" onchange="onBaseChange()">
-                        <option value="">All Installations</option>
-                        {% for base in bases %}
-                            <option value="{{ base.id }}" {% if filters.base == base.id|stringformat:"s" %}selected{% endif %}>{{ base.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <small>Shows stores within 15 miles of selected installation</small>
-                </div>
-            </div>
-            
-            <div class="filter-actions">
-                <button type="submit" class="btn btn-primary">Apply Filters</button>
-                <a href="{% url 'items' %}" class="btn btn-secondary">Clear Filters</a>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 
     <!-- Bulk Actions -->
-    <div class="bulk-actions" id="bulkActions" style="display: none;">
-        <div class="bulk-actions-content">
-            <span id="selectedCount">0 items selected</span>
-            <button type="button" class="btn btn-success" onclick="createPackingListFromSelected()">
-                Create Packing List from Selected
-            </button>
-            <button type="button" class="btn btn-secondary" onclick="clearSelection()">
-                Clear Selection
-            </button>
+    <div class="card mb-6" id="bulkActions" style="display: none;">
+        <div class="card__content">
+            <div class="flex items-center justify-between gap-4">
+                <span id="selectedCount" class="font-medium">0 items selected</span>
+                <div class="flex gap-2">
+                    <button type="button" class="btn btn--success" onclick="createPackingListFromSelected()">
+                        Create Packing List from Selected
+                    </button>
+                    <button type="button" class="btn btn--secondary" onclick="clearSelection()">
+                        Clear Selection
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Items Grid -->
     <div id="itemsCardView" class="items-grid">
         {% for item_data in items_with_data %}
-        <div class="item-card" data-item-id="{{ item_data.item.id }}">
-            <div class="item-header">
-                <label class="item-checkbox">
-                    <input type="checkbox" class="item-select" value="{{ item_data.item.id }}" onchange="updateSelection()">
-                    <span class="checkmark"></span>
-                </label>
-                <h3 class="item-name">{{ item_data.item.name }}</h3>
+        <div class="card" data-item-id="{{ item_data.item.id }}">
+            <div class="card__header">
+                <div class="flex items-center gap-3">
+                    <label class="item-checkbox">
+                        <input type="checkbox" class="item-select" value="{{ item_data.item.id }}" onchange="updateSelection()">
+                        <span class="checkmark"></span>
+                    </label>
+                    <h3 class="card__title mb-0">{{ item_data.item.name }}</h3>
+                </div>
             </div>
             
-            <div class="item-content">
+            <div class="card__content">
                 {% if item_data.item.description %}
                     <p class="item-description">{{ item_data.item.description }}</p>
                 {% endif %}
@@ -166,7 +185,7 @@
                                 {% elif item_data.best_price.vote_confidence < 0 %}
                                     <span class="vote-confidence negative">✗</span>
                                 {% endif %}
-                                <button type="button" class="edit-price-btn" title="Edit Price" onclick="openPriceModal({{ item_data.item.id }}, {{ item_data.best_price.price.id }})">
+                                <button type="button" class="edit-price-btn" title="Edit Price" data-item-id="{{ item_data.item.id }}" data-price-id="{{ item_data.best_price.price.id }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                 </button>
                             </span>
@@ -179,7 +198,7 @@
                     {% else %}
                         <div class="no-price">
                             <em>No pricing information available</em>
-                            <button type="button" class="add-price-btn" onclick="openPriceModal({{ item_data.item.id }}, null)">
+                            <button type="button" class="add-price-btn" data-item-id="{{ item_data.item.id }}">
                                 Add Price
                             </button>
                         </div>
@@ -236,7 +255,7 @@
                                         {% if price_data.price.store.url %}
                                             <a href="{{ price_data.price.store.url }}" target="_blank" class="store-link">🔗</a>
                                         {% endif %}
-                                        <button type="button" class="edit-price-btn" title="Edit Price" onclick="openPriceModal({{ item_data.item.id }}, {{ price_data.price.id }})">
+                                        <button type="button" class="edit-price-btn" title="Edit Price" data-item-id="{{ item_data.item.id }}" data-price-id="{{ price_data.price.id }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                         </button>
                                     </div>
@@ -308,10 +327,10 @@
                         {% endif %}
                     </td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline" onclick="openItemModal({{ item_data.item.id }})" title="Edit Item">
+                        <button type="button" class="btn btn-sm btn-outline edit-item-btn" data-item-id="{{ item_data.item.id }}" title="Edit Item">
                             <img src="{% static 'packing_lists/icons/edit.svg' %}" alt="Edit" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" /> Edit
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline" onclick="openPriceModal({{ item_data.item.id }}, null)" title="Add Price">
+                        <button type="button" class="btn btn-sm btn-outline add-price-btn" data-item-id="{{ item_data.item.id }}" title="Add Price">
                             <img src="{% static 'packing_lists/icons/plus-database.svg' %}" alt="Add Price" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" /> Add Price
                         </button>
                     </td>
@@ -325,7 +344,7 @@
 
 <!-- Price Modal -->
 <div id="price-modal" class="modal" style="display: none;">
-    <div class="modal-content">
+    <div class="modal-content" onclick="event.stopPropagation();">
         <span id="close-price-modal" class="modal-close">&times;</span>
         <div id="price-modal-body">
             <!-- AJAX-loaded form will go here -->
@@ -335,7 +354,7 @@
 
 <!-- Item Modal -->
 <div id="item-modal" class="modal" style="display: none;">
-    <div class="modal-content">
+    <div class="modal-content" onclick="event.stopPropagation();">
         <div id="item-modal-body">
             <!-- AJAX-loaded form will go here -->
         </div>
@@ -410,8 +429,31 @@ function openPriceModal(itemId, priceId) {
     console.log('Opening price modal for item:', itemId, 'price:', priceId);
     const modal = document.getElementById('price-modal');
     const modalBody = document.getElementById('price-modal-body');
+    
+    if (!modal) {
+        console.error('Price modal element not found!');
+        return;
+    }
+    if (!modalBody) {
+        console.error('Price modal body element not found!');
+        return;
+    }
+    
+    console.log('Setting modal display to block');
     modal.style.display = 'block';
     modalBody.innerHTML = '<div class="loading-spinner" style="padding:2em;text-align:center;"><div class="spinner"></div>Loading...</div>';
+    
+    // Check modal state after a short delay
+    setTimeout(() => {
+        console.log('Modal display after 50ms:', modal.style.display);
+        if (modal.style.display === 'none') {
+            console.log('WARNING: Modal was closed immediately!');
+        }
+    }, 50);
+    
+    setTimeout(() => {
+        console.log('Modal display after 200ms:', modal.style.display);
+    }, 200);
     let url = `/item/${itemId}/add_price_modal/`;
     if (priceId) {
         url += `?price_id=${priceId}`;
@@ -430,10 +472,15 @@ function openPriceModal(itemId, priceId) {
             return response.json();
         })
         .then(data => {
-            console.log('Price modal data received, setting up handler');
-            modalBody.innerHTML = data.html;
-            // Set up form submission handler after content is loaded
-            setupPriceFormHandler();
+            console.log('Price modal data received:', data);
+            if (data.html) {
+                modalBody.innerHTML = data.html;
+                // Set up form submission handler after content is loaded
+                setupPriceFormHandler();
+            } else {
+                console.error('No HTML content received:', data);
+                modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;"><strong>Error: No content received.</strong><br>Please try again.</div>';
+            }
         })
         .catch(error => {
             console.error('Error loading price modal:', error);
@@ -487,16 +534,28 @@ function setupPriceFormHandler() {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Price form response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Price form response data:', data);
                 if (data.success) {
                     // Close modal and refresh page to show new price
                     document.getElementById('price-modal').style.display = 'none';
+                    showSuccessMessage('Price added successfully!');
                     window.location.reload();
                 } else {
                     // Replace modal content with error form
-                    document.getElementById('price-modal-body').innerHTML = data.html;
-                    setupPriceFormHandler(); // Re-setup handler for new form
+                    if (data.html) {
+                        document.getElementById('price-modal-body').innerHTML = data.html;
+                        setupPriceFormHandler(); // Re-setup handler for new form
+                    } else {
+                        showErrorMessage(data.message || 'Error submitting form. Please try again.');
+                    }
                 }
             })
             .catch(error => {
@@ -633,21 +692,53 @@ function showErrorMessage(message) {
     }, 5000);
 }
 
-document.getElementById('close-price-modal').onclick = function() {
-    document.getElementById('price-modal').style.display = 'none';
-};
+// Close price modal handler
+document.addEventListener('DOMContentLoaded', function() {
+    const closePriceModal = document.getElementById('close-price-modal');
+    if (closePriceModal) {
+        closePriceModal.onclick = function(e) {
+            e.stopPropagation();
+            console.log('Close button clicked - CLOSING MODAL');
+            document.getElementById('price-modal').style.display = 'none';
+        };
+    }
+    
+    // Monitor any changes to modal display
+    const modal = document.getElementById('price-modal');
+    if (modal) {
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                    console.log('Modal style changed:', modal.style.display);
+                    if (modal.style.display === 'none') {
+                        console.trace('Modal was hidden - stack trace above');
+                    }
+                }
+            });
+        });
+        observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
+    }
+});
 
-// Close modals when clicking outside
-window.onclick = function(event) {
+// Close modals when clicking outside (but not on modal content)
+// Note: This is now handled by the event delegation system above
+function handleModalBackdropClick(event) {
     const priceModal = document.getElementById('price-modal');
     const itemModal = document.getElementById('item-modal');
+    
+    // Only close if clicking directly on the modal background, not its children
     if (event.target === priceModal) {
         priceModal.style.display = 'none';
     }
     if (event.target === itemModal) {
         itemModal.style.display = 'none';
     }
-};
+}
+
+// Attach the backdrop click handler - TEMPORARILY DISABLED FOR DEBUGGING
+// document.addEventListener('DOMContentLoaded', function() {
+//     document.addEventListener('click', handleModalBackdropClick);
+// });
 
 // Close modals with Escape key
 document.addEventListener('keydown', function(event) {
@@ -661,7 +752,60 @@ document.addEventListener('keydown', function(event) {
 document.addEventListener('DOMContentLoaded', function() {
     updateSelection();
     onBaseChange();
+    setupModalEventDelegation();
 });
+
+// Set up event delegation for modal buttons (like packing list detail page)
+function setupModalEventDelegation() {
+    console.log('Setting up modal event delegation');
+    
+    document.addEventListener('click', function(event) {
+        const target = event.target;
+        console.log('Click detected on:', target.tagName, target.className);
+        
+        // Handle Add Price buttons with data attributes
+        if (target.closest('.add-price-btn')) {
+            console.log('Add price button clicked');
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const btn = target.closest('.add-price-btn');
+            const itemId = btn.dataset.itemId || btn.getAttribute('data-item-id');
+            console.log('Item ID:', itemId);
+            
+            if (itemId) {
+                console.log('Calling openPriceModal for item:', itemId);
+                openPriceModal(parseInt(itemId), null);
+            }
+            return;
+        }
+        
+        // Handle Edit Price buttons
+        if (target.closest('.edit-price-btn')) {
+            console.log('Edit price button clicked');
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const btn = target.closest('.edit-price-btn');
+            const itemId = btn.dataset.itemId || btn.getAttribute('data-item-id');
+            const priceId = btn.dataset.priceId || btn.getAttribute('data-price-id');
+            
+            if (itemId && priceId) {
+                openPriceModal(parseInt(itemId), parseInt(priceId));
+            }
+            return;
+        }
+        
+        // Handle Add Item button
+        if (target.closest('.add-item-btn') || target.textContent?.includes('Add New Item')) {
+            console.log('Add item button clicked');
+            event.preventDefault();
+            event.stopPropagation();
+            openItemModal();
+            return;
+        }
+    }, true); // Use capture phase to handle events before other handlers
+}
 
 function setItemsView(view) {
     var card = document.getElementById('itemsCardView');
