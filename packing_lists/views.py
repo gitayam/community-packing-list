@@ -15,6 +15,7 @@ from io import BytesIO
 from datetime import datetime
 from reportlab.lib.utils import simpleSplit
 from django.template.loader import render_to_string
+import logging
 
 # Requires login for actions that modify data if user accounts are active
 # from django.contrib.auth.decorators import login_required
@@ -503,10 +504,9 @@ def store_edit(request, store_id):
 
 def price_form_partial(request, item_id, list_id=None):
     from .security import should_block_submission, get_client_ip
-    
+    import logging
+    logger = logging.getLogger(__name__)
     item = get_object_or_404(Item, id=item_id)
-    
-    # Check if we're editing an existing price
     price_id = request.GET.get('price_id')
     price_instance = None
     if price_id:
@@ -514,25 +514,23 @@ def price_form_partial(request, item_id, list_id=None):
             price_instance = Price.objects.get(id=price_id, item=item)
         except Price.DoesNotExist:
             pass
-    
     if request.method == 'POST':
-        # Security: Check if submission should be blocked (only for new prices)
-        if not price_instance:  # Allow editing existing prices
+        if not price_instance:
             ip_address = get_client_ip(request)
             is_blocked, block_reason = should_block_submission(ip_address)
-            
             if is_blocked:
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return JsonResponse({'success': False, 'message': f"Submission blocked: {block_reason}"})
+                    return JsonResponse({'success': False, 'html': f'<div class="alert alert-danger">Submission blocked: {block_reason}</div>'})
                 else:
                     messages.error(request, f"Submission blocked: {block_reason}")
                     return redirect('items')
-        
         post_data = request.POST.copy()
+        # Always ensure new fields are present
+        for field in ['store_name', 'store_city', 'store_state']:
+            if field not in post_data:
+                post_data[field] = ''
         store_value = post_data.get('store')
         store_name = post_data.get('store_name', '').strip()
-        
-        # If user selected 'Add new store...'
         if store_value == '__add_new__':
             if not store_name:
                 form = PriceForm(post_data)
@@ -545,37 +543,32 @@ def price_form_partial(request, item_id, list_id=None):
                 }
                 html = render_to_string('packing_lists/price_form_modal.html', context, request=request)
                 return JsonResponse({'success': False, 'html': html})
-            
-            # Create store with just the name (form will handle this in its save method)
-            # The form's save method will create the store if store_name is provided
-            post_data['store'] = ''  # Clear store selection to force form to use store_name
-        
+            post_data['store'] = ''
         if price_instance:
             form = PriceForm(post_data, instance=price_instance)
         else:
             form = PriceForm(post_data)
-            
         if form.is_valid():
             try:
-                # Pass request for IP tracking and security
                 price = form.save(commit=True, item_instance=item, request=request)
-                
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                     return JsonResponse({'success': True})
                 else:
                     messages.success(request, f"Price for '{item.name}' saved successfully!")
                     return redirect('items')
             except ValueError as e:
+                logger.error(f"ValueError in price_form_partial: {e}")
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return JsonResponse({'success': False, 'message': str(e)})
+                    return JsonResponse({'success': False, 'html': f'<div class="alert alert-danger">{str(e)}</div>'})
                 messages.error(request, str(e))
             except IntegrityError:
                 error_msg = "There was an error saving the price. It might already exist or there's a data conflict."
+                logger.error(f"IntegrityError in price_form_partial: {error_msg}")
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return JsonResponse({'success': False, 'message': error_msg})
+                    return JsonResponse({'success': False, 'html': f'<div class="alert alert-danger">{error_msg}</div>'})
                 messages.error(request, error_msg)
         else:
-            print('DEBUG: PriceForm errors:', form.errors.as_json())  # Log form errors
+            logger.error(f"DEBUG: PriceForm errors: {form.errors.as_json()}")
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 context = {
                     'form': form,
@@ -587,11 +580,14 @@ def price_form_partial(request, item_id, list_id=None):
                 html = render_to_string('packing_lists/price_form_modal.html', context, request=request)
                 return JsonResponse({'success': False, 'html': html})
     else:
+        # GET: always provide all fields for the form
+        initial = {}
+        for field in ['store_name', 'store_city', 'store_state']:
+            initial[field] = ''
         if price_instance:
-            form = PriceForm(instance=price_instance)
+            form = PriceForm(instance=price_instance, initial=initial)
         else:
-            form = PriceForm()
-            
+            form = PriceForm(initial=initial)
     context = {
         'form': form,
         'item': item,
@@ -599,7 +595,6 @@ def price_form_partial(request, item_id, list_id=None):
         'title': f"{'Edit' if price_instance else 'Add'} Price for {item.name}",
         'is_modal': True,
     }
-    
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         html = render_to_string('packing_lists/price_form_modal.html', context, request=request)
         return JsonResponse({'html': html})
