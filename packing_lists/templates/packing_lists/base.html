@@ -7,33 +7,38 @@
     <title>{% block title %}Community Packing List{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{% static 'packing_lists/icons/travel-bag.svg' %}">
     <link rel="shortcut icon" type="image/svg+xml" href="{% static 'packing_lists/icons/travel-bag.svg' %}">
+    <link rel="stylesheet" href="{% static 'src/styles/main.css' %}">
     <link rel="stylesheet" href="{% static 'packing_lists/css/style.css' %}">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <header class="main-header">
-        <div class="header-content-wrapper">
-            <div class="logo-container">
-                <img src="{% static 'packing_lists/icons/travel-bag.svg' %}" alt="Packing List Logo" width="32" height="32" style="display:block;" />
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <header class="header">
+        <div class="header__container">
+            <div class="header__content">
+                <a href="{% url 'home' %}" class="header__logo">
+                    <img src="{% static 'packing_lists/icons/travel-bag.svg' %}" alt="Logo" class="header__logo-icon" />
+                    <span class="header__logo-text">Community Packing List</span>
+                </a>
+                <nav class="header__nav" aria-label="Main navigation">
+                    <button id="mobile-menu-toggle" class="header__menu-toggle" aria-label="Open menu">
+                        <span class="hamburger-icon">&#9776;</span>
+                    </button>
+                    <ul class="header__nav-list" id="main-nav-list">
+                        <li><a href="{% url 'home' %}" class="header__nav-link {% if request.resolver_match.url_name == 'home' %}header__nav-link--active{% endif %}">Home</a></li>
+                        <li><a href="{% url 'lists' %}" class="header__nav-link {% if request.resolver_match.url_name == 'lists' %}header__nav-link--active{% endif %}">Lists</a></li>
+                        <li><a href="{% url 'store_list' %}" class="header__nav-link {% if request.resolver_match.url_name == 'store_list' %}header__nav-link--active{% endif %}">Stores</a></li>
+                        <li><a href="{% url 'items' %}" class="header__nav-link {% if request.resolver_match.url_name == 'items' %}header__nav-link--active{% endif %}">Items</a></li>
+                    </ul>
+                </nav>
             </div>
-            <div class="header-title-container">
-                <h1 class="header-title">{% block page_header %}Community Packing List App{% endblock %}</h1>
+            <div class="header__page-title">
+                <h1>{% block page_header %}Welcome{% endblock %}</h1>
             </div>
-            <nav class="main-nav" aria-label="Main navigation">
-                <button id="mobile-menu-toggle" aria-label="Open menu" style="display:none; background:none; border:none; cursor:pointer;">
-                    <span id="hamburger-icon">&#9776;</span>
-                </button>
-                <ul class="nav-list" id="main-nav-list">
-                    <li><a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">HOME</a></li>
-                    <li><a href="{% url 'lists' %}" class="{% if request.resolver_match.url_name == 'lists' %}active{% endif %}">LISTS</a></li>
-                    <li><a href="{% url 'store_list' %}" class="{% if request.resolver_match.url_name == 'store_list' %}active{% endif %}">STORES</a></li>
-                    <li><a href="{% url 'items' %}" class="{% if request.resolver_match.url_name == 'items' %}active{% endif %}">ITEMS</a></li>
-                </ul>
-            </nav>
         </div>
     </header>
 
-    <main class="container" id="main-content">
+    <main class="main-content" id="main-content">
         {% if messages %}
             <ul class="messages" role="alert">
                 {% for message in messages %}
@@ -47,8 +52,10 @@
         {% endblock %}
     </main>
 
-    <footer class="main-footer">
-        <p>&copy; {% now "Y" %} Community Packing List App. All rights reserved (not really).</p>
+    <footer class="footer">
+        <div class="footer__container">
+            <p>&copy; {% now "Y" %} Community Packing List App. All rights reserved (not really).</p>
+        </div>
     </footer>
 
     {% block extra_js %}{% endblock %}
@@ -63,9 +70,9 @@
       function handleResize() {
         var nav = document.getElementById('main-nav-list');
         var btn = document.getElementById('mobile-menu-toggle');
-        if (window.innerWidth < 700) {
+        if (window.innerWidth < 769) {
           nav.style.display = 'none';
-          btn.style.display = 'inline-block';
+          btn.style.display = 'inline-flex';
         } else {
           nav.style.display = 'flex';
           btn.style.display = 'none';
@@ -76,48 +83,47 @@
     })();
     </script>
     <style>
-    @media (max-width: 700px) {
-      .main-nav {
+    @media (max-width: 768px) {
+      .header__nav {
         position: relative;
       }
-      .main-nav ul.nav-list {
+      .header__nav-list {
         display: none;
         flex-direction: column;
         position: absolute;
         right: 0;
         top: 100%;
-        background: #222d2f;
-        width: 180px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-        border-radius: 0 0 8px 8px;
-        z-index: 100;
+        background: var(--color-primary);
+        width: 200px;
+        box-shadow: var(--shadow-xl);
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        z-index: var(--z-dropdown);
         margin: 0;
-        padding: 0.5rem 0;
+        padding: var(--space-2) 0;
       }
-      .main-nav ul.nav-list li {
+      .header__nav-list li {
         display: block;
         margin: 0;
         padding: 0;
       }
-      .main-nav ul.nav-list li a {
+      .header__nav-link {
         display: block;
-        padding: 0.75rem 1.5rem;
-        font-size: 1.1em;
-        border-radius: 0;
-        border: none;
-        color: #fff;
+        padding: var(--space-3) var(--space-4);
+        color: var(--color-white) !important;
         background: none;
         text-align: left;
+        border: none;
+        width: 100%;
       }
-      #mobile-menu-toggle {
-        display: inline-block !important;
+      .header__menu-toggle {
+        display: inline-flex !important;
       }
     }
-    @media (min-width: 701px) {
-      #mobile-menu-toggle {
+    @media (min-width: 769px) {
+      .header__menu-toggle {
         display: none !important;
       }
-      .main-nav ul.nav-list {
+      .header__nav-list {
         display: flex !important;
         flex-direction: row;
         position: static;
