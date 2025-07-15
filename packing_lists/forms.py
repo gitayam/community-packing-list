@@ -183,6 +183,10 @@ class PriceForm(forms.ModelForm):
     """
     store_name = forms.CharField(max_length=200, required=False,
                                  help_text="If the store isn't listed, enter its name here to create it.")
+    store_city = forms.CharField(max_length=100, required=False, label="Store City",
+                                help_text="Required for new stores.")
+    store_state = forms.CharField(max_length=100, required=False, label="Store State",
+                                 help_text="Required for new stores.")
     
     date_purchased = forms.DateField(
         required=False,
@@ -337,6 +341,8 @@ class PriceForm(forms.ModelForm):
         cleaned_data = super().clean()
         store = cleaned_data.get('store')
         store_name = cleaned_data.get('store_name')
+        store_city = cleaned_data.get('store_city')
+        store_state = cleaned_data.get('store_state')
         price = cleaned_data.get('price')
         quantity = cleaned_data.get('quantity')
 
@@ -344,18 +350,19 @@ class PriceForm(forms.ModelForm):
         if store == '__add_new__':
             if not store_name:
                 raise forms.ValidationError("Please provide a name for the new store.")
+            if not store_city:
+                raise forms.ValidationError("Please provide a city for the new store.")
+            if not store_state:
+                raise forms.ValidationError("Please provide a state for the new store.")
             # Clear the store field so the save method will create a new store
             cleaned_data['store'] = ''
-            
         elif not store and not store_name:
             raise forms.ValidationError("Please select an existing store or provide a new store name.")
-            
         # Validate price per unit makes sense
         if price and quantity:
             price_per_unit = price / quantity
             if price_per_unit < 0.01:
                 raise forms.ValidationError("Price per unit cannot be less than $0.01.")
-
         return cleaned_data
 
     def save(self, commit=True, item_instance=None, request=None):
@@ -372,8 +379,14 @@ class PriceForm(forms.ModelForm):
         # Handle creation of new store if store_name is provided and no store selected
         store = self.cleaned_data.get('store')
         store_name = self.cleaned_data.get('store_name')
+        store_city = self.cleaned_data.get('store_city')
+        store_state = self.cleaned_data.get('store_state')
         if store_name and not store:
-            store, created = Store.objects.get_or_create(name=store_name.strip())
+            store, created = Store.objects.get_or_create(
+                name=store_name.strip(),
+                city=store_city.strip(),
+                state=store_state.strip()
+            )
             price_instance.store = store
 
         # Security: Add IP tracking and trust scoring for anonymous submissions
@@ -640,7 +653,7 @@ class ItemForm(forms.ModelForm):
     """
     class Meta:
         model = Item
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'image']
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Item Name',
@@ -651,14 +664,20 @@ class ItemForm(forms.ModelForm):
                 'rows': 3,
                 'class': 'form-control'
             }),
+            'image': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
         }
         labels = {
             'name': 'Item Name',
             'description': 'Description',
+            'image': 'Item Image',
         }
         help_texts = {
             'name': 'Enter the name of the item (e.g., "Compass", "Sleeping Bag", "First Aid Kit")',
             'description': 'Optional description to help identify the item',
+            'image': 'Upload an image of the item (optional)',
         }
 
     def clean_name(self):
