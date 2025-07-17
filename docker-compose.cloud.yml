@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.cloud
+    ports:
+      - "8080:8080"
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=your-secret-key-here
+      - DJANGO_SETTINGS_MODULE=community_packing_list.settings_cloud
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/community_packing_list
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 0.0.0.0
+    depends_on:
+      - db
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=community_packing_list
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - static_volume:/usr/share/nginx/html/static
+      - media_volume:/usr/share/nginx/html/media
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:

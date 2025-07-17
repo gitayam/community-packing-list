@@ -1,0 +1,30 @@
+runtime: python311
+
+service: community-packing-list
+
+env_variables:
+  DJANGO_SETTINGS_MODULE: community_packing_list.settings_cloud
+  SECRET_KEY: your-secret-key-here
+  DATABASE_URL: postgres://user:password@host:port/database
+  
+automatic_scaling:
+  min_instances: 0
+  max_instances: 10
+  target_cpu_utilization: 0.6
+
+resources:
+  cpu: 1
+  memory_gb: 1
+
+handlers:
+- url: /static
+  static_dir: staticfiles
+  secure: always
+
+- url: /media
+  static_dir: media
+  secure: always
+
+- url: /.*
+  script: auto
+  secure: always
