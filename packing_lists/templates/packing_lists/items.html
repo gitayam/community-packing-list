@@ -367,8 +367,8 @@
 
 <!-- Price Modal -->
 <div id="price-modal" class="modal" style="display: none;">
-    <div class="modal-content" onclick="event.stopPropagation();">
-        <span id="close-price-modal" class="modal-close">&times;</span>
+    <div class="modal-content">
+        <button id="close-price-modal" class="modal-close">&times;</button>
         <div id="price-modal-body">
             <!-- AJAX-loaded form will go here -->
         </div>
@@ -453,37 +453,6 @@ function openPriceModal(itemId, priceId) {
     const modal = document.getElementById('price-modal');
     const modalBody = document.getElementById('price-modal-body');
     
-<<<<<<< HEAD
-    if (!modal) {
-        console.error('Price modal element not found!');
-        return;
-    }
-    if (!modalBody) {
-        console.error('Price modal body element not found!');
-        return;
-    }
-    
-    console.log('Setting modal display to block');
-    modal.style.display = 'block';
-    modalBody.innerHTML = '<div class="loading-spinner" style="padding:2em;text-align:center;"><div class="spinner"></div>Loading...</div>';
-    
-    // Check modal state after a short delay
-    setTimeout(() => {
-        console.log('Modal display after 50ms:', modal.style.display);
-        if (modal.style.display === 'none') {
-            console.log('WARNING: Modal was closed immediately!');
-        }
-    }, 50);
-    
-    setTimeout(() => {
-        console.log('Modal display after 200ms:', modal.style.display);
-    }, 200);
-    let url = `/item/${itemId}/add_price_modal/`;
-    if (priceId) {
-        url += `?price_id=${priceId}`;
-    }
-    console.log('Fetching price modal from:', url);
-=======
     // Use a small delay to ensure the click event has finished processing
     setTimeout(function() {
         modal.style.display = 'block';
@@ -494,34 +463,34 @@ function openPriceModal(itemId, priceId) {
             url += `?price_id=${priceId}`;
         }
         console.log('Fetching price modal from:', url);
->>>>>>> origin/main
-    fetch(url, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-        .then(response => {
-            console.log('Price modal response status:', response.status);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Price modal data received:', data);
-            if (data.html) {
-                modalBody.innerHTML = data.html;
-                // Set up form submission handler after content is loaded
-                setupPriceFormHandler();
-            } else {
-                console.error('No HTML content received:', data);
-                modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;"><strong>Error: No content received.</strong><br>Please try again.</div>';
+        
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .catch(error => {
-            console.error('Error loading price modal:', error);
-            modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;"><strong>Error loading form.</strong><br>Please try again or contact support if the issue persists.</div>';
-        });
+            .then(response => {
+                console.log('Price modal response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Price modal data received:', data);
+                if (data.html) {
+                    modalBody.innerHTML = data.html;
+                    // Set up form submission handler after content is loaded
+                    setupPriceFormHandler();
+                } else {
+                    console.error('No HTML content received:', data);
+                    modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;"><strong>Error: No content received.</strong><br>Please try again.</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading price modal:', error);
+                modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;"><strong>Error loading form.</strong><br>Please try again or contact support if the issue persists.</div>';
+            });
     }, 50); // Small delay to prevent event propagation issues
 }
 
@@ -772,11 +741,7 @@ function handleModalBackdropClick(event) {
     const priceModal = document.getElementById('price-modal');
     const itemModal = document.getElementById('item-modal');
     
-<<<<<<< HEAD
-    // Only close if clicking directly on the modal background, not its children
-=======
     // Only close if clicking directly on the modal backdrop
->>>>>>> origin/main
     if (event.target === priceModal) {
         priceModal.style.display = 'none';
     }
