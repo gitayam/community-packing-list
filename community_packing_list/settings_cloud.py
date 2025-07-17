@@ -59,6 +59,12 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# Include src directory in static files
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'packing_lists', 'static'),
+    os.path.join(BASE_DIR, 'src'),  # Add src directory for main.css
+]
+
 # Logging configuration
 LOGGING = {
     'version': 1,

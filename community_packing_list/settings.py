@@ -123,6 +123,7 @@ else:
 STATIC_URL = "static/"
 STATICFILES_DIRS = [
     BASE_DIR / "packing_lists" / "static",
+    BASE_DIR / "src",  # Add src directory for main.css
 ]
 # For Docker/production, you'll typically use collectstatic.
 STATIC_ROOT = BASE_DIR / "staticfiles" # Uncomment if you use collectstatic
