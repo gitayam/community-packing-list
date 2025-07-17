@@ -27,6 +27,18 @@ CUSTOM_DOMAIN = os.environ.get('CUSTOM_DOMAIN')
 if CUSTOM_DOMAIN:
     ALLOWED_HOSTS.append(CUSTOM_DOMAIN)
 
+# Add WhiteNoise middleware for static file serving
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add WhiteNoise for static files
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
 # CSRF trusted origins for cloud deployment
 CSRF_TRUSTED_ORIGINS = [
     'https://*.run.app',
@@ -64,6 +76,9 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'packing_lists', 'static'),
     os.path.join(BASE_DIR, 'src'),  # Add src directory for main.css
 ]
+
+# WhiteNoise configuration for static file serving
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Logging configuration
 LOGGING = {
