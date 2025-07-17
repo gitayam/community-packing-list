@@ -9,5 +9,7 @@ python-dotenv~=1.0.0 # For managing environment variables locally, useful with D
 pillow~=10.2.0 # pdfplumber dependency, good to make explicit
 numpy~=1.26.4 # pandas dependency
 reportlab~=4.0.8 # For PDF generation
+dj-database-url~=2.1.0 # For cloud database configuration
+whitenoise~=6.8.2 # For serving static files in cloud
 # Ensure other transitive dependencies like pytz, sqlparse, etc., are covered or add if needed.
 # For now, relying on pip to resolve them based on the above.

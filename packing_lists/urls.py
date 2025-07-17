@@ -51,4 +51,7 @@ urlpatterns = [
     
     # Anonymous price info API
     path('api/price/<int:price_id>/anonymous-info/', views.anonymous_price_info, name='anonymous_price_info'),
+    
+    # Health check endpoint
+    path('health/', views.health_check, name='health_check'),
 ]

@@ -1351,3 +1351,8 @@ def add_item_modal(request):
         }
         html = render_to_string('packing_lists/item_form_modal.html', context, request=request)
         return JsonResponse({'html': html})
+
+def health_check(request):
+    """Health check endpoint for Cloud Run"""
+    from django.http import JsonResponse
+    return JsonResponse({'status': 'healthy', 'service': 'community-packing-list'})
