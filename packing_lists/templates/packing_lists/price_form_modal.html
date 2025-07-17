@@ -4,190 +4,192 @@
     <div class="modal-header">
         <h3>{{ title }}</h3>
     </div>
-    <div class="item-info">
-        <div class="item-badge">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5z"/>
-            </svg>
-            <span>{{ item.name }}</span>
+    <div class="modal-body">
+        <div class="item-info">
+            <div class="item-badge">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5z"/>
+                </svg>
+                <span>{{ item.name }}</span>
+            </div>
+            {% if item.description %}
+                <p class="item-description">{{ item.description }}</p>
+            {% endif %}
         </div>
-        {% if item.description %}
-            <p class="item-description">{{ item.description }}</p>
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          </div>
         {% endif %}
-    </div>
 
-    {% if form.non_field_errors %}
-      <div class="alert alert-danger">
-        {% for error in form.non_field_errors %}
-          <div>{{ error }}</div>
-        {% endfor %}
-      </div>
-    {% endif %}
-
-    {% if list_id %}
-        <form method="post" id="price-form" action="{% url 'add_price_for_item_modal' item_id=item.id list_id=list_id %}">
-    {% else %}
-        <form method="post" id="price-form" action="{% url 'add_price_for_item_modal_no_list' item_id=item.id %}">
-    {% endif %}
-        {% csrf_token %}
-        
-        <!-- Store Selection -->
-        <div class="form-group">
-            {{ form.store.label_tag }}
-            {{ form.store }}
-            {% if form.store.errors %}
-              <div class="text-danger">
-                {% for error in form.store.errors %}
-                  <div>{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
-            {% if form.store.help_text %}
-              <small class="form-text text-muted">{{ form.store.help_text }}</small>
-            {% endif %}
-        </div>
-
-        <!-- Add New Store Section -->
-        <div id="inline-add-store" class="form-group" style="display: none;">
-            {{ form.store_name.label_tag }}
-            {{ form.store_name }}
-            {% if form.store_name.errors %}
-              <div class="text-danger">
-                {% for error in form.store_name.errors %}
-                  <div>{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
-            {% if form.store_name.help_text %}
-              <small class="form-text text-muted">{{ form.store_name.help_text }}</small>
-            {% endif %}
-
-            <div class="form-group mt-2">
-                {{ form.store_city.label_tag }}
-                {{ form.store_city }}
-                {% if form.store_city.errors %}
+        {% if list_id %}
+            <form method="post" id="price-form" action="{% url 'add_price_for_item_modal' item_id=item.id list_id=list_id %}">
+        {% else %}
+            <form method="post" id="price-form" action="{% url 'add_price_for_item_modal_no_list' item_id=item.id %}">
+        {% endif %}
+            {% csrf_token %}
+            
+            <!-- Store Selection -->
+            <div class="form-group">
+                {{ form.store.label_tag }}
+                {{ form.store }}
+                {% if form.store.errors %}
                   <div class="text-danger">
-                    {% for error in form.store_city.errors %}
+                    {% for error in form.store.errors %}
                       <div>{{ error }}</div>
                     {% endfor %}
                   </div>
                 {% endif %}
-                {% if form.store_city.help_text %}
-                  <small class="form-text text-muted">{{ form.store_city.help_text }}</small>
+                {% if form.store.help_text %}
+                  <small class="form-text text-muted">{{ form.store.help_text }}</small>
                 {% endif %}
             </div>
-            <div class="form-group mt-2">
-                {{ form.store_state.label_tag }}
-                {{ form.store_state }}
-                {% if form.store_state.errors %}
+
+            <!-- Add New Store Section -->
+            <div id="inline-add-store" class="form-group" style="display: none;">
+                {{ form.store_name.label_tag }}
+                {{ form.store_name }}
+                {% if form.store_name.errors %}
                   <div class="text-danger">
-                    {% for error in form.store_state.errors %}
+                    {% for error in form.store_name.errors %}
                       <div>{{ error }}</div>
                     {% endfor %}
                   </div>
                 {% endif %}
-                {% if form.store_state.help_text %}
-                  <small class="form-text text-muted">{{ form.store_state.help_text }}</small>
+                {% if form.store_name.help_text %}
+                  <small class="form-text text-muted">{{ form.store_name.help_text }}</small>
                 {% endif %}
-            </div>
-        </div>
 
-        <!-- Price Field -->
-        <div class="form-group">
-            {{ form.price.label_tag }}
-            {{ form.price }}
-            <!-- Quick Price Actions -->
-            <div class="quick-price-actions mt-2">
-                <small class="text-muted d-block mb-1">Quick amounts:</small>
-                <div class="quick-price-buttons">
-                    <button type="button" class="quick-price-btn" data-price="9.99">$9.99</button>
-                    <button type="button" class="quick-price-btn" data-price="19.99">$19.99</button>
-                    <button type="button" class="quick-price-btn" data-price="29.99">$29.99</button>
-                    <button type="button" class="quick-price-btn" data-price="49.99">$49.99</button>
+                <div class="form-group mt-2">
+                    {{ form.store_city.label_tag }}
+                    {{ form.store_city }}
+                    {% if form.store_city.errors %}
+                      <div class="text-danger">
+                        {% for error in form.store_city.errors %}
+                          <div>{{ error }}</div>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                    {% if form.store_city.help_text %}
+                      <small class="form-text text-muted">{{ form.store_city.help_text }}</small>
+                    {% endif %}
+                </div>
+                <div class="form-group mt-2">
+                    {{ form.store_state.label_tag }}
+                    {{ form.store_state }}
+                    {% if form.store_state.errors %}
+                      <div class="text-danger">
+                        {% for error in form.store_state.errors %}
+                          <div>{{ error }}</div>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                    {% if form.store_state.help_text %}
+                      <small class="form-text text-muted">{{ form.store_state.help_text }}</small>
+                    {% endif %}
                 </div>
             </div>
-            {% if form.price.errors %}
-              <div class="text-danger">
-                {% for error in form.price.errors %}
-                  <div>{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
-            {% if form.price.help_text %}
-              <small class="form-text text-muted">{{ form.price.help_text }}</small>
-            {% endif %}
-        </div>
 
-        <!-- Quantity Field -->
-        <div class="form-group">
-            {{ form.quantity.label_tag }}
-            <div class="quantity-wrapper">
-                {{ form.quantity }}
-                <button type="button" class="set-quantity-btn" data-quantity="1" title="Set quantity to 1">1</button>
+            <!-- Price Field -->
+            <div class="form-group">
+                {{ form.price.label_tag }}
+                {{ form.price }}
+                <!-- Quick Price Actions -->
+                <div class="quick-price-actions mt-2">
+                    <small class="text-muted d-block mb-1">Quick amounts:</small>
+                    <div class="quick-price-buttons">
+                        <button type="button" class="quick-price-btn" data-price="9.99">$9.99</button>
+                        <button type="button" class="quick-price-btn" data-price="19.99">$19.99</button>
+                        <button type="button" class="quick-price-btn" data-price="29.99">$29.99</button>
+                        <button type="button" class="quick-price-btn" data-price="49.99">$49.99</button>
+                    </div>
+                </div>
+                {% if form.price.errors %}
+                  <div class="text-danger">
+                    {% for error in form.price.errors %}
+                      <div>{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                {% if form.price.help_text %}
+                  <small class="form-text text-muted">{{ form.price.help_text }}</small>
+                {% endif %}
             </div>
-            {% if form.quantity.errors %}
-              <div class="text-danger">
-                {% for error in form.quantity.errors %}
-                  <div>{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
-            {% if form.quantity.help_text %}
-              <small class="form-text text-muted">{{ form.quantity.help_text }}</small>
-            {% endif %}
-        </div>
 
-        <!-- Date Purchased Field -->
-        <div class="form-group">
-            {{ form.date_purchased.label_tag }}
-            {{ form.date_purchased }}
-            {% if form.date_purchased.errors %}
-              <div class="text-danger">
-                {% for error in form.date_purchased.errors %}
-                  <div>{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
-            {% if form.date_purchased.help_text %}
-              <small class="form-text text-muted">{{ form.date_purchased.help_text }}</small>
-            {% endif %}
-        </div>
-
-        <!-- Price Confidence Field -->
-        <div class="form-group">
-            {{ form.confidence.label_tag }}
-            {{ form.confidence }}
-            {% if form.confidence.errors %}
-              <div class="text-danger">
-                {% for error in form.confidence.errors %}
-                  <div>{{ error }}</div>
-                {% endfor %}
-              </div>
-            {% endif %}
-            {% if form.confidence.help_text %}
-              <small class="form-text text-muted">{{ form.confidence.help_text }}</small>
-            {% endif %}
-        </div>
-
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
-                </svg>
-                Save Price
-            </button>
-            <button type="button" class="btn btn-secondary" onclick="document.getElementById('price-modal').style.display='none'">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-                </svg>
-                Cancel
-            </button>
-            <div class="keyboard-hints">
-                <small class="text-muted">💡 Tips: Ctrl+Enter to save, Esc to cancel</small>
+            <!-- Quantity Field -->
+            <div class="form-group">
+                {{ form.quantity.label_tag }}
+                <div class="quantity-wrapper">
+                    {{ form.quantity }}
+                    <button type="button" class="set-quantity-btn" data-quantity="1" title="Set quantity to 1">1</button>
+                </div>
+                {% if form.quantity.errors %}
+                  <div class="text-danger">
+                    {% for error in form.quantity.errors %}
+                      <div>{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                {% if form.quantity.help_text %}
+                  <small class="form-text text-muted">{{ form.quantity.help_text }}</small>
+                {% endif %}
             </div>
-        </div>
-    </form>
+
+            <!-- Date Purchased Field -->
+            <div class="form-group">
+                {{ form.date_purchased.label_tag }}
+                {{ form.date_purchased }}
+                {% if form.date_purchased.errors %}
+                  <div class="text-danger">
+                    {% for error in form.date_purchased.errors %}
+                      <div>{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                {% if form.date_purchased.help_text %}
+                  <small class="form-text text-muted">{{ form.date_purchased.help_text }}</small>
+                {% endif %}
+            </div>
+
+            <!-- Price Confidence Field -->
+            <div class="form-group">
+                {{ form.confidence.label_tag }}
+                {{ form.confidence }}
+                {% if form.confidence.errors %}
+                  <div class="text-danger">
+                    {% for error in form.confidence.errors %}
+                      <div>{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                {% if form.confidence.help_text %}
+                  <small class="form-text text-muted">{{ form.confidence.help_text }}</small>
+                {% endif %}
+            </div>
+
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                    </svg>
+                    Save Price
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('price-modal').style.display='none'">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                    </svg>
+                    Cancel
+                </button>
+                <div class="keyboard-hints">
+                    <small class="text-muted">💡 Tips: Ctrl+Enter to save, Esc to cancel</small>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
 <style>
@@ -195,21 +197,25 @@
     background: white;
     border-radius: 8px;
     overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 20px 15px;
+    padding: 16px 20px;
     border-bottom: 1px solid #e9ecef;
     background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    flex-shrink: 0;
 }
 
 .modal-header h3 {
     margin: 0;
     color: #2c3e50;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 600;
 }
 
@@ -225,10 +231,18 @@
     color: #dc3545;
 }
 
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+}
+
 .item-info {
-    padding: 15px 20px;
+    padding: 12px 0;
     background: #f8f9fa;
-    border-bottom: 1px solid #e9ecef;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    padding: 12px;
 }
 
 .item-badge {
@@ -237,7 +251,7 @@
     gap: 8px;
     font-weight: 600;
     color: #495057;
-    font-size: 16px;
+    font-size: 15px;
 }
 
 .item-badge svg {
@@ -245,33 +259,28 @@
 }
 
 .item-description {
-    margin: 8px 0 0;
+    margin: 6px 0 0;
     color: #6c757d;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.4;
 }
 
 .form-group {
-    margin-bottom: 20px;
-    padding: 0 20px;
-}
-
-.form-group:first-of-type {
-    margin-top: 20px;
+    margin-bottom: 16px;
 }
 
 .form-group label {
     display: block;
     font-weight: 600;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: #495057;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
     border: 2px solid #e9ecef;
     border-radius: 6px;
     font-size: 14px;
@@ -287,23 +296,23 @@
 }
 
 .quick-price-actions {
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
 .quick-price-buttons {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
 .quick-price-btn {
-    padding: 6px 12px;
+    padding: 4px 8px;
     border: 1px solid #007bff;
     background: white;
     color: #007bff;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11px;
     transition: all 0.2s ease;
 }
 
@@ -323,13 +332,13 @@
 }
 
 .set-quantity-btn {
-    padding: 8px 12px;
+    padding: 6px 10px;
     border: 1px solid #6c757d;
     background: white;
     color: #6c757d;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11px;
     transition: all 0.2s ease;
 }
 
@@ -340,21 +349,22 @@
 
 .form-actions {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
-    padding: 20px;
+    padding: 16px 20px;
     border-top: 1px solid #e9ecef;
     background: #f8f9fa;
+    flex-shrink: 0;
 }
 
 .btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
+    gap: 6px;
+    padding: 8px 16px;
     border: none;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -391,23 +401,24 @@
 
 .keyboard-hints {
     margin-left: auto;
-    font-size: 12px;
+    font-size: 11px;
     color: #6c757d;
 }
 
 .text-danger {
     color: #dc3545;
-    font-size: 13px;
-    margin-top: 5px;
+    font-size: 12px;
+    margin-top: 4px;
 }
 
 .text-muted {
     color: #6c757d;
+    font-size: 12px;
 }
 
 .alert {
-    padding: 12px;
-    margin-bottom: 20px;
+    padding: 10px;
+    margin-bottom: 16px;
     border-radius: 6px;
 }
 
@@ -430,12 +441,17 @@
 
 @media (max-width: 768px) {
     .modal-header {
-        padding: 15px;
+        padding: 12px 16px;
+    }
+    
+    .modal-body {
+        padding: 12px 16px;
     }
     
     .form-actions {
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
+        padding: 12px 16px;
     }
     
     .form-actions .btn {
