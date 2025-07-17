@@ -6,7 +6,8 @@
 {% block page_header %}All Items{% endblock %}
 
 {% block content %}
-<div class="items-page">
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<div class="items-page" id="main-content">
     <!-- View Toggle -->
     <div class="card mb-6">
         <div class="card__content">
@@ -456,6 +457,15 @@ function openPriceModal(itemId, priceId) {
     // Use a small delay to ensure the click event has finished processing
     setTimeout(function() {
         modal.style.display = 'block';
+        
+        // Set modal attributes for accessibility
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-labelledby', 'price-modal-title');
+        
+        // Store the element that had focus before opening modal
+        modal.dataset.previousFocus = document.activeElement?.id || '';
+        
         modalBody.innerHTML = '<div class="loading-spinner" style="padding:2em;text-align:center;"><div class="spinner"></div>Loading...</div>';
         
         let url = `/item/${itemId}/add_price_modal/`;
@@ -482,6 +492,14 @@ function openPriceModal(itemId, priceId) {
                     modalBody.innerHTML = data.html;
                     // Set up form submission handler after content is loaded
                     setupPriceFormHandler();
+                    
+                    // Focus the first input field in the modal
+                    setTimeout(() => {
+                        const firstInput = modal.querySelector('input, select, textarea');
+                        if (firstInput) {
+                            firstInput.focus();
+                        }
+                    }, 100);
                 } else {
                     console.error('No HTML content received:', data);
                     modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;"><strong>Error: No content received.</strong><br>Please try again.</div>';
@@ -498,6 +516,15 @@ function openItemModal() {
     console.log('openItemModal called');
     const modal = document.getElementById('item-modal');
     const modalBody = document.getElementById('item-modal-body');
+    
+    // Set modal attributes for accessibility
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-labelledby', 'item-modal-title');
+    
+    // Store the element that had focus before opening modal
+    modal.dataset.previousFocus = document.activeElement?.id || '';
+    
     modal.style.display = 'block';
     modalBody.innerHTML = '<div style="padding:2em;text-align:center;">Loading...</div>';
     
@@ -508,6 +535,14 @@ function openItemModal() {
             modalBody.innerHTML = data.html;
             // Set up form submission handler after content is loaded
             setupItemFormHandler();
+            
+            // Focus the first input field in the modal
+            setTimeout(() => {
+                const firstInput = modal.querySelector('input, select, textarea');
+                if (firstInput) {
+                    firstInput.focus();
+                }
+            }, 100);
         })
         .catch(error => {
             console.error('Error loading item modal:', error);
@@ -666,6 +701,41 @@ function closeItemModal() {
     const modal = document.getElementById('item-modal');
     if (modal) {
         modal.style.display = 'none';
+        
+        // Restore focus to the element that had focus before opening modal
+        const previousFocusId = modal.dataset.previousFocus;
+        if (previousFocusId) {
+            const previousElement = document.getElementById(previousFocusId);
+            if (previousElement) {
+                previousElement.focus();
+            }
+        }
+        
+        // Clear modal attributes
+        modal.removeAttribute('aria-modal');
+        modal.removeAttribute('role');
+        modal.removeAttribute('aria-labelledby');
+    }
+}
+
+function closePriceModal() {
+    const modal = document.getElementById('price-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        
+        // Restore focus to the element that had focus before opening modal
+        const previousFocusId = modal.dataset.previousFocus;
+        if (previousFocusId) {
+            const previousElement = document.getElementById(previousFocusId);
+            if (previousElement) {
+                previousElement.focus();
+            }
+        }
+        
+        // Clear modal attributes
+        modal.removeAttribute('aria-modal');
+        modal.removeAttribute('role');
+        modal.removeAttribute('aria-labelledby');
     }
 }
 
@@ -755,13 +825,79 @@ function handleModalBackdropClick(event) {
 //     document.addEventListener('click', handleModalBackdropClick);
 // });
 
-// Close modals with Escape key
+// Enhanced keyboard shortcuts for better UX
 document.addEventListener('keydown', function(event) {
+    // ESC key - close any open modal
     if (event.key === 'Escape') {
-        document.getElementById('price-modal').style.display = 'none';
-        document.getElementById('item-modal').style.display = 'none';
+        const priceModal = document.getElementById('price-modal');
+        const itemModal = document.getElementById('item-modal');
+        
+        if (priceModal && priceModal.style.display !== 'none') {
+            closePriceModal();
+            event.preventDefault();
+            return;
+        }
+        
+        if (itemModal && itemModal.style.display !== 'none') {
+            closeItemModal();
+            event.preventDefault();
+            return;
+        }
+    }
+    
+    // Ctrl/Cmd + Enter - submit forms
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        const activeElement = document.activeElement;
+        const form = activeElement?.closest('form');
+        
+        if (form) {
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton && !submitButton.disabled) {
+                submitButton.click();
+                event.preventDefault();
+                return;
+            }
+        }
+    }
+    
+    // Tab key - ensure proper focus management in modals
+    if (event.key === 'Tab') {
+        const priceModal = document.getElementById('price-modal');
+        const itemModal = document.getElementById('item-modal');
+        
+        if (priceModal && priceModal.style.display !== 'none') {
+            const focusableElements = priceModal.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+            handleTabNavigation(event, focusableElements);
+        }
+        
+        if (itemModal && itemModal.style.display !== 'none') {
+            const focusableElements = itemModal.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+            handleTabNavigation(event, focusableElements);
+        }
     }
 });
+
+// Handle tab navigation within modals (trap focus)
+function handleTabNavigation(event, focusableElements) {
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    
+    if (event.shiftKey) {
+        if (document.activeElement === firstElement) {
+            lastElement.focus();
+            event.preventDefault();
+        }
+    } else {
+        if (document.activeElement === lastElement) {
+            firstElement.focus();
+            event.preventDefault();
+        }
+    }
+}
 
 // Initialize selection on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -844,20 +980,7 @@ function setItemsView(view) {
     }
 }
 
-function togglePrices(itemId) {
-    const pricesDiv = document.getElementById('prices-' + itemId);
-    const button = event.target;
-    
-    if (pricesDiv.style.display === 'none' || pricesDiv.style.display === '') {
-        pricesDiv.style.display = 'block';
-        button.textContent = 'Hide Prices';
-        button.classList.add('active');
-    } else {
-        pricesDiv.style.display = 'none';
-        button.textContent = 'Show All Prices';
-        button.classList.remove('active');
-    }
-}
+
 </script>
 
 <style>
@@ -1501,6 +1624,27 @@ function togglePrices(itemId) {
     box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
 }
 
+/* View toggle button styles */
+#cardViewBtn.active,
+#tableViewBtn.active {
+    background: var(--color-primary, #007bff);
+    color: white;
+    border-color: var(--color-primary, #007bff);
+}
+
+#cardViewBtn:not(.active),
+#tableViewBtn:not(.active) {
+    background: var(--color-surface, #f8f9fa);
+    color: var(--color-text-primary, #495057);
+    border-color: var(--color-border, #dee2e6);
+}
+
+#cardViewBtn:hover:not(.active),
+#tableViewBtn:hover:not(.active) {
+    background: var(--color-background, #e9ecef);
+    border-color: var(--color-primary, #007bff);
+}
+
 /* Enhanced checkboxes */
 .item-checkbox {
     transition: all 0.3s ease;
@@ -1552,6 +1696,105 @@ function togglePrices(itemId) {
     .filter-actions .btn {
         width: 100%;
     }
+}
+
+/* Enhanced keyboard accessibility */
+.btn:focus,
+.form-input:focus,
+.form-select:focus,
+.modal-close:focus {
+    outline: 2px solid var(--color-primary, #007bff);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.1);
+}
+
+/* Skip to main content link for screen readers */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: var(--color-primary, #007bff);
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    border-radius: 4px;
+    z-index: 1000;
+    transition: top 0.3s ease;
+}
+
+.skip-link:focus {
+    top: 6px;
+}
+
+/* Enhanced form feedback */
+.form-input:invalid,
+.form-select:invalid {
+    border-color: var(--color-error, #dc3545);
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.1);
+}
+
+.form-input:valid,
+.form-select:valid {
+    border-color: var(--color-success, #28a745);
+}
+
+/* Loading state for buttons */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Enhanced modal animations */
+.modal {
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px) scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Enhanced button states */
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn:focus:not(:active) {
+    transform: translateY(-1px);
+}
+
+/* Enhanced form field interactions */
+.form-input:focus,
+.form-select:focus {
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+/* Enhanced checkbox interactions */
+.item-checkbox:focus-within .checkmark {
+    box-shadow: 0 0 0 2px var(--color-primary, #007bff);
+}
+
+/* Enhanced table interactions */
+.modern-table tbody tr:focus-within {
+    background-color: rgba(0, 123, 255, 0.05);
+    outline: 2px solid var(--color-primary, #007bff);
+    outline-offset: -2px;
 }
 
 /* Table image styling */
