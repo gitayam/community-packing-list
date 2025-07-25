@@ -458,9 +458,17 @@ function openPriceModal(itemId, priceId) {
     const modal = document.getElementById('price-modal');
     const modalBody = document.getElementById('price-modal-body');
     
+    if (!modal || !modalBody) {
+        console.error('Modal elements not found!');
+        return;
+    }
+    
     // Use a small delay to ensure the click event has finished processing
     setTimeout(function() {
-        modal.style.display = 'block';
+        // Force display the modal
+        modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
         
         // Set modal attributes for accessibility
         modal.setAttribute('aria-modal', 'true');
@@ -486,7 +494,7 @@ function openPriceModal(itemId, priceId) {
             .then(response => {
                 console.log('Price modal response status:', response.status);
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 return response.json();
             })
@@ -496,6 +504,10 @@ function openPriceModal(itemId, priceId) {
                     modalBody.innerHTML = data.html;
                     // Set up form submission handler after content is loaded
                     setupPriceFormHandler();
+                    
+                    // Set up quick price and quantity buttons
+                    setupQuickPriceButtons();
+                    setupQuantityButtons();
                     
                     // Focus the first input field in the modal
                     setTimeout(() => {
@@ -511,7 +523,7 @@ function openPriceModal(itemId, priceId) {
             })
             .catch(error => {
                 console.error('Error loading price modal:', error);
-                modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;"><strong>Error loading form.</strong><br>Please try again or contact support if the issue persists.</div>';
+                modalBody.innerHTML = `<div style="padding:2em;text-align:center;color:red;"><strong>Error loading form:</strong><br>${error.message}<br>Please try again or contact support if the issue persists.</div>`;
             });
     }, 50); // Small delay to prevent event propagation issues
 }
@@ -726,6 +738,8 @@ function closePriceModal() {
     const modal = document.getElementById('price-modal');
     if (modal) {
         modal.style.display = 'none';
+        modal.style.visibility = 'hidden';
+        modal.style.opacity = '0';
         
         // Restore focus to the element that had focus before opening modal
         const previousFocusId = modal.dataset.previousFocus;
@@ -903,6 +917,52 @@ function handleTabNavigation(event, focusableElements) {
     }
 }
 
+function setupQuickPriceButtons() {
+    const quickPriceButtons = document.querySelectorAll('.quick-price-btn');
+    const priceInput = document.getElementById('id_price');
+    
+    quickPriceButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const price = this.dataset.price;
+            if (priceInput && price) {
+                priceInput.value = price;
+                priceInput.focus();
+                // Add visual feedback
+                this.style.background = '#28a745';
+                this.style.color = 'white';
+                setTimeout(() => {
+                    this.style.background = '';
+                    this.style.color = '';
+                }, 200);
+            }
+        });
+    });
+}
+
+function setupQuantityButtons() {
+    const quantityButtons = document.querySelectorAll('.set-quantity-btn');
+    const quantityInput = document.getElementById('id_quantity');
+    
+    quantityButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const quantity = this.dataset.quantity;
+            if (quantityInput && quantity) {
+                quantityInput.value = quantity;
+                quantityInput.focus();
+                // Add visual feedback
+                this.style.background = '#28a745';
+                this.style.color = 'white';
+                setTimeout(() => {
+                    this.style.background = '';
+                    this.style.color = '';
+                }, 200);
+            }
+        });
+    });
+}
+
 // Initialize selection on page load
 document.addEventListener('DOMContentLoaded', function() {
     updateSelection();
@@ -916,37 +976,73 @@ function setupModalEventDelegation() {
     
     document.addEventListener('click', function(event) {
         const target = event.target;
-        console.log('Click detected on:', target.tagName, target.className);
+        const btn = target.closest('button');
         
-        // Handle Add Price buttons with data attributes
-        if (target.closest('.add-price-btn')) {
+        // Enhanced logging for debugging
+        console.log('Click detected on:', {
+            tagName: target.tagName,
+            className: target.className,
+            id: target.id,
+            textContent: target.textContent?.substring(0, 50),
+            closest_button: btn?.className,
+            onclick: btn?.getAttribute('onclick')
+        });
+        
+        // Handle Add Price buttons with data attributes OR onclick attributes
+        if (target.closest('.add-price-btn') || (btn && btn.getAttribute('onclick')?.includes('openPriceModal'))) {
             console.log('Add price button clicked');
             event.preventDefault();
             event.stopPropagation();
             
-            const btn = target.closest('.add-price-btn');
-            const itemId = btn.dataset.itemId || btn.getAttribute('data-item-id');
-            console.log('Item ID:', itemId);
+            const clickBtn = target.closest('.add-price-btn') || btn;
+            
+            // Try to extract itemId from various sources
+            let itemId = clickBtn.dataset.itemId || clickBtn.getAttribute('data-item-id');
+            
+            // If no data attribute, try to parse from onclick
+            if (!itemId && clickBtn.getAttribute('onclick')) {
+                const onclickAttr = clickBtn.getAttribute('onclick');
+                const match = onclickAttr.match(/openPriceModal\(\s*(\d+)\s*,\s*(null|\d+)\s*\)/);
+                if (match) {
+                    itemId = match[1];
+                }
+            }
+            
+            console.log('Item ID found:', itemId);
             
             if (itemId) {
                 console.log('Calling openPriceModal for item:', itemId);
                 openPriceModal(parseInt(itemId), null);
+            } else {
+                console.error('Could not find item ID for add price button');
             }
             return;
         }
         
         // Handle Edit Price buttons
-        if (target.closest('.edit-price-btn')) {
+        if (target.closest('.edit-price-btn') || (btn && btn.getAttribute('onclick')?.includes('openPriceModal') && btn.getAttribute('onclick')?.includes(','))) {
             console.log('Edit price button clicked');
             event.preventDefault();
             event.stopPropagation();
             
-            const btn = target.closest('.edit-price-btn');
-            const itemId = btn.dataset.itemId || btn.getAttribute('data-item-id');
-            const priceId = btn.dataset.priceId || btn.getAttribute('data-price-id');
+            const clickBtn = target.closest('.edit-price-btn') || btn;
+            let itemId = clickBtn.dataset.itemId || clickBtn.getAttribute('data-item-id');
+            let priceId = clickBtn.dataset.priceId || clickBtn.getAttribute('data-price-id');
+            
+            // If no data attributes, try to parse from onclick
+            if ((!itemId || !priceId) && clickBtn.getAttribute('onclick')) {
+                const onclickAttr = clickBtn.getAttribute('onclick');
+                const match = onclickAttr.match(/openPriceModal\(\s*(\d+)\s*,\s*(\d+)\s*\)/);
+                if (match) {
+                    itemId = match[1];
+                    priceId = match[2];
+                }
+            }
             
             if (itemId && priceId) {
                 openPriceModal(parseInt(itemId), parseInt(priceId));
+            } else {
+                console.error('Could not find item ID or price ID for edit price button');
             }
             return;
         }
@@ -1396,18 +1492,22 @@ function setItemsView(view) {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 .modal-content {
     background-color: white;
-    padding: 20px;
+    padding: 30px;
     border-radius: 8px;
-    max-width: 500px;
-    width: 90%;
-    max-height: 80vh;
+    max-width: 700px;
+    width: 100%;
+    max-height: 90vh;
     overflow-y: auto;
     position: relative;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transform: scale(1) !important;
+    margin: auto;
 }
 
 .modal-close {
@@ -1443,10 +1543,16 @@ function setItemsView(view) {
 }
 
 @media (max-width: 768px) {
+    .modal {
+        padding: 10px;
+    }
+    
     .modal-content {
-        width: 95%;
-        margin: 10px;
-        max-height: 90vh;
+        width: 100%;
+        margin: 0;
+        max-height: 95vh;
+        padding: 20px;
+        border-radius: 8px;
     }
 }
 
