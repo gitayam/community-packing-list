@@ -1,10 +1,29 @@
-FROM python:3.11-slim
+# Multi-stage build for TypeScript compilation and Python runtime
+FROM node:18-alpine AS frontend-builder
+
+# Set work directory for frontend build
+WORKDIR /app
+
+# Copy package files and install Node.js dependencies
+COPY package*.json ./
+RUN npm ci
+
+# Copy TypeScript source files and configuration
+COPY tsconfig.json webpack.config.js postcss.config.js .prettierrc ./
+COPY src/ ./src/
+
+# Build TypeScript files and process CSS
+RUN npm run build && npm run css:build
+
+# Python runtime stage
+FROM python:3.11-slim AS production
 
 # Set environment variables for cloud deployment
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
-    PORT=8080
+    PORT=8080 \
+    NODE_ENV=production
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -29,16 +48,22 @@ COPY requirements.txt ./
 RUN pip install --upgrade pip setuptools wheel && \
     pip install -r requirements.txt
 
+# Copy entrypoint script first and set permissions
+COPY ./entrypoint-cloud.sh /app/entrypoint-cloud.sh
+RUN chmod +x /app/entrypoint-cloud.sh
+
 # Copy application code
 COPY . .
+
+# Copy compiled frontend assets from builder stage
+COPY --from=frontend-builder /app/packing_lists/static/packing_lists/js/ /app/packing_lists/static/packing_lists/js/
+COPY --from=frontend-builder /app/packing_lists/static/packing_lists/css/compiled.css /app/packing_lists/static/packing_lists/css/
 
 # Create necessary directories and set permissions
 RUN mkdir -p logs media static staticfiles && \
     chown -R appuser:appuser /app
 
-# Run migrations and collect static files
-RUN python manage.py collectstatic --noinput
-RUN python manage.py migrate --noinput
+# Don't run collectstatic or migrations in Docker build - they should run at deployment time
 
 # Switch to non-root user
 USER appuser
@@ -46,6 +71,9 @@ USER appuser
 # Health check endpoint for Cloud Run
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:$PORT/health/ || exit 1
+
+# Set entrypoint
+ENTRYPOINT ["/app/entrypoint-cloud.sh"]
 
 # Cloud Run requires binding to 0.0.0.0:$PORT
 CMD exec gunicorn community_packing_list.wsgi:application \
