@@ -8,7 +8,8 @@ module.exports = (env, argv) => {
       'packing-list-detail': './src/packing-list-detail.ts',
       'store-list': './src/store-list.ts',
       'packing-list-form': './src/packing-list-form.ts',
-      'price-form-modal': './src/price-form-modal.ts'
+      'price-form-modal': './src/price-form-modal.ts',
+      'items': './src/items.ts'
     },
     output: {
       path: path.resolve(__dirname, 'packing_lists/static/packing_lists/js'),

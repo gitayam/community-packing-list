@@ -191,7 +191,7 @@
                                 {% elif item_data.best_price.vote_confidence < 0 %}
                                     <span class="vote-confidence negative">✗</span>
                                 {% endif %}
-                                <button type="button" class="edit-price-btn" title="Edit Price" onclick="event.stopPropagation(); openPriceModal({{ item_data.item.id }}, {{ item_data.best_price.price.id }})">
+                                <button type="button" class="edit-price-btn" title="Edit Price" data-item-id="{{ item_data.item.id }}" data-price-id="{{ item_data.best_price.price.id }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                 </button>
                             </span>
@@ -202,14 +202,14 @@
                             </div>
                         {% endif %}
                         <div class="price-actions">
-                            <button type="button" class="add-price-btn" onclick="event.stopPropagation(); openPriceModal({{ item_data.item.id }}, null)">
+                            <button type="button" class="add-price-btn" data-item-id="{{ item_data.item.id }}">
                                 Add Price
                             </button>
                         </div>
                     {% else %}
                         <div class="no-price">
                             <em>No pricing information available</em>
-                            <button type="button" class="add-price-btn" onclick="event.stopPropagation(); openPriceModal({{ item_data.item.id }}, null)">
+                            <button type="button" class="add-price-btn" data-item-id="{{ item_data.item.id }}">
                                 Add Price
                             </button>
                         </div>
@@ -266,7 +266,7 @@
                                         {% if price_data.price.store.url %}
                                             <a href="{{ price_data.price.store.url }}" target="_blank" class="store-link">🔗</a>
                                         {% endif %}
-                                        <button type="button" class="edit-price-btn" title="Edit Price" onclick="event.stopPropagation(); openPriceModal({{ item_data.item.id }}, {{ price_data.price.id }})">
+                                        <button type="button" class="edit-price-btn" title="Edit Price" data-item-id="{{ item_data.item.id }}" data-price-id="{{ price_data.price.id }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                         </button>
                                     </div>
@@ -351,10 +351,10 @@
                         {% endif %}
                     </td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline" onclick="event.stopPropagation(); openItemModal({{ item_data.item.id }})" title="Edit Item">
+                        <button type="button" class="btn btn-sm btn-outline edit-item-btn" data-item-id="{{ item_data.item.id }}" title="Edit Item">
                             <img src="{% static 'packing_lists/icons/edit.svg' %}" alt="Edit" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" /> Edit
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline" onclick="event.stopPropagation(); openPriceModal({{ item_data.item.id }}, null)" title="Add Price">
+                        <button type="button" class="btn btn-sm btn-outline add-price-btn" data-item-id="{{ item_data.item.id }}" title="Add Price">
                             <img src="{% static 'packing_lists/icons/plus-database.svg' %}" alt="Add Price" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" /> Add Price
                         </button>
                     </td>
@@ -385,9 +385,13 @@
     </div>
 </div>
 
+<!-- JavaScript functionality now handled by TypeScript module in extra_js block -->
 <script>
-let selectedItems = new Set();
-
+/*
+Legacy JavaScript - Commented out to prevent conflicts with TypeScript module
+All functionality moved to src/items.ts
+*/
+/*
 function updateSelection() {
     const checkboxes = document.querySelectorAll('.item-select:checked');
     selectedItems = new Set(Array.from(checkboxes).map(cb => cb.value));
@@ -980,7 +984,7 @@ function setItemsView(view) {
     }
 }
 
-
+*/
 </script>
 
 <style>
@@ -1855,4 +1859,8 @@ function setItemsView(view) {
     transform: translateY(-1px);
 }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'packing_lists/js/items.js' %}"></script>
 {% endblock %} 
