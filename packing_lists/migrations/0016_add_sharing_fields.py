@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
             model_name='packinglist',
             name='created_at',
             field=models.DateTimeField(default=timezone.now),
-            preserve_default=False,
+            preserve_default=True,
         ),
         migrations.AddField(
             model_name='packinglist',
