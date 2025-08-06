@@ -1128,6 +1128,79 @@ a:focus-visible {
   font-size: 16px;
 }
 
+/* Action Button Icons */
+.action-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: var(--space-2);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-base);
+  background: var(--color-white);
+  color: var(--color-gray-700);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.action-btn:hover {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.action-btn:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.action-btn .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.action-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: center;
+}
+
+/* Specific action button colors */
+.add-price-btn:hover {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.edit-item-btn:hover {
+  background: var(--color-info);
+  border-color: var(--color-info);
+}
+
+.expand-price-btn:hover {
+  background: var(--color-secondary);
+  border-color: var(--color-secondary);
+}
+
+.review-btn:hover {
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+  color: var(--color-gray-900);
+}
+
 /* Touch target sizing for mobile */
 @media (max-width: 768px) {
   .btn {
@@ -1144,5 +1217,10 @@ a:focus-visible {
   .item-checkbox .checkmark {
     height: 24px;
     width: 24px;
+  }
+  
+  .action-btn {
+    min-width: 44px;
+    min-height: 44px;
   }
 } 
