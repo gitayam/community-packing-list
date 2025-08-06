@@ -1,4 +1,8 @@
-import { DOMUtils, UIUtils, apiClient, FormUtils } from './common';
+import { DOMUtils, FormUtils } from './common';
+import { apiService } from './services/ApiService';
+import { logger } from './services/Logger';
+import { appState, StateUtils } from './services/StateManager';
+import { cacheService, CacheConfigs } from './services/CacheService';
 import type { TableSortState, FilterState, PriceDetailsData, TableRowData } from './types';
 
 class PackingListDetailManager {
@@ -9,6 +13,7 @@ class PackingListDetailManager {
   private rows: HTMLTableRowElement[] = [];
   private sortableHeaders: HTMLTableCellElement[] = [];
   private currentSortState: TableSortState = { column: '', direction: 'asc' };
+  private unsubscribe?: () => void;
 
   constructor() {
     this.initialize();
@@ -17,12 +22,36 @@ class PackingListDetailManager {
   }
 
   private initialize(): void {
+    logger.info('Initializing PackingListDetailManager', 'packing_list');
+    
+    this.setupStateManagement();
     this.setupElements();
     this.setupEventListeners();
     this.setupTableFunctionality();
     this.setupModalFunctionality();
     this.setupVoteFunctionality();
     this.setupFilterFunctionality();
+    this.preloadData();
+  }
+
+  private setupStateManagement(): void {
+    // Subscribe to state changes
+    this.unsubscribe = appState.subscribe((newState, previousState) => {
+      this.handleStateChange(newState, previousState);
+    });
+  }
+
+  private handleStateChange(newState: any, previousState: any): void {
+    if (newState.ui.loading !== previousState.ui.loading) {
+      this.updateLoadingState(newState.ui.loading);
+    }
+  }
+
+  private updateLoadingState(loading: boolean): void {
+    const loadingIndicator = DOMUtils.getElement<HTMLElement>('#loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.style.display = loading ? 'block' : 'none';
+    }
   }
 
   private setupElements(): void {
@@ -32,7 +61,7 @@ class PackingListDetailManager {
     this.tableWrapper = DOMUtils.getElement<HTMLElement>('.modern-table-wrapper');
 
     if (!this.table || !this.filterInput || !this.toggleBtn || !this.tableWrapper) {
-      console.log('Table elements not found, skipping table functionality');
+      logger.warn('Table elements not found, skipping table functionality', 'packing_list');
       return;
     }
 
@@ -85,14 +114,14 @@ class PackingListDetailManager {
     const closePriceModalBtn = DOMUtils.getElement<HTMLButtonElement>('#close-price-modal');
     if (closePriceModalBtn) {
       closePriceModalBtn.addEventListener('click', () => {
-        UIUtils.hideModal('price-modal');
+        this.hideModal('price-modal');
       });
     }
 
     const closeEditItemModalBtn = DOMUtils.getElement<HTMLButtonElement>('#close-edit-item-modal');
     if (closeEditItemModalBtn) {
       closeEditItemModalBtn.addEventListener('click', () => {
-        UIUtils.hideModal('edit-item-modal');
+        this.hideModal('edit-item-modal');
       });
     }
   }
@@ -930,6 +959,49 @@ class PackingListDetailManager {
 
     // Start injection
     injectIcons();
+  }
+
+  private hideModal(modalId: string): void {
+    const modal = DOMUtils.getElement<HTMLElement>(`#${modalId}`);
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  private showButtonLoading(button: HTMLButtonElement): void {
+    button.classList.add('loading');
+    button.disabled = true;
+    button.dataset.originalText = button.textContent || '';
+    button.textContent = 'Loading...';
+  }
+
+  private hideButtonLoading(button: HTMLButtonElement, originalText: string): void {
+    button.classList.remove('loading');
+    button.disabled = false;
+    button.textContent = originalText;
+  }
+
+  private async preloadData(): Promise<void> {
+    try {
+      // Preload commonly accessed endpoints
+      const preloadUrls = [
+        '/api/recent-prices/',
+        '/api/user-location/'
+      ];
+      
+      await apiService.preload(preloadUrls);
+      logger.debug('Data preloading completed', 'packing_list');
+    } catch (error) {
+      logger.warn('Failed to preload some data', 'packing_list', error);
+    }
+  }
+
+  // Cleanup method
+  public destroy(): void {
+    if (this.unsubscribe) {
+      this.unsubscribe();
+    }
+    logger.info('PackingListDetailManager destroyed', 'packing_list');
   }
 }
 
