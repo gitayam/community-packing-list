@@ -1,15 +1,48 @@
-import { DOMUtils, UIUtils, apiClient, FormUtils } from './common';
+import { DOMUtils, FormUtils } from './common';
+import { apiService } from './services/ApiService';
+import { logger } from './services/Logger';
+import { appState, StateUtils } from './services/StateManager';
+import { cacheService, CacheConfigs } from './services/CacheService';
 
 class ItemsPageManager {
-  private selectedItems: Set<string> = new Set();
+  private unsubscribe?: () => void;
 
   constructor() {
     this.initialize();
   }
 
   private initialize(): void {
+    logger.info('Initializing ItemsPageManager', 'items');
+    
+    this.setupStateManagement();
     this.setupEventListeners();
     this.setupViewToggle();
+    this.preloadData();
+  }
+
+  private setupStateManagement(): void {
+    // Subscribe to state changes
+    this.unsubscribe = appState.subscribe((newState, previousState) => {
+      this.handleStateChange(newState, previousState);
+    });
+  }
+
+  private handleStateChange(newState: any, previousState: any): void {
+    // Update UI based on state changes
+    if (newState.ui.loading !== previousState.ui.loading) {
+      this.updateLoadingState(newState.ui.loading);
+    }
+    
+    if (newState.data.selectedItems !== previousState.data.selectedItems) {
+      this.updateBulkActionsVisibility();
+    }
+  }
+
+  private updateLoadingState(loading: boolean): void {
+    const loadingIndicator = DOMUtils.getElement<HTMLElement>('#loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.style.display = loading ? 'block' : 'none';
+    }
   }
 
   private setupEventListeners(): void {
@@ -54,8 +87,8 @@ class ItemsPageManager {
     document.addEventListener('click', (event) => {
       const target = event.target as HTMLElement;
       if (target.classList.contains('modal')) {
-        UIUtils.hideModal('price-modal');
-        UIUtils.hideModal('item-modal');
+        StateUtils.toggleModal('priceModal', false);
+        StateUtils.toggleModal('itemModal', false);
       }
     });
   }
@@ -64,6 +97,7 @@ class ItemsPageManager {
     const target = event.target as HTMLElement;
     
     if (target.closest('.add-price-btn') || target.closest('.edit-price-btn')) {
+      logger.logUserAction('price_modal_open', { target: target.className });
       event.preventDefault();
       event.stopPropagation();
       
@@ -73,9 +107,9 @@ class ItemsPageManager {
       
       if (!itemId) return;
       
-      console.log('Opening price modal for item:', itemId, 'price:', priceId);
+      logger.debug('Opening price modal', 'items', { itemId, priceId });
       
-      UIUtils.showLoading(btn as HTMLButtonElement);
+      this.showButtonLoading(btn as HTMLButtonElement);
       
       try {
         let url = `/item/${itemId}/add_price_modal/`;
@@ -83,7 +117,7 @@ class ItemsPageManager {
           url += `?price_id=${priceId}`;
         }
         
-        const response = await apiClient.get(url);
+        const response = await apiService.get(url, { useCache: true, cacheTimeout: CacheConfigs.SHORT.ttl });
         
         if (response.html) {
           const modal = DOMUtils.getElement<HTMLElement>('#price-modal');
@@ -91,7 +125,7 @@ class ItemsPageManager {
           
           if (modal && modalBody) {
             modalBody.innerHTML = response.html;
-            UIUtils.showModal('price-modal');
+            StateUtils.toggleModal('priceModal', true);
             
             // Set up form submission handler
             const form = modalBody.querySelector('form') as HTMLFormElement;
@@ -109,11 +143,11 @@ class ItemsPageManager {
           }
         }
       } catch (error) {
-        console.error('Error loading price modal:', error);
-        UIUtils.showNotification('Error loading price form. Please try again.', 'error');
+        logger.error('Error loading price modal', 'items', error);
+        StateUtils.addNotification('Error loading price form. Please try again.', 'error');
       } finally {
         const buttonText = btn.classList.contains('add-price-btn') ? 'Add Price' : 'Edit';
-        UIUtils.hideLoading(btn as HTMLButtonElement, buttonText);
+        this.hideButtonLoading(btn as HTMLButtonElement, buttonText);
       }
     }
   }
@@ -130,11 +164,11 @@ class ItemsPageManager {
       
       if (!itemId) return;
       
-      UIUtils.showLoading(btn as HTMLButtonElement);
+      this.showButtonLoading(btn as HTMLButtonElement);
       
       try {
         const url = `/item/${itemId}/edit_modal/`;
-        const response = await apiClient.get(url);
+        const response = await apiService.get(url, { useCache: false });
         
         if (response.html) {
           const modal = DOMUtils.getElement<HTMLElement>('#item-modal');
@@ -142,7 +176,7 @@ class ItemsPageManager {
           
           if (modal && modalBody) {
             modalBody.innerHTML = response.html;
-            UIUtils.showModal('item-modal');
+            modal.style.display = 'flex'; // Temporary fallback
             
             // Set up form submission handler
             const form = modalBody.querySelector('form') as HTMLFormElement;
@@ -152,10 +186,10 @@ class ItemsPageManager {
           }
         }
       } catch (error) {
-        console.error('Error loading item modal:', error);
-        UIUtils.showNotification('Error loading edit form. Please try again.', 'error');
+        logger.error('Error loading item modal', 'items', error);
+        StateUtils.addNotification('Error loading edit form. Please try again.', 'error');
       } finally {
-        UIUtils.hideLoading(btn as HTMLButtonElement, 'Edit');
+        this.hideButtonLoading(btn as HTMLButtonElement, 'Edit');
       }
     }
   }
@@ -187,12 +221,12 @@ class ItemsPageManager {
       const itemId = checkbox.value;
       
       if (checkbox.checked) {
-        this.selectedItems.add(itemId);
+        StateUtils.addSelectedItem(itemId);
+        logger.logUserAction('item_selected', { itemId });
       } else {
-        this.selectedItems.delete(itemId);
+        StateUtils.removeSelectedItem(itemId);
+        logger.logUserAction('item_deselected', { itemId });
       }
-      
-      this.updateBulkActionsVisibility();
     }
   }
 
@@ -267,18 +301,21 @@ class ItemsPageManager {
       }
     }
     
-    // Store preference in localStorage
-    localStorage.setItem('itemsViewPreference', view);
+    // Update state with preference
+    StateUtils.updatePreferences({ viewMode: view });
+    logger.logUserAction('view_changed', { view });
   }
 
   private updateBulkActionsVisibility(): void {
+    const state = appState.getState();
+    const selectedItems = state.data.selectedItems;
     const bulkActions = DOMUtils.getElement<HTMLElement>('#bulkActions');
     const selectedCount = DOMUtils.getElement<HTMLElement>('#selectedCount');
     
-    if (this.selectedItems.size > 0) {
+    if (selectedItems.size > 0) {
       if (bulkActions) bulkActions.style.display = 'block';
       if (selectedCount) {
-        selectedCount.textContent = `${this.selectedItems.size} item${this.selectedItems.size > 1 ? 's' : ''} selected`;
+        selectedCount.textContent = `${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} selected`;
       }
     } else {
       if (bulkActions) bulkActions.style.display = 'none';
@@ -289,18 +326,23 @@ class ItemsPageManager {
     document.querySelectorAll('.item-select').forEach((cb) => {
       (cb as HTMLInputElement).checked = false;
     });
-    this.selectedItems.clear();
-    this.updateBulkActionsVisibility();
+    StateUtils.clearSelectedItems();
+    logger.logUserAction('selection_cleared');
   }
 
   private createPackingListFromSelected(): void {
-    if (this.selectedItems.size === 0) {
-      UIUtils.showNotification('Please select at least one item.', 'warning');
+    const state = appState.getState();
+    const selectedItems = state.data.selectedItems;
+    
+    if (selectedItems.size === 0) {
+      StateUtils.addNotification('Please select at least one item.', 'info');
       return;
     }
     
+    logger.logUserAction('create_packing_list_from_selection', { itemCount: selectedItems.size });
+    
     const params = new URLSearchParams();
-    this.selectedItems.forEach(itemId => {
+    selectedItems.forEach(itemId => {
       params.append('selected_items', itemId);
     });
     
@@ -313,16 +355,23 @@ class ItemsPageManager {
 
       const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
       if (submitBtn) {
-        UIUtils.showLoading(submitBtn);
+        this.showButtonLoading(submitBtn);
       }
+      
+      StateUtils.setLoading(true);
 
       try {
         const formData = FormUtils.getFormData(form);
-        const response = await apiClient.post(form.action, formData);
+        const response = await apiService.post(form.action, formData);
 
         if (response.success) {
-          UIUtils.hideModal('price-modal');
-          UIUtils.showNotification('Price updated successfully!', 'success');
+          StateUtils.toggleModal('priceModal', false);
+          StateUtils.addNotification('Price updated successfully!', 'success');
+          
+          // Clear related cache entries
+          cacheService.invalidateByPattern(/\/item\//i);
+          
+          logger.logUserAction('price_updated', { success: true });
           location.reload();
         } else if (response.html) {
           const modalBody = DOMUtils.getElement<HTMLElement>('#price-modal-body');
@@ -331,14 +380,16 @@ class ItemsPageManager {
             this.setupPriceFormSubmission(modalBody.querySelector('form') as HTMLFormElement);
           }
         } else {
-          UIUtils.showNotification(response.message || 'Error updating price.', 'error');
+          StateUtils.addNotification(response.message || 'Error updating price.', 'error');
         }
       } catch (error) {
-        UIUtils.showNotification('Error updating price. Please try again.', 'error');
+        logger.error('Error updating price', 'items', error);
+        StateUtils.addNotification('Error updating price. Please try again.', 'error');
       } finally {
         if (submitBtn) {
-          UIUtils.hideLoading(submitBtn, 'Save Price');
+          this.hideButtonLoading(submitBtn, 'Save Price');
         }
+        StateUtils.setLoading(false);
       }
     });
   }
@@ -349,16 +400,23 @@ class ItemsPageManager {
 
       const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
       if (submitBtn) {
-        UIUtils.showLoading(submitBtn);
+        this.showButtonLoading(submitBtn);
       }
+      
+      StateUtils.setLoading(true);
 
       try {
         const formData = FormUtils.getFormData(form);
-        const response = await apiClient.post(form.action, formData);
+        const response = await apiService.post(form.action, formData);
 
         if (response.success) {
-          UIUtils.hideModal('item-modal');
-          UIUtils.showNotification('Item updated successfully!', 'success');
+          StateUtils.toggleModal('itemModal', false);
+          StateUtils.addNotification('Item updated successfully!', 'success');
+          
+          // Clear related cache entries
+          cacheService.invalidateByPattern(/\/item\//i);
+          
+          logger.logUserAction('item_updated', { success: true });
           location.reload();
         } else if (response.html) {
           const modalBody = DOMUtils.getElement<HTMLElement>('#item-modal-body');
@@ -367,16 +425,54 @@ class ItemsPageManager {
             this.setupItemFormSubmission(modalBody.querySelector('form') as HTMLFormElement);
           }
         } else {
-          UIUtils.showNotification(response.message || 'Error updating item.', 'error');
+          StateUtils.addNotification(response.message || 'Error updating item.', 'error');
         }
       } catch (error) {
-        UIUtils.showNotification('Error updating item. Please try again.', 'error');
+        logger.error('Error updating item', 'items', error);
+        StateUtils.addNotification('Error updating item. Please try again.', 'error');
       } finally {
         if (submitBtn) {
-          UIUtils.hideLoading(submitBtn, 'Save Changes');
+          this.hideButtonLoading(submitBtn, 'Save Changes');
         }
+        StateUtils.setLoading(false);
       }
     });
+  }
+
+  private showButtonLoading(button: HTMLButtonElement): void {
+    button.classList.add('loading');
+    button.disabled = true;
+    button.dataset.originalText = button.textContent || '';
+    button.textContent = 'Loading...';
+  }
+
+  private hideButtonLoading(button: HTMLButtonElement, originalText: string): void {
+    button.classList.remove('loading');
+    button.disabled = false;
+    button.textContent = originalText;
+  }
+
+  private async preloadData(): Promise<void> {
+    try {
+      // Preload commonly accessed endpoints
+      const preloadUrls = [
+        '/api/user-preferences/',
+        '/api/recent-items/'
+      ];
+      
+      await apiService.preload(preloadUrls);
+      logger.debug('Data preloading completed', 'items');
+    } catch (error) {
+      logger.warn('Failed to preload some data', 'items', error);
+    }
+  }
+
+  // Cleanup method
+  public destroy(): void {
+    if (this.unsubscribe) {
+      this.unsubscribe();
+    }
+    logger.info('ItemsPageManager destroyed', 'items');
   }
 }
 
@@ -387,8 +483,9 @@ function initializeItemsPage() {
   // Store reference for global access
   (window as any).itemsManager = manager;
   
-  // Restore view preference
-  const savedView = localStorage.getItem('itemsViewPreference') as 'card' | 'table';
+  // Restore view preference from state
+  const state = appState.getState();
+  const savedView = state.user?.preferences?.viewMode;
   if (savedView) {
     (manager as any).setItemsView(savedView);
   }
