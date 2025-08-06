@@ -7,7 +7,7 @@ import dj_database_url
 from .settings import *
 
 # Override settings for cloud deployment
-DEBUG = False
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 # Cloud environment variables
 SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -77,10 +77,11 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Include only necessary directories in static files
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'packing_lists', 'static'),
-    os.path.join(BASE_DIR, 'src', 'styles'),  # Only include the styles directory from src
-]
+STATICFILES_DIRS = []
+if os.path.exists(os.path.join(BASE_DIR, 'packing_lists', 'static')):
+    STATICFILES_DIRS.append(os.path.join(BASE_DIR, 'packing_lists', 'static'))
+if os.path.exists(os.path.join(BASE_DIR, 'src', 'styles')):
+    STATICFILES_DIRS.append(os.path.join(BASE_DIR, 'src', 'styles'))
 
 # WhiteNoise configuration for static file serving
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
