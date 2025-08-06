@@ -1,0 +1,103 @@
+# Optimized Cloud Build configuration for production scaling to 10k users
+steps:
+# Build the container with multi-architecture support
+- name: 'gcr.io/cloud-builders/docker'
+  args: 
+  - 'buildx'
+  - 'build'
+  - '--platform'
+  - 'linux/amd64'
+  - '-f'
+  - 'Dockerfile'
+  - '-t'
+  - 'gcr.io/$PROJECT_ID/community-packing-list:${SHORT_SHA}'
+  - '-t'
+  - 'gcr.io/$PROJECT_ID/community-packing-list:latest'
+  - '--cache-from'
+  - 'gcr.io/$PROJECT_ID/community-packing-list:latest'
+  - '.'
+  
+# Push both tagged versions
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+  - 'push'
+  - 'gcr.io/$PROJECT_ID/community-packing-list:${SHORT_SHA}'
+  
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+  - 'push'
+  - 'gcr.io/$PROJECT_ID/community-packing-list:latest'
+
+# Deploy to Cloud Run with production scaling configuration
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args:
+  - 'run'
+  - 'deploy'
+  - 'community-packing-list'
+  - '--image=gcr.io/$PROJECT_ID/community-packing-list:${SHORT_SHA}'
+  - '--region=us-central1'
+  - '--platform=managed'
+  - '--allow-unauthenticated'
+  - '--port=8080'
+  - '--memory=2Gi'  # Increased for caching
+  - '--cpu=2'       # Increased for performance
+  - '--concurrency=80'  # Optimal for Django apps
+  - '--max-instances=100'  # Auto-scale up to 100 instances
+  - '--min-instances=2'    # Keep 2 instances warm
+  - '--cpu-throttling'     # Enable CPU throttling for cost optimization
+  - '--execution-environment=gen2'  # Use newer runtime
+  - '--timeout=900'  # 15 minute timeout for long operations
+  - '--set-env-vars=DJANGO_SETTINGS_MODULE=community_packing_list.settings_cloud,DEBUG=False,GUNICORN_WORKERS=4,MAX_REQUESTS=10000'
+  - '--set-env-vars=REDIS_URL=redis://10.0.0.1:6379,DATABASE_URL=${_DATABASE_URL}'
+  - '--vpc-connector=projects/$PROJECT_ID/locations/us-central1/connectors/serverless-connector'
+  - '--vpc-egress=private-ranges-only'
+
+# Run database migrations
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args:
+  - 'run'
+  - 'jobs'
+  - 'replace'
+  - 'migration-job'
+  - '--image=gcr.io/$PROJECT_ID/community-packing-list:${SHORT_SHA}'
+  - '--region=us-central1'
+  - '--command=python,manage.py,migrate,--noinput'
+  - '--set-env-vars=DJANGO_SETTINGS_MODULE=community_packing_list.settings_cloud,DATABASE_URL=${_DATABASE_URL}'
+  - '--vpc-connector=projects/$PROJECT_ID/locations/us-central1/connectors/serverless-connector'
+  - '--task-timeout=1800'  # 30 minutes for migrations
+
+# Warm up caches
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args:
+  - 'run'
+  - 'jobs'
+  - 'replace'
+  - 'cache-warmup-job'
+  - '--image=gcr.io/$PROJECT_ID/community-packing-list:${SHORT_SHA}'
+  - '--region=us-central1'
+  - '--command=python,manage.py,shell,-c,from packing_lists.tasks import warm_popular_items_cache; warm_popular_items_cache.delay()'
+  - '--set-env-vars=DJANGO_SETTINGS_MODULE=community_packing_list.settings_cloud,REDIS_URL=redis://10.0.0.1:6379'
+  - '--vpc-connector=projects/$PROJECT_ID/locations/us-central1/connectors/serverless-connector'
+
+# Build options for optimization
+options:
+  machineType: 'E2_HIGHCPU_8'  # Use high-CPU machine for faster builds
+  diskSizeGb: 100
+  logging: CLOUD_LOGGING_ONLY
+  dynamic_substitutions: true
+
+# Substitutions for environment-specific deployment
+substitutions:
+  _DATABASE_URL: 'postgres://user:pass@10.0.0.2:5432/community_packing_list'
+  _REDIS_URL: 'redis://10.0.0.1:6379'
+
+# Configure timeout
+timeout: '1800s'  # 30 minutes
+
+# Images to be pushed to Container Registry
+images:
+- 'gcr.io/$PROJECT_ID/community-packing-list:${SHORT_SHA}'
+- 'gcr.io/$PROJECT_ID/community-packing-list:latest'

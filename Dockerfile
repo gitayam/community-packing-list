@@ -47,16 +47,19 @@ USER appuser
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:$PORT/health/ || exit 1
 
-# Cloud Run requires binding to 0.0.0.0:$PORT
+# Cloud Run optimized Gunicorn configuration for 10k users
 CMD exec gunicorn community_packing_list.wsgi:application \
     --bind 0.0.0.0:$PORT \
-    --workers 2 \
-    --worker-class sync \
-    --worker-connections 1000 \
-    --max-requests 1000 \
-    --max-requests-jitter 100 \
-    --timeout 120 \
-    --keep-alive 5 \
-    --log-level info \
+    --workers ${GUNICORN_WORKERS:-4} \
+    --worker-class ${WORKER_CLASS:-sync} \
+    --worker-connections ${WORKER_CONNECTIONS:-2000} \
+    --max-requests ${MAX_REQUESTS:-5000} \
+    --max-requests-jitter ${MAX_REQUESTS_JITTER:-500} \
+    --timeout ${TIMEOUT:-300} \
+    --keep-alive ${KEEP_ALIVE:-10} \
+    --preload \
+    --log-level ${LOG_LEVEL:-info} \
     --access-logfile - \
-    --error-logfile -
+    --error-logfile - \
+    --access-logformat '%h %l %u %t "%r" %s %b "%{Referer}i" "%{User-Agent}i" %D' \
+    --enable-stdio-inheritance

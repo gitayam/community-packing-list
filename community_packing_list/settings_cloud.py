@@ -144,9 +144,31 @@ LOGGING = {
     },
 }
 
-# Media files configuration
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Media files configuration - Cloud Storage for production
+USE_CLOUD_STORAGE = os.environ.get('USE_CLOUD_STORAGE', 'false').lower() == 'true'
+
+if USE_CLOUD_STORAGE:
+    # Google Cloud Storage settings
+    DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+    GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'community-packing-list-media')
+    GS_PROJECT_ID = os.environ.get('GS_PROJECT_ID')
+    GS_DEFAULT_ACL = 'publicRead'
+    GS_FILE_OVERWRITE = False
+    GS_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+    
+    # CDN for media files
+    GS_CUSTOM_ENDPOINT = os.environ.get('GS_CUSTOM_ENDPOINT')  # CDN endpoint
+    MEDIA_URL = f'https://{GS_CUSTOM_ENDPOINT}/' if GS_CUSTOM_ENDPOINT else f'https://storage.googleapis.com/{GS_BUCKET_NAME}/'
+    
+    # Static files via Cloud Storage + CDN
+    STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+    GS_STATIC_BUCKET_NAME = os.environ.get('GS_STATIC_BUCKET_NAME', 'community-packing-list-static')
+    STATIC_URL = f'https://storage.googleapis.com/{GS_STATIC_BUCKET_NAME}/'
+    
+else:
+    # Local development settings
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Cache configuration - Redis for production, LocMem for development
 REDIS_URL = os.environ.get('REDIS_URL')

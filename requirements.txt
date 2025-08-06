@@ -27,5 +27,9 @@ kombu~=5.3.4 # Celery message transport
 django-debug-toolbar~=4.2.0 # Development debugging (only in DEBUG mode)
 django-silk~=5.0.4 # SQL profiling and performance monitoring
 
+# Phase 3 Scaling: Cloud Storage and CDN
+django-storages[google]~=1.14.2 # Google Cloud Storage backend
+google-cloud-storage~=2.10.0 # Google Cloud Storage client
+
 # Ensure other transitive dependencies like pytz, sqlparse, etc., are covered or add if needed.
 # For now, relying on pip to resolve them based on the above.
