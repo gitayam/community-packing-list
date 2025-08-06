@@ -54,4 +54,7 @@ urlpatterns = [
     
     # Health check endpoint
     path('health/', views.health_check, name='health_check'),
+    
+    # Migration endpoint for debugging
+    path('run-migrations/', views.run_migrations, name='run_migrations'),
 ]

@@ -1361,3 +1361,35 @@ def health_check(request):
     """Health check endpoint for Cloud Run"""
     from django.http import JsonResponse
     return JsonResponse({'status': 'healthy', 'service': 'community-packing-list'})
+
+def run_migrations(request):
+    """Run database migrations via web endpoint - for debugging only"""
+    from django.http import JsonResponse
+    
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    
+    try:
+        from django.core.management import call_command
+        from io import StringIO
+        import sys
+        
+        # Capture output
+        old_stdout = sys.stdout
+        sys.stdout = output = StringIO()
+        
+        # Run migrations
+        call_command('migrate', verbosity=2)
+        
+        # Restore stdout
+        sys.stdout = old_stdout
+        
+        return JsonResponse({
+            'status': 'success',
+            'output': output.getvalue()
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'error': str(e)
+        }, status=500)
