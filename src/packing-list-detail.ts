@@ -860,8 +860,76 @@ class PackingListDetailManager {
   }
 
   private injectActionButtonIcons(): void {
-    // The template already has emoji icons, so we don't need to inject SVG icons
-    // This method is kept for potential future use
+    console.log('Injecting SVG icons into action buttons...');
+    
+    // Define SVG icons
+    const icons = {
+      addPrice: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>`,
+      expandPrice: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bar-chart"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>`,
+      editItem: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`,
+      review: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-star"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon></svg>`
+    };
+
+    // Inject icons with retry mechanism
+    const injectIcons = (attempt = 1) => {
+      const maxAttempts = 3;
+      
+      // Add price buttons
+      const addPriceBtns = document.querySelectorAll('.add-price-btn .btn-icon');
+      console.log(`Attempt ${attempt}: Found ${addPriceBtns.length} add-price button icons`);
+      addPriceBtns.forEach((icon: Element) => {
+        if (icon.textContent?.trim() === '$' || icon.innerHTML.trim() === '') {
+          icon.innerHTML = icons.addPrice;
+          console.log('Injected add-price icon');
+        }
+      });
+
+      // Expand price buttons  
+      const expandPriceBtns = document.querySelectorAll('.expand-price-btn .btn-icon');
+      console.log(`Attempt ${attempt}: Found ${expandPriceBtns.length} expand-price button icons`);
+      expandPriceBtns.forEach((icon: Element) => {
+        if (icon.textContent?.includes('📊') || icon.innerHTML.trim() === '') {
+          icon.innerHTML = icons.expandPrice;
+          console.log('Injected expand-price icon');
+        }
+      });
+
+      // Edit item buttons
+      const editItemBtns = document.querySelectorAll('.edit-item-btn .btn-icon');
+      console.log(`Attempt ${attempt}: Found ${editItemBtns.length} edit-item button icons`);
+      editItemBtns.forEach((icon: Element) => {
+        if (icon.textContent?.trim() === '✏' || icon.innerHTML.trim() === '') {
+          icon.innerHTML = icons.editItem;
+          console.log('Injected edit-item icon');
+        }
+      });
+
+      // Review buttons
+      const reviewBtns = document.querySelectorAll('.review-btn .btn-icon');
+      console.log(`Attempt ${attempt}: Found ${reviewBtns.length} review button icons`);
+      reviewBtns.forEach((icon: Element) => {
+        if (icon.textContent?.trim() === '★' || icon.innerHTML.trim() === '') {
+          icon.innerHTML = icons.review;
+          console.log('Injected review icon');
+        }
+      });
+
+      // Check if we successfully injected icons, if not retry
+      const totalButtons = addPriceBtns.length + expandPriceBtns.length + editItemBtns.length + reviewBtns.length;
+      const iconsInjected = document.querySelectorAll('.action-btn svg').length;
+      
+      console.log(`Total buttons: ${totalButtons}, Icons injected: ${iconsInjected}`);
+      
+      if (iconsInjected === 0 && attempt < maxAttempts && totalButtons > 0) {
+        console.log(`No icons injected on attempt ${attempt}, retrying in 100ms...`);
+        setTimeout(() => injectIcons(attempt + 1), 100);
+      } else {
+        console.log(`Icon injection complete. Attempt ${attempt}, ${iconsInjected} icons injected.`);
+      }
+    };
+
+    // Start injection
+    injectIcons();
   }
 }
 
