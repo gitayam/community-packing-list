@@ -28,9 +28,18 @@ def home(request):
     """
     try:
         packing_lists = PackingList.objects.all().order_by('-id') # Show newest first, or by name, etc.
-    except Exception:
-        # Handle case where database tables don't exist yet
-        packing_lists = []
+    except Exception as e:
+        # Handle case where database tables don't exist yet - try auto-migration
+        if 'relation' in str(e) or 'table' in str(e).lower():
+            try:
+                from django.core.management import call_command
+                call_command('migrate', verbosity=0)
+                # Try again after migration
+                packing_lists = PackingList.objects.all().order_by('-id')
+            except Exception:
+                packing_lists = []
+        else:
+            packing_lists = []
     
     context = {
         'packing_lists': packing_lists,
