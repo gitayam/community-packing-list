@@ -105,17 +105,27 @@ class PackingList(models.Model):
 
     def save(self, *args, **kwargs):
         # Auto-generate share_slug if not provided
-        if not self.share_slug:
-            from django.utils.text import slugify
-            import uuid
-            base_slug = slugify(self.name)[:50]  # Limit length
-            self.share_slug = f"{base_slug}-{uuid.uuid4().hex[:8]}"
+        try:
+            if hasattr(self, 'share_slug') and not self.share_slug:
+                from django.utils.text import slugify
+                import uuid
+                base_slug = slugify(self.name)[:50]  # Limit length
+                self.share_slug = f"{base_slug}-{uuid.uuid4().hex[:8]}"
+        except AttributeError:
+            # share_slug field doesn't exist yet (migration not applied)
+            pass
         super().save(*args, **kwargs)
     
     def get_share_url(self):
         """Get the public sharing URL for this list"""
-        from django.urls import reverse
-        return reverse('public_list', kwargs={'share_slug': self.share_slug})
+        try:
+            if self.share_slug:
+                from django.urls import reverse
+                return reverse('public_list', kwargs={'share_slug': self.share_slug})
+        except AttributeError:
+            # share_slug field doesn't exist yet (migration not applied)
+            pass
+        return None
     
     def get_absolute_url(self):
         """Get the detail URL for this list"""
@@ -124,8 +134,12 @@ class PackingList(models.Model):
     
     def increment_view_count(self):
         """Increment the view count for this list"""
-        self.view_count += 1
-        self.save(update_fields=['view_count'])
+        try:
+            self.view_count += 1
+            self.save(update_fields=['view_count'])
+        except AttributeError:
+            # view_count field doesn't exist yet (migration not applied)
+            pass
     
     def get_completion_stats(self):
         """Get packing completion statistics"""
