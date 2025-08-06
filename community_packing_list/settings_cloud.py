@@ -48,36 +48,19 @@ CSRF_TRUSTED_ORIGINS = [
 if CUSTOM_DOMAIN:
     CSRF_TRUSTED_ORIGINS.append(f'https://{CUSTOM_DOMAIN}')
 
-# Database configuration using DATABASE_URL with PostgreSQL optimizations
-DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',
-        conn_max_age=600,
-        conn_health_checks=True,
-        # PostgreSQL optimizations
-        options={
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            'charset': 'utf8mb4',
-        } if 'mysql' in dj_database_url.config().get('ENGINE', '') else {}
-    )
-}
-
-# PostgreSQL-specific optimizations when using PostgreSQL
-db_config = dj_database_url.config()
-if 'postgresql' in db_config.get('ENGINE', ''):
-    DATABASES['default']['OPTIONS'] = {
-        'init_command': "SET default_transaction_isolation='read committed'",
-        'options': '-c default_transaction_isolation=serializable'
+# Database configuration - simplified for deployment
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL)
     }
-    
-    # Enable connection pooling for PostgreSQL
-    DATABASES['default']['CONN_MAX_AGE'] = 0  # Use persistent connections
-    
-    # Add read replica support (when available)
-    read_replica_url = os.environ.get('DATABASE_READ_REPLICA_URL')
-    if read_replica_url:
-        DATABASES['read_replica'] = dj_database_url.parse(read_replica_url)
-        DATABASE_ROUTERS = ['packing_lists.routers.DatabaseRouter']
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'db.sqlite3',
+        }
+    }
 
 # Security settings for production
 SECURE_BROWSER_XSS_FILTER = True
