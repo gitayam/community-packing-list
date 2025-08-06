@@ -26,7 +26,12 @@ def home(request):
     Home page view.
     Displays existing packing lists and links to create/upload new ones.
     """
-    packing_lists = PackingList.objects.all().order_by('-id') # Show newest first, or by name, etc.
+    try:
+        packing_lists = PackingList.objects.all().order_by('-id') # Show newest first, or by name, etc.
+    except Exception:
+        # Handle case where database tables don't exist yet
+        packing_lists = []
+    
     context = {
         'packing_lists': packing_lists,
     }
