@@ -971,4 +971,6 @@ if (document.readyState === 'loading') {
   if (manager) {
     manager.hideAnonymousPopup();
   }
-}; 
+};
+
+export default PackingListDetailManager; 
