@@ -7,8 +7,17 @@
     <title>{% block title %}Community Packing List{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{% static 'packing_lists/icons/travel-bag.svg' %}">
     <link rel="shortcut icon" type="image/svg+xml" href="{% static 'packing_lists/icons/travel-bag.svg' %}">
-    <link rel="stylesheet" href="{% static 'packing_lists/css/compiled.css' %}">
+    <link rel="stylesheet" href="{% static 'main.css' %}">
     <link rel="stylesheet" href="{% static 'packing_lists/css/style.css' %}">
+    <!-- Fallback for critical CSS -->
+    <noscript>
+        <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .btn { padding: 8px 16px; border: 1px solid #ccc; border-radius: 4px; background: #f8f9fa; cursor: pointer; }
+        .btn:hover { background: #e9ecef; }
+        </style>
+    </noscript>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
