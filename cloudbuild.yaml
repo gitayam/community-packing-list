@@ -26,4 +26,3 @@ steps:
   - '--cpu=1'
   - '--max-instances=10'
   - '--set-env-vars=DJANGO_SETTINGS_MODULE=community_packing_list.settings_cloud,DEBUG=False'
-EOF < /dev/null
