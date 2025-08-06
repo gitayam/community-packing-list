@@ -52,8 +52,13 @@ def is_rate_limited(ip_address: str, window_minutes: int = 5, max_submissions: i
     
     if current_count >= max_submissions:
         # Get TTL for cache key to know when limit resets
-        ttl = cache.ttl(cache_key)
-        return True, ttl if ttl > 0 else 300
+        # Note: ttl() method may not be available in all cache backends
+        try:
+            ttl = cache.ttl(cache_key)
+            return True, ttl if ttl > 0 else 300
+        except AttributeError:
+            # Fallback for cache backends without ttl() method
+            return True, window_minutes * 60
     
     # Increment counter with expiry
     cache.set(cache_key, current_count + 1, timeout=window_minutes * 60)
