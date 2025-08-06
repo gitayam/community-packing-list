@@ -27,6 +27,15 @@ A Django-based web application for creating, sharing, and managing structured pa
 - **Component Architecture**: Reusable UI components with TypeScript
 - **Performance Optimized**: Lazy loading, intersection observers, and efficient animations
 
+### Enhanced User Experience
+- **Modern Design System**: Comprehensive UI/UX overhaul with custom CSS properties and design tokens
+- **Enhanced Items Page**: Redesigned item cards with improved visual hierarchy and modern styling
+- **Collapsible Filters**: Organized filter system with visual grouping and smooth animations
+- **Price Display Enhancements**: Confidence badges, store information layouts, and enhanced empty states
+- **Interactive Elements**: Hover effects, smooth transitions, and engaging call-to-action buttons
+- **Accessibility Improvements**: ARIA attributes, keyboard navigation, and focus management
+- **Mobile Optimization**: Touch-friendly interactions and responsive design patterns
+
 ### Example Data
 The application includes a comprehensive Ranger School packing list example with:
 - 35+ items organized into 7 categories
@@ -113,6 +122,38 @@ npm run dev
 
 # Terminal 3: CSS watch mode
 npm run css:dev
+```
+
+## 🚀 Deployment
+
+### Google Cloud Run (Production)
+
+The application is deployed on Google Cloud Run with the following features:
+- **Scalable Infrastructure**: Automatic scaling based on demand
+- **Production-Ready**: Optimized Docker container with gunicorn
+- **Environment Variables**: Secure configuration management
+- **Health Checks**: Built-in health monitoring
+- **HTTPS**: Automatic SSL certificate management
+
+**Live Demo**: [https://community-packing-list-nesvf2duwa-uc.a.run.app/](https://community-packing-list-nesvf2duwa-uc.a.run.app/)
+
+### Deployment Commands
+
+```bash
+# Deploy using Cloud Build
+gcloud builds submit --config cloudbuild.yaml .
+
+# Or deploy directly
+gcloud run deploy community-packing-list \
+  --image=gcr.io/PROJECT_ID/community-packing-list:latest \
+  --region=us-central1 \
+  --platform=managed \
+  --allow-unauthenticated \
+  --port=8080 \
+  --memory=1Gi \
+  --cpu=1 \
+  --max-instances=10 \
+  --set-env-vars="DJANGO_SETTINGS_MODULE=community_packing_list.settings_cloud,DEBUG=False,SECRET_KEY=your-secret-key"
 ```
 
 ## 🔧 Development
