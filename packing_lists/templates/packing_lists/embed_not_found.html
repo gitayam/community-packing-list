@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embed Not Found</title>
+    <meta name="robots" content="noindex, nofollow">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            line-height: 1.5;
+            font-size: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        
+        .embed-error {
+            text-align: center;
+            padding: 40px 20px;
+            max-width: 300px;
+        }
+        
+        .embed-error svg {
+            color: #9ca3af;
+            margin-bottom: 16px;
+        }
+        
+        .embed-error h2 {
+            color: #374151;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .embed-error p {
+            color: #6b7280;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+        
+        .embed-error a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 12px;
+        }
+        
+        .embed-error a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="embed-error">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        
+        <h2>List Not Found</h2>
+        <p>The packing list you're trying to embed doesn't exist or is not publicly available.</p>
+        
+        <a href="#" onclick="window.parent.location.reload()">Try Again</a>
+    </div>
+</body>
+</html>
