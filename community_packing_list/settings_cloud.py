@@ -71,14 +71,27 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Include src directory in static files
+# Include only necessary directories in static files
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'packing_lists', 'static'),
-    os.path.join(BASE_DIR, 'src'),  # Add src directory for main.css
+    os.path.join(BASE_DIR, 'src', 'styles'),  # Only include the styles directory from src
 ]
 
 # WhiteNoise configuration for static file serving
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Static files optimization
+WHITENOISE_USE_FINDERS = False  # Disable in production for better performance
+WHITENOISE_AUTOREFRESH = False  # Disable auto-refresh in production
+WHITENOISE_MAX_AGE = 31536000  # Cache static files for 1 year
+
+# Add .js and .css MIME types for compression
+WHITENOISE_MIMETYPES = {
+    '.js': 'application/javascript',
+    '.css': 'text/css',
+    '.map': 'application/json',
+    '.svg': 'image/svg+xml',
+}
 
 # Logging configuration
 LOGGING = {
