@@ -10,53 +10,36 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Add critical indexes for scalability to 10,000+ users
+        # Add basic indexes compatible with SQLite for initial deployment
+        # PostgreSQL-specific indexes will be added later via manual migration
         
-        # Store location indexes for geographic queries
+        # Store location indexes
         migrations.RunSQL([
-            "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_store_location ON packing_lists_store(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;",
+            "CREATE INDEX idx_store_location ON packing_lists_store(latitude, longitude);",
         ], reverse_sql=[
             "DROP INDEX IF EXISTS idx_store_location;",
         ]),
         
-        # Item indexes for search and filtering
+        # PackingListItem indexes
         migrations.RunSQL([
-            "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_item_name_trgm ON packing_lists_item USING gin(name gin_trgm_ops);",
-        ], reverse_sql=[
-            "DROP INDEX IF EXISTS idx_item_name_trgm;",
-        ]),
-        
-        # PackingListItem indexes for detail view optimization
-        migrations.RunSQL([
-            "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_packinglistitem_list_section ON packing_lists_packinglistitem(packing_list_id, section);",
-            "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_packinglistitem_list_required ON packing_lists_packinglistitem(packing_list_id, required);",
+            "CREATE INDEX idx_packinglistitem_list_section ON packing_lists_packinglistitem(packing_list_id, section);",
+            "CREATE INDEX idx_packinglistitem_list_required ON packing_lists_packinglistitem(packing_list_id, required);",
         ], reverse_sql=[
             "DROP INDEX IF EXISTS idx_packinglistitem_list_section;",
             "DROP INDEX IF EXISTS idx_packinglistitem_list_required;",
         ]),
         
-        # Price indexes for aggregation and filtering
+        # Basic price indexes
         migrations.RunSQL([
-            "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_price_item_confidence ON packing_lists_price(item_id, confidence, created_at);",
-            "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_price_store_date ON packing_lists_price(store_id, date_purchased) WHERE date_purchased IS NOT NULL;",
-            "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_price_per_unit ON packing_lists_price((price/quantity)) WHERE quantity > 0;",
+            "CREATE INDEX idx_price_item_confidence ON packing_lists_price(item_id, confidence);",
         ], reverse_sql=[
             "DROP INDEX IF EXISTS idx_price_item_confidence;",
-            "DROP INDEX IF EXISTS idx_price_store_date;",
-            "DROP INDEX IF EXISTS idx_price_per_unit;",
         ]),
         
-        # Vote indexes for aggregation
+        # Vote indexes
         migrations.RunSQL([
-            "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_vote_price_correct ON packing_lists_vote(price_id, is_correct_price);",
+            "CREATE INDEX idx_vote_price_correct ON packing_lists_vote(price_id, is_correct_price);",
         ], reverse_sql=[
             "DROP INDEX IF EXISTS idx_vote_price_correct;",
-        ]),
-        
-        # Composite indexes for common query patterns
-        migrations.RunSQL([
-            "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_price_complex_filter ON packing_lists_price(item_id, confidence, is_verified, flagged_count) WHERE flagged_count < 3;",
-        ], reverse_sql=[
-            "DROP INDEX IF EXISTS idx_price_complex_filter;",
         ]),
     ]

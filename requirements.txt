@@ -1,4 +1,4 @@
-Django~=5.2.4
+Django~=4.2.16 # Compatible with all scaling packages
 psycopg2-binary~=2.9.10
 pandas~=2.2.0 # Loosening from 2.3.0 as it's very new, 2.2 is safer for wider compatibility
 openpyxl~=3.1.2
@@ -20,7 +20,7 @@ django-extensions~=3.2.3 # Development tools and optimizations
 redis~=5.0.1 # Redis client for caching and sessions
 django-redis~=5.4.0 # Django Redis cache backend
 celery~=5.3.4 # Background task processing
-django-celery-beat~=2.5.0 # Periodic task scheduling
+django-celery-beat~=2.5.0 # Periodic task scheduling (compatible with Django 4.x)
 kombu~=5.3.4 # Celery message transport
 
 # Performance and monitoring
