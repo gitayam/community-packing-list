@@ -48,14 +48,36 @@ CSRF_TRUSTED_ORIGINS = [
 if CUSTOM_DOMAIN:
     CSRF_TRUSTED_ORIGINS.append(f'https://{CUSTOM_DOMAIN}')
 
-# Database configuration using DATABASE_URL
+# Database configuration using DATABASE_URL with PostgreSQL optimizations
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///db.sqlite3',
         conn_max_age=600,
         conn_health_checks=True,
+        # PostgreSQL optimizations
+        options={
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',
+        } if 'mysql' in dj_database_url.config().get('ENGINE', '') else {}
     )
 }
+
+# PostgreSQL-specific optimizations when using PostgreSQL
+db_config = dj_database_url.config()
+if 'postgresql' in db_config.get('ENGINE', ''):
+    DATABASES['default']['OPTIONS'] = {
+        'init_command': "SET default_transaction_isolation='read committed'",
+        'options': '-c default_transaction_isolation=serializable'
+    }
+    
+    # Enable connection pooling for PostgreSQL
+    DATABASES['default']['CONN_MAX_AGE'] = 0  # Use persistent connections
+    
+    # Add read replica support (when available)
+    read_replica_url = os.environ.get('DATABASE_READ_REPLICA_URL')
+    if read_replica_url:
+        DATABASES['read_replica'] = dj_database_url.parse(read_replica_url)
+        DATABASE_ROUTERS = ['packing_lists.routers.DatabaseRouter']
 
 # Security settings for production
 SECURE_BROWSER_XSS_FILTER = True
@@ -126,9 +148,64 @@ LOGGING = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Cache configuration (can be enhanced with Redis/Memcached)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+# Cache configuration - Redis for production, LocMem for development
+REDIS_URL = os.environ.get('REDIS_URL')
+if REDIS_URL:
+    # Production Redis configuration
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'CONNECTION_POOL_KWARGS': {
+                    'max_connections': 50,
+                    'retry_on_timeout': True,
+                },
+                'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+                'IGNORE_EXCEPTIONS': True,  # Don't fail if Redis is down
+            },
+            'TIMEOUT': 300,  # Default timeout
+            'KEY_PREFIX': 'cpl',
+        }
     }
-}
+    
+    # Use Redis for sessions as well
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
+else:
+    # Fallback to local memory cache for development
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+            'TIMEOUT': 300,
+        }
+    }
+
+# Cache middleware settings
+CACHE_MIDDLEWARE_ALIAS = 'default'
+CACHE_MIDDLEWARE_SECONDS = 300  # 5 minutes
+CACHE_MIDDLEWARE_KEY_PREFIX = 'cpl'
+
+# Celery Configuration
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', REDIS_URL)
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL)
+
+if CELERY_BROKER_URL:
+    # Celery task configuration
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_TIMEZONE = 'UTC'
+    CELERY_TASK_TRACK_STARTED = True
+    CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+    CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+    CELERY_TASK_ACKS_LATE = True
+    
+    # Configure task routing
+    CELERY_TASK_ROUTES = {
+        'packing_lists.tasks.update_price_scores': {'queue': 'high_priority'},
+        'packing_lists.tasks.process_uploaded_file': {'queue': 'file_processing'},
+        'packing_lists.tasks.send_notification_email': {'queue': 'notifications'},
+    }

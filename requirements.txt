@@ -11,5 +11,21 @@ numpy~=1.26.4 # pandas dependency
 reportlab~=4.0.8 # For PDF generation
 dj-database-url~=2.1.0 # For cloud database configuration
 whitenoise~=6.8.2 # For serving static files in cloud
+
+# Phase 1 Scaling: PostgreSQL with PostGIS and full-text search
+django-environ~=0.11.2 # Better environment management
+django-extensions~=3.2.3 # Development tools and optimizations
+
+# Phase 2 Scaling: Redis and background tasks
+redis~=5.0.1 # Redis client for caching and sessions
+django-redis~=5.4.0 # Django Redis cache backend
+celery~=5.3.4 # Background task processing
+django-celery-beat~=2.5.0 # Periodic task scheduling
+kombu~=5.3.4 # Celery message transport
+
+# Performance and monitoring
+django-debug-toolbar~=4.2.0 # Development debugging (only in DEBUG mode)
+django-silk~=5.0.4 # SQL profiling and performance monitoring
+
 # Ensure other transitive dependencies like pytz, sqlparse, etc., are covered or add if needed.
 # For now, relying on pip to resolve them based on the above.
