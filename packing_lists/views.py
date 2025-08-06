@@ -1489,3 +1489,160 @@ def test_database_write(request):
             'status': 'error',
             'error': str(e)
         }, status=500)
+
+def public_list_view(request, share_slug):
+    """Public view of a packing list for sharing"""
+    try:
+        packing_list = PackingList.objects.get(share_slug=share_slug, is_public=True)
+        packing_list.increment_view_count()  # Track views for analytics
+    except PackingList.DoesNotExist:
+        return render(request, 'packing_lists/list_not_found.html', status=404)
+    
+    # Get completion stats for display
+    completion_stats = packing_list.get_completion_stats()
+    
+    # Get items with prices for public view
+    list_items = packing_list.items.select_related('item').order_by('section', 'item__name')
+    items_with_prices = []
+    
+    for pli in list_items:
+        # Get prices for this item, ordered by best value
+        prices = pli.item.prices.select_related('store').order_by('price')
+        prices_with_votes = []
+        
+        for price in prices:
+            # Get vote counts
+            upvotes = price.votes.filter(is_correct_price=True).count()
+            downvotes = price.votes.filter(is_correct_price=False).count()
+            price_per_unit = price.price / price.quantity if price.quantity > 0 else price.price
+            
+            prices_with_votes.append({
+                'price': price,
+                'upvotes': upvotes,
+                'downvotes': downvotes,
+                'price_per_unit': price_per_unit,
+            })
+        
+        items_with_prices.append({
+            'pli': pli,
+            'item': pli.item,
+            'prices_with_votes': prices_with_votes,
+        })
+    
+    context = {
+        'packing_list': packing_list,
+        'items_with_prices': items_with_prices,
+        'completion_stats': completion_stats,
+        'is_public_view': True,
+    }
+    
+    return render(request, 'packing_lists/public_list.html', context)
+
+def embed_list_view(request, share_slug):
+    """Embeddable widget view of a packing list"""
+    try:
+        packing_list = PackingList.objects.get(share_slug=share_slug, is_public=True)
+        packing_list.increment_view_count()
+    except PackingList.DoesNotExist:
+        return render(request, 'packing_lists/embed_not_found.html', status=404)
+    
+    # Get completion stats for display
+    completion_stats = packing_list.get_completion_stats()
+    
+    # Get items with prices for embedding (limited set)
+    list_items = packing_list.items.select_related('item').order_by('item__name')[:20]
+    items_with_prices = []
+    
+    for pli in list_items:
+        # Get best price for this item
+        best_price = pli.item.prices.select_related('store').order_by('price').first()
+        prices_with_votes = []
+        
+        if best_price:
+            # Get vote counts for best price
+            upvotes = best_price.votes.filter(is_correct_price=True).count()
+            downvotes = best_price.votes.filter(is_correct_price=False).count()
+            price_per_unit = best_price.price / best_price.quantity if best_price.quantity > 0 else best_price.price
+            
+            prices_with_votes.append({
+                'price': best_price,
+                'upvotes': upvotes,
+                'downvotes': downvotes,
+                'price_per_unit': price_per_unit,
+            })
+        
+        items_with_prices.append({
+            'pli': pli,
+            'item': pli.item,
+            'prices_with_votes': prices_with_votes,
+        })
+    
+    context = {
+        'packing_list': packing_list,
+        'items_with_prices': items_with_prices,
+        'completion_stats': completion_stats,
+    }
+    
+    # Return minimal HTML for embedding
+    response = render(request, 'packing_lists/embed_list.html', context)
+    response['X-Frame-Options'] = 'ALLOWALL'  # Allow embedding in iframes
+    return response
+
+def discover_lists(request):
+    """Community discovery page showing popular and recent lists"""
+    from django.db.models import Count, Sum
+    
+    # Get filter parameters
+    search_query = request.GET.get('search', '').strip()
+    event_type = request.GET.get('event_type', '')
+    sort_by = request.GET.get('sort', 'views')
+    
+    # Base queryset for public lists
+    packing_lists = PackingList.objects.filter(is_public=True).select_related('school')
+    
+    # Apply search filter
+    if search_query:
+        packing_lists = packing_lists.filter(
+            Q(name__icontains=search_query) | 
+            Q(description__icontains=search_query) |
+            Q(school__name__icontains=search_query)
+        )
+    
+    # Apply event type filter
+    if event_type:
+        packing_lists = packing_lists.filter(event_type=event_type)
+    
+    # Apply sorting
+    if sort_by == 'views':
+        packing_lists = packing_lists.order_by('-view_count', '-created_at')
+    elif sort_by == 'recent':
+        packing_lists = packing_lists.order_by('-updated_at', '-created_at')
+    elif sort_by == 'name':
+        packing_lists = packing_lists.order_by('name')
+    elif sort_by == 'items':
+        packing_lists = packing_lists.annotate(item_count=Count('items')).order_by('-item_count')
+    
+    # Limit results for performance
+    packing_lists = packing_lists[:50]
+    
+    # Get stats for header
+    all_public_lists = PackingList.objects.filter(is_public=True)
+    total_lists = all_public_lists.count()
+    total_items = all_public_lists.aggregate(
+        total=Count('items', distinct=True)
+    )['total'] or 0
+    total_views = all_public_lists.aggregate(
+        total=Sum('view_count')
+    )['total'] or 0
+    
+    context = {
+        'packing_lists': packing_lists,
+        'search_query': search_query,
+        'event_type': event_type,
+        'sort_by': sort_by,
+        'total_lists': total_lists,
+        'total_items': total_items,
+        'total_views': total_views,
+    }
+    
+    return render(request, 'packing_lists/discover.html', context)

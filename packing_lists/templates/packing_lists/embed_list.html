@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ packing_list.name }} - Embedded Packing List</title>
+    {% load static %}
+    
+    <!-- Prevent this page from being indexed -->
+    <meta name="robots" content="noindex, nofollow">
+    
+    <style>
+        /* Embedded widget styles - minimal and clean */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        
+        .embed-container {
+            padding: 16px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .embed-header {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .embed-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .embed-meta {
+            color: #666;
+            font-size: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .embed-table {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .embed-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .embed-table th {
+            background: #f1f5f9;
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .embed-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 13px;
+        }
+        
+        .embed-table tbody tr:hover {
+            background: #f9fafb;
+        }
+        
+        .embed-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .status-badge {
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        .status-badge.packed {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-badge.unpacked {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-badge.required {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-badge.optional {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+        
+        .quantity-badge {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 11px;
+        }
+        
+        .section-header {
+            background: #1f2937;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .embed-footer {
+            margin-top: 16px;
+            text-align: center;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .embed-footer a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 12px;
+        }
+        
+        .embed-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #10b981;
+            transition: width 0.3s ease;
+        }
+        
+        .no-items {
+            text-align: center;
+            padding: 32px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="embed-container">
+        <div class="embed-header">
+            <div class="embed-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                {{ packing_list.name }}
+            </div>
+            <div class="embed-meta">
+                <span>{{ completion_stats.total }} items</span>
+                <span>•</span>
+                <span>{{ completion_stats.completion_rate }}% complete</span>
+                {% if packing_list.school %}
+                <span>•</span>
+                <span>{{ packing_list.school.name }}</span>
+                {% endif %}
+            </div>
+            {% if completion_stats.total > 0 %}
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ completion_stats.completion_rate }}%"></div>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if items_with_prices %}
+        <div class="embed-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Type</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% regroup items_with_prices by pli.section as sectioned_items %}
+                    {% for section in sectioned_items %}
+                        {% if section.grouper %}
+                        <tr>
+                            <td colspan="5" class="section-header">{{ section.grouper }}</td>
+                        </tr>
+                        {% endif %}
+                        {% for item_wp in section.list %}
+                        <tr>
+                            <td>
+                                {% if item_wp.pli.packed %}
+                                    <span class="status-badge packed">✓</span>
+                                {% else %}
+                                    <span class="status-badge unpacked">○</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ item_wp.item.name }}</strong>
+                                {% if item_wp.pli.notes %}
+                                    <div style="color: #6b7280; font-size: 11px; margin-top: 2px;">{{ item_wp.pli.notes|truncatewords:10 }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="quantity-badge">{{ item_wp.pli.quantity }}</span>
+                            </td>
+                            <td>
+                                {% if item_wp.pli.required %}
+                                    <span class="status-badge required">Req</span>
+                                {% else %}
+                                    <span class="status-badge optional">Opt</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item_wp.prices_with_votes %}
+                                    <strong>${{ item_wp.prices_with_votes.0.price.price }}</strong>
+                                {% else %}
+                                    <span style="color: #9ca3af;">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-items">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            <p>No items in this packing list</p>
+        </div>
+        {% endif %}
+        
+        <div class="embed-footer">
+            <p>
+                <a href="{{ packing_list.get_share_url }}" target="_parent">View full packing list</a> 
+                • 
+                <a href="{% url 'home' %}" target="_parent">Community Packing List</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+    // Automatically adjust iframe height if parent allows it
+    function updateParentHeight() {
+        const height = document.body.scrollHeight;
+        if (window.parent && window.parent !== window) {
+            try {
+                window.parent.postMessage({
+                    type: 'resize',
+                    height: height
+                }, '*');
+            } catch (e) {
+                // Parent doesn't allow cross-origin messaging
+                console.log('Cannot auto-resize iframe - cross-origin restriction');
+            }
+        }
+    }
+    
+    // Update height on load and resize
+    window.addEventListener('load', updateParentHeight);
+    window.addEventListener('resize', updateParentHeight);
+    
+    // Update height when content changes (for dynamic content)
+    const observer = new MutationObserver(updateParentHeight);
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true
+    });
+    </script>
+</body>
+</html>

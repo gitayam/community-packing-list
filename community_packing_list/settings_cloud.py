@@ -20,6 +20,7 @@ ALLOWED_HOSTS = [
     '.appspot.com',
     'localhost',
     '127.0.0.1',
+    'community-packing-list-496146455129.us-central1.run.app',
 ]
 
 # Add any custom domain hosts from environment

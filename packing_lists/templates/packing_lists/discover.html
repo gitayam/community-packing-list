@@ -1,0 +1,431 @@
+{% extends "packing_lists/base.html" %}
+{% load static %}
+
+{% block title %}Discover Community Packing Lists{% endblock %}
+
+{% block page_header %}
+<div style="display: flex; align-items: center; gap: 12px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-globe"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+    <span>Discover Community Lists</span>
+</div>
+{% endblock %}
+
+{% block content %}
+    <div class="discover-header">
+        <p class="discover-description">
+            Explore packing lists shared by the military community. Find tested gear recommendations,
+            pricing insights, and comprehensive lists for various training, deployments, and schools.
+        </p>
+        
+        <div class="discover-stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_lists }}</div>
+                <div class="stat-label">Public Lists</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_items }}</div>
+                <div class="stat-label">Total Items</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_views|floatformat:0 }}</div>
+                <div class="stat-label">Community Views</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="discover-filters">
+        <form method="get" class="filter-form">
+            <div class="filter-group">
+                <input type="text" name="search" value="{{ search_query }}" placeholder="🔍 Search lists..." class="search-input">
+            </div>
+            <div class="filter-group">
+                <select name="event_type" class="filter-select">
+                    <option value="">All Event Types</option>
+                    <option value="school" {% if event_type == 'school' %}selected{% endif %}>School</option>
+                    <option value="training" {% if event_type == 'training' %}selected{% endif %}>Training</option>
+                    <option value="deployment" {% if event_type == 'deployment' %}selected{% endif %}>Deployment</option>
+                    <option value="other" {% if event_type == 'other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <select name="sort" class="filter-select">
+                    <option value="views" {% if sort_by == 'views' %}selected{% endif %}>Most Popular</option>
+                    <option value="recent" {% if sort_by == 'recent' %}selected{% endif %}>Recently Updated</option>
+                    <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Alphabetical</option>
+                    <option value="items" {% if sort_by == 'items' %}selected{% endif %}>Most Items</option>
+                </select>
+            </div>
+            <button type="submit" class="button primary">Filter</button>
+            {% if request.GET %}
+            <a href="{% url 'discover_lists' %}" class="button secondary">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    {% if packing_lists %}
+    <div class="discover-results">
+        <div class="results-header">
+            <h2>
+                {% if search_query %}
+                    Search Results for "{{ search_query }}"
+                {% else %}
+                    Community Packing Lists
+                {% endif %}
+                <span class="results-count">({{ packing_lists|length }} lists)</span>
+            </h2>
+        </div>
+
+        <div class="list-grid">
+            {% for list in packing_lists %}
+            <div class="list-card">
+                <div class="list-card-header">
+                    <div class="list-title">
+                        <a href="{{ list.get_share_url }}" class="list-name-link">
+                            {{ list.name }}
+                        </a>
+                        <div class="list-badges">
+                            {% if list.event_type %}
+                            <span class="event-badge event-{{ list.event_type }}">
+                                {% if list.event_type == 'school' %}🎓
+                                {% elif list.event_type == 'training' %}🏋️
+                                {% elif list.event_type == 'deployment' %}🌍
+                                {% else %}📝
+                                {% endif %}
+                                {{ list.get_event_type_display }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if list.description %}
+                    <p class="list-description">{{ list.description|truncatewords:20 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="list-card-stats">
+                    <div class="stat-row">
+                        <div class="stat-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-package"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                            {{ list.items.count }} items
+                        </div>
+                        <div class="stat-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            {{ list.view_count }} views
+                        </div>
+                    </div>
+                    {% if list.school %}
+                    <div class="stat-row">
+                        <div class="stat-item school-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-map-pin"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            {{ list.school.name }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="stat-row">
+                        <div class="stat-item updated-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            Updated {{ list.updated_at|timesince }} ago
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="list-card-actions">
+                    <a href="{{ list.get_share_url }}" class="button primary small">View List</a>
+                    <a href="{% url 'export_packing_list_pdf' list.id %}" class="button secondary small" title="Export PDF">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    </a>
+                    <button class="button secondary small" onclick="copyShareUrl('{{ list.get_share_url }}', this)" title="Copy Link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+        {% if search_query %}
+            <h3>No lists found for "{{ search_query }}"</h3>
+            <p>Try adjusting your search terms or filters.</p>
+            <a href="{% url 'discover_lists' %}" class="button secondary">View All Lists</a>
+        {% else %}
+            <h3>No public lists available yet</h3>
+            <p>Be the first to share a packing list with the community!</p>
+            <a href="{% url 'create_packing_list' %}" class="button primary">Create List</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <div class="community-cta">
+        <div class="cta-content">
+            <h3>Share Your Packing Lists</h3>
+            <p>Help fellow service members by sharing your tested packing lists and gear recommendations.</p>
+            <div class="cta-actions">
+                <a href="{% url 'create_packing_list' %}" class="button success">Create New List</a>
+                <a href="{% url 'lists' %}" class="button secondary">Manage My Lists</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function copyShareUrl(url, button) {
+        const fullUrl = window.location.protocol + '//' + window.location.host + url;
+        
+        navigator.clipboard.writeText(fullUrl).then(() => {
+            const originalContent = button.innerHTML;
+            button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            button.style.background = '#28a745';
+            button.style.color = 'white';
+            
+            setTimeout(() => {
+                button.innerHTML = originalContent;
+                button.style.background = '';
+                button.style.color = '';
+            }, 2000);
+        }).catch(() => {
+            // Fallback
+            const textArea = document.createElement('textarea');
+            textArea.value = fullUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            const originalContent = button.innerHTML;
+            button.innerHTML = '✓';
+            
+            setTimeout(() => {
+                button.innerHTML = originalContent;
+            }, 2000);
+        });
+    }
+    </script>
+
+    <style>
+    .discover-header {
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 24px;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .discover-description {
+        font-size: 16px;
+        color: #6b7280;
+        margin-bottom: 24px;
+        line-height: 1.6;
+    }
+    
+    .discover-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 16px;
+    }
+    
+    .stat-card {
+        text-align: center;
+        padding: 16px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .stat-number {
+        font-size: 24px;
+        font-weight: bold;
+        color: #1f2937;
+        margin-bottom: 4px;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .discover-filters {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 24px;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .filter-form {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr auto auto;
+        gap: 12px;
+        align-items: center;
+    }
+    
+    .search-input, .filter-select {
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+    
+    .search-input {
+        width: 100%;
+    }
+    
+    .results-header {
+        margin-bottom: 20px;
+    }
+    
+    .results-count {
+        color: #6b7280;
+        font-weight: normal;
+        font-size: 16px;
+    }
+    
+    .list-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+    
+    .list-card {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        padding: 20px;
+        transition: all 0.2s ease;
+    }
+    
+    .list-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-color: #cbd5e1;
+    }
+    
+    .list-card-header {
+        margin-bottom: 16px;
+    }
+    
+    .list-title {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+    
+    .list-name-link {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1f2937;
+        text-decoration: none;
+        flex: 1;
+        margin-right: 12px;
+    }
+    
+    .list-name-link:hover {
+        color: #2563eb;
+    }
+    
+    .list-badges {
+        display: flex;
+        gap: 6px;
+    }
+    
+    .event-badge {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    
+    .event-school { background: #dbeafe; color: #1e40af; }
+    .event-training { background: #f3e8ff; color: #7c3aed; }
+    .event-deployment { background: #ecfdf5; color: #059669; }
+    .event-other { background: #f1f5f9; color: #475569; }
+    
+    .list-description {
+        color: #6b7280;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    
+    .list-card-stats {
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .stat-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 6px;
+    }
+    
+    .stat-row:last-child {
+        margin-bottom: 0;
+    }
+    
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        color: #6b7280;
+    }
+    
+    .list-card-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    .button.small {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .community-cta {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        padding: 32px;
+        text-align: center;
+        color: white;
+        margin-top: 40px;
+    }
+    
+    .cta-content h3 {
+        font-size: 24px;
+        margin-bottom: 8px;
+    }
+    
+    .cta-content p {
+        font-size: 16px;
+        opacity: 0.9;
+        margin-bottom: 20px;
+    }
+    
+    .cta-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    @media (max-width: 768px) {
+        .filter-form {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        
+        .list-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .cta-actions {
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+    </style>
+{% endblock %}
