@@ -128,8 +128,19 @@
                 </div>
                 
                 <div class="flex gap-4 mt-6">
-                    <button type="submit" class="btn btn--primary">Apply Filters</button>
-                    <a href="{% url 'items' %}" class="btn btn--secondary">Clear Filters</a>
+                    <button type="submit" class="btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Apply Filters
+                    </button>
+                    <a href="{% url 'items' %}" class="btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Clear All
+                    </a>
                 </div>
             </form>
         </div>
@@ -152,66 +163,128 @@
         </div>
     </div>
 
-    <!-- Items Grid -->
-    <div id="itemsCardView" class="items-grid">
+    <!-- Enhanced Items Grid -->
+    <div id="itemsCardView" class="items-grid-enhanced">
         {% for item_data in items_with_data %}
-        <div class="card" data-item-id="{{ item_data.item.id }}">
-            <div class="card__header">
-                <div class="flex items-center gap-3">
-                    <label class="item-checkbox">
+        <div class="item-card-enhanced" data-item-id="{{ item_data.item.id }}">
+            <div class="item-card-header">
+                <div class="item-selection">
+                    <label class="modern-checkbox">
                         <input type="checkbox" class="item-select" value="{{ item_data.item.id }}" onchange="updateSelection()">
-                        <span class="checkmark"></span>
+                        <span class="checkbox-checkmark">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </span>
                     </label>
-                    <h3 class="card__title mb-0">{{ item_data.item.name }}</h3>
                 </div>
+                <h3 class="item-title">{{ item_data.item.name }}</h3>
+                {% if item_data.item.image %}
+                    <div class="item-image-badge">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="9" cy="9" r="2"></circle>
+                            <path d="M21 15l-3.086-3.086a2 2 0 00-2.828 0L6 21"></path>
+                        </svg>
+                    </div>
+                {% endif %}
             </div>
             
-            <div class="card__content">
+            <div class="item-card-content">
                 {% if item_data.item.image %}
-                    <div class="item-image-container mb-4">
-                        <img src="{{ item_data.item.image.url }}" alt="{{ item_data.item.name }}" class="item-image" style="max-width: 100%; height: auto; border-radius: var(--radius-md);">
+                    <div class="item-image-container">
+                        <img src="{{ item_data.item.image.url }}" alt="{{ item_data.item.name }}" class="item-image" loading="lazy">
+                        <div class="image-overlay"></div>
                     </div>
                 {% endif %}
                 {% if item_data.item.description %}
-                    <p class="item-description">{{ item_data.item.description }}</p>
+                    <div class="item-description-card">
+                        <p class="description-text">{{ item_data.item.description }}</p>
+                    </div>
                 {% endif %}
                 
-                <!-- Price Information -->
-                <div class="price-section">
+                <!-- Enhanced Price Information -->
+                <div class="price-section-enhanced">
                     {% if item_data.best_price %}
-                        <div class="best-price">
-                            <strong>Best Price:</strong> ${{ item_data.best_price.price_per_unit|floatformat:2 }}
-                            <span class="price-details">
-                                at {{ item_data.best_price.price.store.name }}
-                                {% if item_data.best_price.price.store.city %}
-                                    ({{ item_data.best_price.price.store.city }}, {{ item_data.best_price.price.store.state }})
-                                {% endif %}
+                        <div class="price-card">
+                            <div class="price-header">
+                                <div class="price-badge">
+                                    <span class="price-label">Best Price</span>
+                                    <div class="price-amount">
+                                        <span class="currency">$</span>
+                                        <span class="amount">{{ item_data.best_price.price_per_unit|floatformat:2 }}</span>
+                                    </div>
+                                </div>
                                 {% if item_data.best_price.vote_confidence > 0 %}
-                                    <span class="vote-confidence positive">✓</span>
+                                    <div class="confidence-badge confidence-positive">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                        </svg>
+                                        Verified
+                                    </div>
                                 {% elif item_data.best_price.vote_confidence < 0 %}
-                                    <span class="vote-confidence negative">✗</span>
+                                    <div class="confidence-badge confidence-negative">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                                        </svg>
+                                        Disputed
+                                    </div>
                                 {% endif %}
-                                <button type="button" class="edit-price-btn" title="Edit Price" data-item-id="{{ item_data.item.id }}" data-price-id="{{ item_data.best_price.price.id }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                                </button>
-                            </span>
+                            </div>
+                            <div class="price-store-info">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                                <span class="store-name">{{ item_data.best_price.price.store.name }}</span>
+                                {% if item_data.best_price.price.store.city %}
+                                    <span class="store-location">{{ item_data.best_price.price.store.city }}, {{ item_data.best_price.price.store.state }}</span>
+                                {% endif %}
+                            </div>
                         </div>
                         {% if item_data.price_range and item_data.total_prices > 1 %}
                             <div class="price-range">
                                 <small>Range: {{ item_data.price_range }} ({{ item_data.total_prices }} prices)</small>
                             </div>
                         {% endif %}
-                        <div class="price-actions">
-                            <button type="button" class="add-price-btn" data-item-id="{{ item_data.item.id }}">
+                        <div class="price-actions-enhanced">
+                            <button type="button" class="btn-action btn-add-price" data-item-id="{{ item_data.item.id }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                                </svg>
                                 Add Price
+                            </button>
+                            <button type="button" class="btn-action-small btn-edit-price" title="Edit Price" data-item-id="{{ item_data.item.id }}" data-price-id="{{ item_data.best_price.price.id }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                                </svg>
                             </button>
                         </div>
                     {% else %}
-                        <div class="no-price">
-                            <em>No pricing information available</em>
-                            <button type="button" class="add-price-btn" data-item-id="{{ item_data.item.id }}">
-                                Add Price
-                            </button>
+                        <div class="no-price-card">
+                            <div class="no-price-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                </svg>
+                            </div>
+                            <div class="no-price-content">
+                                <h4>No pricing yet</h4>
+                                <p>Help the community by adding the first price</p>
+                                <button type="button" class="btn-cta-small" data-item-id="{{ item_data.item.id }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                                    </svg>
+                                    Add First Price
+                                </button>
+                            </div>
                         </div>
                     {% endif %}
                 </div>
@@ -291,8 +364,23 @@
             </div>
         </div>
         {% empty %}
-        <div class="no-items">
-            <p>No items found matching your filters.</p>
+        <div class="no-items-enhanced">
+            <div class="no-items-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </div>
+            <h3>No items found</h3>
+            <p>Try adjusting your filters or add a new item to get started.</p>
+            <button type="button" class="btn-cta-small" onclick="openItemModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Add Your First Item
+            </button>
         </div>
         {% endfor %}
     </div>
@@ -988,76 +1076,987 @@ function setItemsView(view) {
 </script>
 
 <style>
+/* Modern Items Page - Enhanced UX/UI Design */
+:root {
+    --primary-color: #0066cc;
+    --primary-hover: #0052a3;
+    --success-color: #00b894;
+    --warning-color: #fdcb6e;
+    --error-color: #e17055;
+    --surface-color: #ffffff;
+    --background-color: #f8fafc;
+    --border-color: #e2e8f0;
+    --text-primary: #1a202c;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+}
+
 .items-page {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 20px;
+    padding: var(--spacing-lg);
+    background: var(--background-color);
+    min-height: 100vh;
 }
 
-.add-item-section {
-    margin-bottom: 20px;
-    text-align: right;
+/* Enhanced Page Header */
+.page-header-enhanced {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: var(--spacing-2xl);
+    padding: var(--spacing-xl) 0;
+    border-bottom: 2px solid var(--border-color);
+    background: linear-gradient(135deg, var(--surface-color) 0%, #f1f5f9 100%);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
 }
 
-.add-item-section .btn {
-    display: inline-flex;
+.page-header-content {
+    flex: 1;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-sm) 0;
+    background: linear-gradient(135deg, var(--primary-color), #00b894);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    margin: 0;
+    font-weight: 400;
+}
+
+.page-header-stats {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+.stat-item {
+    text-align: center;
+    padding: var(--spacing-md);
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+}
+
+.stat-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: var(--spacing-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+}
+
+/* Enhanced View Controls */
+.view-controls {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 8px;
-    padding: 12px 20px;
-    background: var(--color-primary);
-    color: white;
+    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-lg);
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.view-toggle-group {
+    display: flex;
+    background: var(--background-color);
+    border-radius: var(--radius-md);
+    padding: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.view-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: transparent;
     border: none;
-    border-radius: var(--border-radius-sm);
-    font-size: 16px;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
     font-weight: 500;
     cursor: pointer;
-    text-decoration: none;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
+    position: relative;
 }
 
-.add-item-section .btn:hover {
-    background: var(--color-primary-dark);
+.view-toggle-btn:hover {
+    color: var(--primary-color);
+    background: rgba(0, 102, 204, 0.1);
 }
 
+.view-toggle-btn.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.view-toggle-btn svg {
+    transition: all 0.2s ease;
+}
+
+.view-toggle-btn:hover svg {
+    transform: scale(1.1);
+}
+
+/* Enhanced Add Item Section */
+.add-item-section {
+    margin-bottom: var(--spacing-xl);
+    display: flex;
+    justify-content: center;
+}
+
+.btn-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg) var(--spacing-xl);
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-cta::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-cta:hover::before {
+    left: 100%;
+}
+
+.btn-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-cta span {
+    font-size: 1.125rem;
+}
+
+.btn-cta small {
+    font-size: 0.875rem;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+/* Enhanced Filter Section */
 .filters-section {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius);
-    padding: 20px;
-    margin-bottom: 20px;
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    margin-bottom: var(--spacing-xl);
+    overflow: hidden;
+}
+
+.filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.filters-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.filters-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filters-toggle:hover {
+    background: var(--background-color);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.chevron-down {
+    transition: transform 0.3s ease;
+}
+
+.filters-toggle[aria-expanded="true"] .chevron-down {
+    transform: rotate(180deg);
+}
+
+.filters-content {
+    padding: var(--spacing-xl);
 }
 
 .filters-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.filter-group--primary {
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.filter-groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.filter-group-section {
+    background: rgba(248, 250, 252, 0.5);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    border: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.filter-group-title {
+    margin: 0 0 var(--spacing-md) 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.filter-group-title::before {
+    content: '';
+    width: 4px;
+    height: 1rem;
+    background: var(--primary-color);
+    border-radius: 2px;
+}
+
+.filter-group-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 15px;
+    gap: var(--spacing-md);
 }
 
 .filter-group {
     display: flex;
     flex-direction: column;
+    gap: var(--spacing-xs);
 }
 
-.filter-group label {
-    font-weight: 600;
-    margin-bottom: 5px;
-    color: var(--color-text-primary);
+.filter-group--wide {
+    grid-column: 1 / -1;
 }
 
-.filter-group input,
-.filter-group select {
-    padding: 8px 12px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius-sm);
-    font-size: 14px;
-}
-
-.filter-actions {
+.filter-label {
     display: flex;
-    gap: 10px;
-    justify-content: flex-end;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+    font-size: 0.875rem;
 }
+
+.filter-input,
+.filter-select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--surface-color);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    transform: translateY(-1px);
+}
+
+.filter-input--search {
+    padding: var(--spacing-md);
+    font-size: 1rem;
+    border-radius: var(--radius-md);
+    background: var(--surface-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.price-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.price-symbol {
+    position: absolute;
+    left: var(--spacing-sm);
+    color: var(--text-secondary);
+    font-weight: 600;
+    z-index: 1;
+}
+
+.price-input {
+    padding-left: calc(var(--spacing-md) + 12px);
+}
+
+.filter-help {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: var(--spacing-xs);
+    font-style: italic;
+}
+
+.filters-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: flex-end;
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+/* Enhanced Button Styles */
+.btn-primary,
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--background-color);
+    color: var(--text-primary);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.btn-cta-small {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-cta-small:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Enhanced Items Grid */
+.items-grid-enhanced {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-2xl);
+}
+
+@media (max-width: 768px) {
+    .items-grid-enhanced {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+    }
+}
+
+@media (max-width: 480px) {
+    .items-grid-enhanced {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Enhanced Item Card */
+.item-card-enhanced {
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.item-card-enhanced:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--primary-color);
+}
+
+.item-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: var(--spacing-lg);
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+}
+
+.item-selection {
+    margin-right: var(--spacing-md);
+}
+
+.modern-checkbox {
+    position: relative;
+    display: block;
+    cursor: pointer;
+}
+
+.modern-checkbox input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.checkbox-checkmark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: var(--surface-color);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.modern-checkbox:hover .checkbox-checkmark {
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+.modern-checkbox input:checked + .checkbox-checkmark {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.modern-checkbox input:checked + .checkbox-checkmark svg {
+    stroke: white;
+    opacity: 1;
+}
+
+.checkbox-checkmark svg {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.item-title {
+    flex: 1;
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.item-image-badge {
+    padding: var(--spacing-xs);
+    background: rgba(0, 102, 204, 0.1);
+    border-radius: var(--radius-sm);
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+}
+
+.item-card-content {
+    padding: var(--spacing-lg);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.item-image-container {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-bottom: var(--spacing-md);
+}
+
+.item-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.item-image:hover {
+    transform: scale(1.05);
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.1) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.item-image-container:hover .image-overlay {
+    opacity: 1;
+}
+
+.item-description-card {
+    background: rgba(248, 250, 252, 0.8);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--primary-color);
+}
+
+.description-text {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+/* Enhanced Price Section */
+.price-section-enhanced {
+    margin-top: auto;
+}
+
+.price-card {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1px solid rgba(0, 102, 204, 0.2);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.price-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary-color);
+}
+
+.price-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-sm);
+}
+
+.price-badge {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.price-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.price-amount {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+}
+
+.currency {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.amount {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1;
+}
+
+.confidence-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.confidence-positive {
+    background: rgba(0, 184, 148, 0.1);
+    color: var(--success-color);
+    border: 1px solid rgba(0, 184, 148, 0.2);
+}
+
+.confidence-negative {
+    background: rgba(225, 112, 85, 0.1);
+    color: var(--error-color);
+    border: 1px solid rgba(225, 112, 85, 0.2);
+}
+
+.price-store-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.store-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.store-location {
+    color: var(--text-muted);
+}
+
+.price-actions-enhanced {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.btn-action {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-action:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.btn-action-small {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 102, 204, 0.1);
+    color: var(--primary-color);
+    border: 1px solid rgba(0, 102, 204, 0.2);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-action-small:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: scale(1.05);
+}
+
+.no-price-card {
+    background: linear-gradient(135deg, #fefefe 0%, #f8f9fa 100%);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xl);
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.no-price-card:hover {
+    border-color: var(--primary-color);
+    background: rgba(0, 102, 204, 0.02);
+}
+
+.no-price-icon {
+    margin: 0 auto var(--spacing-md) auto;
+    width: 48px;
+    height: 48px;
+    background: rgba(0, 102, 204, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+}
+
+.no-price-content h4 {
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.no-price-content p {
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* No Items State */
+.no-items-enhanced {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: var(--spacing-2xl);
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    border: 2px dashed var(--border-color);
+}
+
+.no-items-icon {
+    margin: 0 auto var(--spacing-lg) auto;
+    width: 80px;
+    height: 80px;
+    background: rgba(0, 102, 204, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+}
+
+.no-items-enhanced h3 {
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.no-items-enhanced p {
+    margin: 0 0 var(--spacing-lg) 0;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .items-grid-enhanced {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+    
+    .page-header-enhanced {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-lg);
+    }
+}
+
+@media (max-width: 768px) {
+    .items-page {
+        padding: var(--spacing-md);
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .filter-group-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .view-controls {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+    
+    .filters-actions {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .filters-actions .btn-primary,
+    .filters-actions .btn-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Legacy styles cleanup - removing old unused styles */
+/* Most legacy styles have been replaced with the new enhanced design above */
+
+/* JavaScript Integration Styles */
+.filters-content[style*="display: none"] + * {
+    /* Handle dynamic show/hide of filters */
+}
+
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid transparent;
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Focus and accessibility improvements */
+.btn-cta:focus,
+.btn-primary:focus,
+.btn-secondary:focus,
+.filter-input:focus,
+.filter-select:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+/* Print styles */
+@media print {
+    .filters-section,
+    .view-controls,
+    .add-item-section {
+        display: none;
+    }
+    
+    .items-grid-enhanced {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: var(--spacing-md);
+    }
+    
+    .item-card-enhanced {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid var(--border-color);
+    }
+}
+
+/* End of enhanced styles */
 
 .bulk-actions {
     background: var(--color-primary);

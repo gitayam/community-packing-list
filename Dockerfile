@@ -1,61 +1,62 @@
-# Multi-stage build for TypeScript compilation and Python runtime
-FROM node:18-alpine AS typescript-builder
+FROM python:3.11-slim
 
-# Set work directory for TypeScript build
-WORKDIR /app
+# Set environment variables for cloud deployment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    PORT=8080
 
-# Copy package files and install Node.js dependencies (including dev dependencies for build)
-COPY package*.json ./
-RUN npm install
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    libpq-dev \
+    curl \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy TypeScript source files and configuration
-COPY tsconfig.json webpack.config.js postcss.config.js .prettierrc ./
-COPY src/ ./src/
-
-# Build TypeScript files and process CSS
-RUN npm run build && npm run css:build
-
-# Python runtime stage
-FROM python:3.12-slim AS production
-
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV NODE_ENV=production
+# Create application user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    gcc \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+# Copy requirements first for better Docker layer caching
+COPY requirements.txt ./
 
 # Install Python dependencies
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install -r requirements.txt
 
-# Copy entrypoint script first and set permissions
-COPY ./entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+# Copy application code
+COPY . .
 
-# Copy project code into the container
-COPY . /app/
+# Create necessary directories and set permissions
+RUN mkdir -p logs media static staticfiles && \
+    chown -R appuser:appuser /app
 
-# Copy compiled TypeScript files from builder stage
-COPY --from=typescript-builder /app/packing_lists/static/packing_lists/js/ /app/packing_lists/static/packing_lists/js/
-COPY --from=typescript-builder /app/packing_lists/static/packing_lists/css/compiled.css /app/packing_lists/static/packing_lists/css/
+# Run migrations and collect static files
+RUN python manage.py collectstatic --noinput
+RUN python manage.py migrate --noinput
 
-# Create directory for static files
-RUN mkdir -p /app/staticfiles
+# Switch to non-root user
+USER appuser
 
-# Expose port (Gunicorn default, or Django dev server)
-EXPOSE 8000
+# Health check endpoint for Cloud Run
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:$PORT/health/ || exit 1
 
-# Set entrypoint
-ENTRYPOINT ["/app/entrypoint.sh"]
-
-# Default command - can be overridden by docker-compose.yml
-CMD ["gunicorn", "community_packing_list.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4", "--log-level", "info"]
+# Cloud Run requires binding to 0.0.0.0:$PORT
+CMD exec gunicorn community_packing_list.wsgi:application \
+    --bind 0.0.0.0:$PORT \
+    --workers 2 \
+    --worker-class sync \
+    --worker-connections 1000 \
+    --max-requests 1000 \
+    --max-requests-jitter 100 \
+    --timeout 120 \
+    --keep-alive 5 \
+    --log-level info \
+    --access-logfile - \
+    --error-logfile -
