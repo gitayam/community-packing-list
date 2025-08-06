@@ -57,4 +57,7 @@ urlpatterns = [
     
     # Migration endpoint for debugging
     path('run-migrations/', views.run_migrations, name='run_migrations'),
+    
+    # Database write test endpoint
+    path('test-db-write/', views.test_database_write, name='test_database_write'),
 ]

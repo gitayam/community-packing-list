@@ -1402,3 +1402,35 @@ def run_migrations(request):
             'status': 'error',
             'error': str(e)
         }, status=500)
+
+def test_database_write(request):
+    """Test database write functionality - for debugging only"""
+    from django.http import JsonResponse
+    from django.utils import timezone
+    
+    try:
+        # Try to create a simple test record
+        from .models import PackingList
+        
+        test_list = PackingList.objects.create(
+            name=f"Test List {timezone.now().strftime('%Y%m%d-%H%M%S')}",
+            description="Test database write functionality"
+        )
+        
+        # Try to update it
+        test_list.description = "Updated test description"
+        test_list.save()
+        
+        # Clean up
+        test_list.delete()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Database write operations working correctly',
+            'test_id': test_list.id if test_list else 'deleted'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'error': str(e)
+        }, status=500)
