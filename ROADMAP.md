@@ -16,13 +16,13 @@ This roadmap focuses on elevating usability, accessibility, and visual quality w
   - Improve current active/hover states (already partially implemented) to be consistent across all routes.
 
 - Visual Consistency
-  - Replace emoji icons with SVGs in templates (notably `packing_list_detail.html` and `items.html`).
-  - Remove inline styles from templates (`home.html`, `lists.html`) and move to classes in `src/styles/main.css`.
-  - Normalize button variants to the existing `.btn` system; remove ad‑hoc `.button` usages or alias them.
+  - DONE: Replace emojis with SVGs in `packing_list_detail.html` actions and indicators.
+  - IN PROGRESS: Remove inline styles from `home.html`, `lists.html`, `items.html`; utilities added in `src/styles/main.css`.
+  - IN PROGRESS: Normalize button variants to `.btn` system on `home.html`, `lists.html`, `packing_list_detail.html`.
 
 - Modal Unification
-  - Use `src/components/Modal.ts` everywhere (price/edit item modals on items and packing list pages).
-  - Extract duplicated modal logic from templates into TypeScript helpers; prefer data attributes over inline `onclick`.
+  - NEXT: Use `src/components/Modal.ts` everywhere (price/edit item modals on items and packing list pages).
+  - NEXT: Extract duplicated modal logic from templates into TypeScript helpers; prefer data attributes over inline `onclick`.
 
 - Items & Lists Usability
   - Persist Card/Table view selection for Items via `localStorage`.

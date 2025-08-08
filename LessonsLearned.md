@@ -116,16 +116,22 @@ You are a senior developer. Identify the best method to accomplish the task with
 ## Development Patterns
 
 ### Frontend Development
-- Use consistent CSS classes and avoid inline styles
-- Implement loading states for all AJAX operations
-- Provide keyboard accessibility (ESC to close modals)
-- Use SVG icons instead of emojis for professional appearance
+- Use consistent CSS classes and avoid inline styles; extract page-specific inline styles into `src/styles/main.css` utilities.
+- Implement loading states for all AJAX operations.
+- Provide keyboard accessibility (ESC to close modals, focus trap, restore focus to trigger).
+- Use SVG icons instead of emojis for professional appearance; include `aria-label` on icon-only buttons.
 
 ### Backend Development
-- Implement proper form validation and error handling
-- Use Django's built-in security features
-- Create comprehensive test suites
-- Handle edge cases in parsers and data processing
+- Implement proper form validation and error handling.
+- Use Django's built-in security features.
+- Create comprehensive test suites.
+- Handle edge cases in parsers and data processing.
+
+### UI State & Preferences
+- Persist non-sensitive UI preferences such as list view mode and dark mode in `localStorage` for better user experience.
+
+### Accessibility Testing
+- Run axe DevTools on key pages (Home, Lists, Items, Packing List Detail) and treat critical/serious issues as blockers.
 
 ### Database Management
 - Always create migrations for schema changes

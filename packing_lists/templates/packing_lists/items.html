@@ -36,7 +36,7 @@
         </div>
         <div class="card__content">
             <form method="GET" class="filters-form">
-                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4);">
+                <div class="auto-grid-200">
                     <div class="form-group">
                         <label for="search" class="form-label">Search Items:</label>
                         <input type="text" id="search" name="search" value="{{ filters.search }}" placeholder="Search by item name..." class="form-input">
@@ -169,7 +169,7 @@
             <div class="card__content">
                 {% if item_data.item.image %}
                     <div class="item-image-container mb-4">
-                        <img src="{{ item_data.item.image.url }}" alt="{{ item_data.item.name }}" class="item-image" style="max-width: 100%; height: auto; border-radius: var(--radius-md);">
+                        <img src="{{ item_data.item.image.url }}" alt="{{ item_data.item.name }}" class="item-image">
                     </div>
                 {% endif %}
                 {% if item_data.item.description %}
