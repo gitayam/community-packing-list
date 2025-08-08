@@ -31,9 +31,9 @@ This roadmap focuses on elevating usability, accessibility, and visual quality w
   - Add empty states and loading states where missing.
 
 - Accessibility
-  - Ensure all interactive controls have labels and focus states (partially done in `base.html`).
+  - Ensure all interactive controls have labels and focus states (partially done in `base.html`; verified on items table icons and actions).
   - Trap focus inside modals; verify ESC closes and focus returns to the trigger (already partially implemented).
-  - Replace decorative emojis with accessible SVGs + `aria-label`.
+  - Replace decorative emojis with accessible SVGs + `aria-label` (completed on items page price and link icons).
 
 - Acceptance
   - No inline styles remain in the noted templates.
