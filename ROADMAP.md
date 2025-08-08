@@ -25,8 +25,8 @@ This roadmap focuses on elevating usability, accessibility, and visual quality w
   - NEXT: Extract duplicated modal logic from templates into TypeScript helpers; prefer data attributes over inline `onclick`.
 
 - Items & Lists Usability
-  - Persist Card/Table view selection for Items via `localStorage`.
-  - Add server-side pagination for Items and Lists; keep filters in querystring for shareable URLs.
+  - DONE: Server-side pagination for Items and Lists; keep filters in querystring for shareable URLs.
+  - DONE: Persist Card/Table view selection for Items via `localStorage`.
   - Add empty states and loading states where missing.
 
 - Accessibility

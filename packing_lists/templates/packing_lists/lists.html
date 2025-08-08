@@ -9,7 +9,7 @@
         <a href="{% url 'create_packing_list' %}" class="btn btn--success">Create New List</a>
     </div>
     <h2 class="section-title">Available Packing Lists</h2>
-    {% if packing_lists %}
+{% if page_obj %}
         <form id="bulkActionsForm" method="post">
             {% csrf_token %}
             <div class="bulk-actions" id="bulkActions" style="display: none; margin-bottom: 1.5rem;">
@@ -18,7 +18,7 @@
                 <span id="selectedCount">0 selected</span>
             </div>
             <ul class="packing-lists-ul">
-                {% for plist in packing_lists %}
+                {% for plist in page_obj.object_list %}
                     <li class="packing-list-entry">
                         <div class="list-entry-header">
                             <div class="list-entry-title-group">
@@ -53,6 +53,17 @@
                     </li>
                 {% endfor %}
             </ul>
+            {% if is_paginated %}
+            <nav class="pagination" aria-label="Pagination">
+                {% if page_obj.has_previous %}
+                    <a class="btn btn--secondary btn--sm" href="?page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">Previous</a>
+                {% endif %}
+                <span class="mx-2">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                    <a class="btn btn--secondary btn--sm" href="?page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">Next</a>
+                {% endif %}
+            </nav>
+            {% endif %}
         </form>
     {% else %}
         <div class="info-box no-lists-box">

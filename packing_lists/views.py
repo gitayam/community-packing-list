@@ -6,6 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from .models import PackingList, Item, PackingListItem, School, Price, Vote, Store, Base
 from .forms import PackingListForm, PriceForm, VoteForm, PackingListItemForm, StoreForm, ItemForm
 from django.db.models import Q
+from django.core.paginator import Paginator
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -656,8 +657,20 @@ def lists_page(request):
     Lists all packing lists and provides a button to create a new list.
     """
     packing_lists = PackingList.objects.all().order_by('-id')
+    paginator = Paginator(packing_lists, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Preserve non-page query params
+    query = request.GET.copy()
+    query.pop('page', None)
+    querystring = query.urlencode()
+
     return render(request, 'packing_lists/lists.html', {
-        'packing_lists': packing_lists,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'is_paginated': page_obj.has_other_pages(),
+        'querystring': querystring,
     })
 
 
@@ -848,8 +861,22 @@ def items_page(request):
         })
     # Sort items by name
     items_with_data.sort(key=lambda x: x['item'].name.lower())
+
+    # Paginate items (24 per page)
+    paginator = Paginator(items_with_data, 24)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Preserve query params except page for pagination links
+    query = request.GET.copy()
+    query.pop('page', None)
+    querystring = query.urlencode()
+
     context = {
-        'items_with_data': items_with_data,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'is_paginated': page_obj.has_other_pages(),
+        'querystring': querystring,
         'categories': categories,
         'packing_lists': packing_lists,
         'stores': stores,

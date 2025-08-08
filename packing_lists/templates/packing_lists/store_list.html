@@ -6,7 +6,7 @@
 {% block page_header %}{{ title }}{% endblock %}
 
 {% block content %}
-    <div class="filter-form" style="margin-bottom: 2.5em;">
+    <div class="filter-form mb-8">
         <form method="get" action="{% url 'store_list' %}">
             <div>
                 <label for="city">City:</label>
@@ -34,9 +34,9 @@
             </div>
             <hr class="my-2">
             <div class="actions-row">
-                <button type="submit" class="button">Apply Filters</button>
-                <button type="button" id="find-near-me" class="button gps-button">Find Stores Near Me (GPS)</button>
-                <a href="{% url 'store_list' %}" class="button secondary">Clear Filters</a>
+                <button type="submit" class="btn btn--primary">Apply Filters</button>
+                <button type="button" id="find-near-me" class="btn btn--secondary gps-button">Find Stores Near Me (GPS)</button>
+                <a href="{% url 'store_list' %}" class="btn btn--secondary">Clear Filters</a>
             </div>
             <input type="hidden" name="user_lat" id="user_lat" value="{{ current_filters.user_lat }}">
             <input type="hidden" name="user_lon" id="user_lon" value="{{ current_filters.user_lon }}">
@@ -45,11 +45,14 @@
 
     <h2>{{ filter_description }}</h2>
     <div class="centered-action">
-      <button id="add-store-btn" class="button">➕ Add Store</button>
+      <button id="add-store-btn" class="btn btn--secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Add Store
+      </button>
     </div>
-    <div id="store-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
-      <div id="store-modal-content" style="background:#fff; padding:2em; border-radius:8px; max-width:500px; margin:40px auto; position:relative;">
-        <button id="close-store-modal" style="position:absolute; top:10px; right:10px; font-size:1.2em;">&times;</button>
+    <div id="store-modal" class="modal" style="display:none;">
+      <div id="store-modal-content" class="modal-content">
+        <button id="close-store-modal" class="modal-close" aria-label="Close">&times;</button>
         <div id="store-modal-body">
           <!-- AJAX-loaded form will go here -->
         </div>
@@ -59,36 +62,39 @@
         <ul class="store-list">
             {% for item_data in stores %}
                 <li class="store-item">
-                    <div style="display:flex;align-items:center;gap:1rem;">
-                        <div style="flex:1;">
-                            <h2 class="store-name">🏬 {{ item_data.store.name }}</h2>
+                    <div class="flex items-center gap-4">
+                        <div class="flex-1">
+                            <h2 class="store-name">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-shopping-bag icon-inline" aria-hidden="true"><path d="M6 2l1.5 3h9L18 2"></path><path d="M3 7h18l-1 12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2L3 7z"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                              {{ item_data.store.name }}
+                            </h2>
                             <p class="item-notes mb-1">{{ item_data.store.formatted_address }}</p>
                             {% if item_data.store.url %}
-                                <p><a href="{{ item_data.store.url }}" target="_blank">🌐 Website</a></p>
+                                <p><a href="{{ item_data.store.url }}" target="_blank">Website</a></p>
                             {% endif %}
                             {% if item_data.store.address_line1 and item_data.store.city and item_data.store.state %}
                                 {% if item_data.store.google_maps_link %}
-                                    <p><a href="{{ item_data.store.google_maps_link }}" target="_blank">🗺️ Google Maps</a> | <a href="{{ item_data.store.apple_maps_link }}" target="_blank">🍏 Apple Maps</a></p>
+                                    <p><a href="{{ item_data.store.google_maps_link }}" target="_blank">Google Maps</a> | <a href="{{ item_data.store.apple_maps_link }}" target="_blank">Apple Maps</a></p>
                                 {% endif %}
                             {% endif %}
-                            <div style="margin-top:0.5em;">
+                            <div class="mt-2">
                                 {% if item_data.store.is_online and item_data.store.is_in_person %}
-                                    <span class="status-optional" style="background:#007bff22;padding:0.2em 0.7em;border-radius:12px;font-size:0.95em;">🌐 Online</span>
-                                    <span class="status-complete" style="background:#28a74522;padding:0.2em 0.7em;border-radius:12px;font-size:0.95em;">🏪 In Person</span>
+                                    <span class="badge badge--info">Online</span>
+                                    <span class="badge badge--success">In Person</span>
                                 {% elif item_data.store.is_online %}
-                                    <span class="status-optional" style="background:#007bff22;padding:0.2em 0.7em;border-radius:12px;font-size:0.95em;">🌐 Online</span>
+                                    <span class="badge badge--info">Online</span>
                                 {% elif item_data.store.is_in_person %}
-                                    <span class="status-complete" style="background:#28a74522;padding:0.2em 0.7em;border-radius:12px;font-size:0.95em;">🏪 In Person</span>
+                                    <span class="badge badge--success">In Person</span>
                                 {% endif %}
                                 {% if item_data.distance is not None %}
-                                    <span class="status-optional" style="background:#C3B09122;padding:0.2em 0.7em;border-radius:12px;font-size:0.95em;">📏 {{ item_data.distance|floatformat:2 }} km</span>
+                                    <span class="badge badge--warning">{{ item_data.distance|floatformat:2 }} km</span>
                                 {% endif %}
                             </div>
                             {% if item_data.store.latitude and item_data.store.longitude %}
                                 <p class="text-small text-muted">Lat: {{ item_data.store.latitude|floatformat:4 }}, Lon: {{ item_data.store.longitude|floatformat:4 }}</p>
                             {% endif %}
                         </div>
-                        <a href="{% url 'edit_store' item_data.store.id %}" class="button text-small">Edit</a>
+                        <a href="{% url 'edit_store' item_data.store.id %}" class="btn btn--secondary btn--sm">Edit</a>
                     </div>
                 </li>
             {% endfor %}
