@@ -30,6 +30,16 @@ This roadmap focuses on elevating usability, accessibility, and visual quality w
   - DONE: Persist Card/Table view selection for Items via `localStorage`.
   - Add empty states and loading states where missing.
 
+- Access Control & Trust Model
+  - Restrict creating/editing Stores and Packing Lists to authenticated users.
+  - Allow all users to submit Prices, but weight trust by IP history; adjust confidence for low-trust IPs.
+  - Display partial IP hash (last 4 chars) for anonymous price submissions in UI tooltips/details.
+
+- Macro View (Time Series)
+  - Add Items “Macro” page: time-series charts of average/min/max price per item over selectable ranges (30/90/180 days).
+  - Server: expose JSON endpoints using `Item.get_price_history(days=N)`; aggregate per day.
+  - UI: simple chart (Chart.js) per item with filters (store, region, confidence).
+
 - Accessibility
   - Ensure all interactive controls have labels and focus states (partially done in `base.html`; verified on items table icons and actions).
   - Trap focus inside modals; verify ESC closes and focus returns to the trigger (already partially implemented).
@@ -53,6 +63,7 @@ This roadmap focuses on elevating usability, accessibility, and visual quality w
 - Price Details & Voting
   - Convert price details popup into a reusable component; mobile-friendly layout.
   - Optimistic vote updates with clear undo and error feedback.
+  - Show submitter trust level and masked IP fragment for anonymous prices.
 
 - Print & Export
   - Dedicated print stylesheet for Packing List detail (hide chrome, show checkboxes cleanly).
@@ -60,6 +71,7 @@ This roadmap focuses on elevating usability, accessibility, and visual quality w
 
 - Theming & Preferences
   - Dark mode toggle (prefers-color-scheme default, persisted in `localStorage`).
+  - Macro dashboards: compare multiple items over time; export CSV.
 
 - Performance
   - Webpack code-splitting by route; lazy-load page scripts (detail, form, store list).

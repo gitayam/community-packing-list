@@ -37,6 +37,10 @@ def create_packing_list(request):
     """
     View for creating a new PackingList manually.
     """
+    # Access control: only authenticated users can create packing lists
+    if not getattr(request, 'user', None) or not request.user.is_authenticated:
+        messages.error(request, "Please sign in to create packing lists.")
+        return redirect('home')
     if request.method == 'POST':
         form = PackingListForm(request.POST)
         if form.is_valid():
@@ -492,6 +496,10 @@ def edit_item_in_list(request, list_id, pli_id):
     return render(request, 'packing_lists/packing_listitem_form.html', context)
 
 def store_edit(request, store_id):
+    # Access control: only authenticated users can edit stores
+    if not getattr(request, 'user', None) or not request.user.is_authenticated:
+        messages.error(request, 'Please sign in to edit stores.')
+        return redirect('store_list')
     store = get_object_or_404(Store, id=store_id)
     if request.method == 'POST':
         form = StoreForm(request.POST, instance=store)
@@ -602,6 +610,12 @@ def price_form_partial(request, item_id, list_id=None):
     return render(request, 'packing_lists/price_form_modal.html', context)
 
 def add_store_modal(request):
+    # Access control: only authenticated users can add stores
+    if not getattr(request, 'user', None) or not request.user.is_authenticated:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'html': '<div class="alert alert-danger">Please sign in to add stores.</div>'})
+        messages.error(request, 'Please sign in to add stores.')
+        return redirect('store_list')
     if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         form = StoreForm(request.POST)
         if form.is_valid():
@@ -1005,6 +1019,10 @@ def merge_packing_lists(request):
     """
     Merge two packing lists into one, deduping items and keeping highest quantity/required.
     """
+    # Access control: only authenticated users can merge lists
+    if not getattr(request, 'user', None) or not request.user.is_authenticated:
+        messages.error(request, 'Please sign in to merge packing lists.')
+        return redirect('lists')
     if request.method == 'POST':
         list1_id = request.POST.get('list1_id')
         list2_id = request.POST.get('list2_id')
@@ -1097,6 +1115,10 @@ def delete_packing_lists(request):
     """
     Delete one or more packing lists.
     """
+    # Access control: only authenticated users can delete lists
+    if not getattr(request, 'user', None) or not request.user.is_authenticated:
+        messages.error(request, 'Please sign in to delete packing lists.')
+        return redirect('lists')
     if request.method == 'POST':
         list_ids = request.POST.getlist('list_ids')
         
