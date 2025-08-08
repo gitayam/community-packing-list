@@ -19,6 +19,7 @@ This roadmap focuses on elevating usability, accessibility, and visual quality w
   - DONE: Replace emojis with SVGs in `packing_list_detail.html` actions and indicators.
   - IN PROGRESS: Remove inline styles from `home.html`, `lists.html`, `items.html`; utilities added in `src/styles/main.css`.
   - IN PROGRESS: Normalize button variants to `.btn` system on `home.html`, `lists.html`, `packing_list_detail.html`.
+  - DONE: Standardized bulk actions UI (hidden class toggle) and removed inline styles from `lists.html` and `items.html`.
 
 - Modal Unification
   - NEXT: Use `src/components/Modal.ts` everywhere (price/edit item modals on items and packing list pages).
