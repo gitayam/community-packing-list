@@ -120,6 +120,7 @@ You are a senior developer. Identify the best method to accomplish the task with
 - Implement loading states for all AJAX operations.
 - Provide keyboard accessibility (ESC to close modals, focus trap, restore focus to trigger).
 - Use SVG icons instead of emojis for professional appearance; include `aria-label` on icon-only buttons.
+- Prefer toggling visibility with utility classes (e.g., `hidden`) instead of inline `style` attributes for easier state control.
 
 ### Backend Development
 - Implement proper form validation and error handling.

@@ -12,9 +12,9 @@
 {% if page_obj %}
         <form id="bulkActionsForm" method="post">
             {% csrf_token %}
-            <div class="bulk-actions" id="bulkActions" style="display: none; margin-bottom: 1.5rem;">
-                <button type="button" class="btn btn-primary" id="mergeBtn" disabled onclick="mergeLists()">Merge</button>
-                <button type="button" class="btn btn-danger" id="deleteBtn" disabled onclick="deleteLists()">Delete</button>
+            <div class="bulk-actions hidden" id="bulkActions">
+                <button type="button" class="btn btn--primary" id="mergeBtn" disabled onclick="mergeLists()">Merge</button>
+                <button type="button" class="btn btn--danger" id="deleteBtn" disabled onclick="deleteLists()">Delete</button>
                 <span id="selectedCount">0 selected</span>
             </div>
             <ul class="packing-lists-ul">
@@ -118,31 +118,5 @@ function deleteLists() {
 }
 document.addEventListener('DOMContentLoaded', updateBulkActions);
 </script>
-
-<style>
-.packing-list-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-.list-checkbox {
-    margin-right: 10px;
-}
-.list-actions {
-    margin-left: auto;
-    display: flex;
-    gap: 8px;
-}
-.bulk-actions {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius);
-    padding: 10px 20px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-</style>
+ 
 {% endblock %} 
