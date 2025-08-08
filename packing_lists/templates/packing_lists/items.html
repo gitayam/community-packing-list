@@ -187,11 +187,15 @@
                                     ({{ item_data.best_price.price.store.city }}, {{ item_data.best_price.price.store.state }})
                                 {% endif %}
                                 {% if item_data.best_price.vote_confidence > 0 %}
-                                    <span class="vote-confidence positive">✓</span>
+                                    <span class="vote-confidence positive" aria-label="Price likely correct">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+                                    </span>
                                 {% elif item_data.best_price.vote_confidence < 0 %}
-                                    <span class="vote-confidence negative">✗</span>
+                                    <span class="vote-confidence negative" aria-label="Price likely incorrect">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </span>
                                 {% endif %}
-                                <button type="button" class="edit-price-btn" title="Edit Price" data-item-id="{{ item_data.item.id }}" data-price-id="{{ item_data.best_price.price.id }}">
+                                <button type="button" class="edit-price-btn" title="Edit Price" aria-label="Edit price" data-item-id="{{ item_data.item.id }}" data-price-id="{{ item_data.best_price.price.id }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                 </button>
                             </span>
@@ -264,9 +268,11 @@
                                             <span class="store-city">({{ price_data.price.store.city }}, {{ price_data.price.store.state }})</span>
                                         {% endif %}
                                         {% if price_data.price.store.url %}
-                                            <a href="{{ price_data.price.store.url }}" target="_blank" class="store-link">🔗</a>
+                                            <a href="{{ price_data.price.store.url }}" target="_blank" class="store-link" aria-label="Store website">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 1 7 7l-3 3a5 5 0 0 1-7-7l1-1"/><path d="M14 11a5 5 0 0 1-7-7l3-3a5 5 0 0 1 7 7l-1 1"/></svg>
+                                            </a>
                                         {% endif %}
-                                        <button type="button" class="edit-price-btn" title="Edit Price" data-item-id="{{ item_data.item.id }}" data-price-id="{{ price_data.price.id }}">
+                                        <button type="button" class="edit-price-btn" title="Edit Price" aria-label="Edit price" data-item-id="{{ item_data.item.id }}" data-price-id="{{ price_data.price.id }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                         </button>
                                     </div>
@@ -351,11 +357,13 @@
                         {% endif %}
                     </td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline edit-item-btn" data-item-id="{{ item_data.item.id }}" title="Edit Item">
-                            <img src="{% static 'packing_lists/icons/edit.svg' %}" alt="Edit" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" /> Edit
+                        <button type="button" class="btn btn-sm btn-outline edit-item-btn" data-item-id="{{ item_data.item.id }}" title="Edit Item" aria-label="Edit item {{ item_data.item.name }}">
+                            <img src="{% static 'packing_lists/icons/edit.svg' %}" alt="" aria-hidden="true" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" />
+                            <span class="sr-only">Edit item</span> Edit
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline add-price-btn" data-item-id="{{ item_data.item.id }}" title="Add Price">
-                            <img src="{% static 'packing_lists/icons/plus-database.svg' %}" alt="Add Price" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" /> Add Price
+                        <button type="button" class="btn btn-sm btn-outline add-price-btn" data-item-id="{{ item_data.item.id }}" title="Add Price" aria-label="Add price for {{ item_data.item.name }}">
+                            <img src="{% static 'packing_lists/icons/plus-database.svg' %}" alt="" aria-hidden="true" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" />
+                            <span class="sr-only">Add price</span> Add Price
                         </button>
                     </td>
                 </tr>
