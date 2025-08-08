@@ -154,7 +154,7 @@
 
     <!-- Items Grid -->
     <div id="itemsCardView" class="items-grid">
-        {% for item_data in items_with_data %}
+        {% for item_data in page_obj.object_list %}
         <div class="card" data-item-id="{{ item_data.item.id }}">
             <div class="card__header">
                 <div class="flex items-center gap-3">
@@ -310,7 +310,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for item_data in items_with_data %}
+                {% for item_data in page_obj.object_list %}
                 <tr>
                     <td class="table-image-cell">
                         {% if item_data.item.image %}
@@ -364,6 +364,18 @@
         </table>
         </div>
     </div>
+
+    {% if is_paginated %}
+    <nav class="pagination" aria-label="Pagination">
+        {% if page_obj.has_previous %}
+            <a class="btn btn--secondary btn--sm" href="?page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">Previous</a>
+        {% endif %}
+        <span class="mx-2">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a class="btn btn--secondary btn--sm" href="?page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">Next</a>
+        {% endif %}
+    </nav>
+    {% endif %}
 </div>
 
 <!-- Price Modal -->
@@ -1081,6 +1093,49 @@ function setItemsView(view) {
 }
 
 */
+</script>
+<script>
+// View mode persistence (card/table)
+function setItemsView(view) {
+  var card = document.getElementById('itemsCardView');
+  var table = document.getElementById('itemsTableView');
+  var cardBtn = document.getElementById('cardViewBtn');
+  var tableBtn = document.getElementById('tableViewBtn');
+  if (view === 'table') {
+    card.style.display = 'none';
+    table.style.display = '';
+    if (cardBtn && tableBtn) {
+      cardBtn.classList.remove('active');
+      cardBtn.setAttribute('aria-pressed', 'false');
+      tableBtn.classList.add('active');
+      tableBtn.setAttribute('aria-pressed', 'true');
+    }
+    try { localStorage.setItem('itemsView', 'table'); } catch (e) {}
+  } else {
+    card.style.display = '';
+    table.style.display = 'none';
+    if (cardBtn && tableBtn) {
+      cardBtn.classList.add('active');
+      cardBtn.setAttribute('aria-pressed', 'true');
+      tableBtn.classList.remove('active');
+      tableBtn.setAttribute('aria-pressed', 'false');
+    }
+    try { localStorage.setItem('itemsView', 'card'); } catch (e) {}
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    var savedView = localStorage.getItem('itemsView');
+    if (savedView === 'table' || savedView === 'card') {
+      setItemsView(savedView);
+    } else {
+      setItemsView('card');
+    }
+  } catch (e) {
+    setItemsView('card');
+  }
+});
 </script>
 
 <style>
