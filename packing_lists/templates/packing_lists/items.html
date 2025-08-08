@@ -1480,7 +1480,7 @@ function setItemsView(view) {
     height: 14px;
 }
 
-/* Modal styling */
+/* Modal styling - Enhanced for zoom levels and better scrolling */
 .modal {
     position: fixed;
     z-index: 1000;
@@ -1490,24 +1490,33 @@ function setItemsView(view) {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 20px;
+    padding: 10px;
     box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .modal-content {
     background-color: white;
-    padding: 30px;
+    padding: 20px;
     border-radius: 8px;
-    max-width: 700px;
     width: 100%;
-    max-height: 90vh;
+    max-width: 600px;
+    min-height: auto;
+    max-height: calc(100vh - 20px);
     overflow-y: auto;
+    overflow-x: hidden;
     position: relative;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     transform: scale(1) !important;
-    margin: auto;
+    margin: 10px auto;
+    /* Enhanced scrolling behavior */
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    /* Ensure modal stays within viewport even when zoomed */
+    contain: layout style paint;
 }
 
 .modal-close {
