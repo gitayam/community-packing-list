@@ -127,6 +127,9 @@ You are a senior developer. Identify the best method to accomplish the task with
 - Use Django's built-in security features.
 - Create comprehensive test suites.
 - Handle edge cases in parsers and data processing.
+- Gate mutating actions (create/edit Stores, create/merge/delete/clone Packing Lists) behind authentication.
+- Allow anonymous price submissions with rate limiting and trust scoring; mask IPs in UI (partial hash).
+- Provide time-series endpoints for items’ price history to enable macro analysis.
 
 ### UI State & Preferences
 - Persist non-sensitive UI preferences such as list view mode and dark mode in `localStorage` for better user experience.
