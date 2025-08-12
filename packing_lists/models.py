@@ -93,9 +93,73 @@ class PackingList(models.Model):
     last_updated = models.CharField(max_length=20, blank=True, null=True, help_text="Last update (YYYY, YYYY-MM, or YYYY-MM-DD)")
     direct_url = models.URLField(blank=True, null=True, help_text="Direct URL to the official or source list")
     uploaded_file = models.FileField(upload_to="packing_list_uploads/", blank=True, null=True, help_text="Upload a file for this list (CSV, Excel, PDF, etc.)")
+    
+    # Sharing functionality fields
+    is_public = models.BooleanField(default=True, help_text="Allow this list to be shared publicly")
+    share_slug = models.SlugField(max_length=100, unique=True, null=True, blank=True, help_text="Unique URL slug for sharing")
+    view_count = models.PositiveIntegerField(default=0, help_text="Number of times this list has been viewed")
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     # user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True) # If user-specific lists
 
+    def save(self, *args, **kwargs):
+        # Auto-generate share_slug if not provided
+        try:
+            if hasattr(self, 'share_slug') and not self.share_slug:
+                from django.utils.text import slugify
+                import uuid
+                base_slug = slugify(self.name)[:50]  # Limit length
+                self.share_slug = f"{base_slug}-{uuid.uuid4().hex[:8]}"
+        except AttributeError:
+            # share_slug field doesn't exist yet (migration not applied)
+            pass
+        super().save(*args, **kwargs)
+    
+    def get_share_url(self):
+        """Get the public sharing URL for this list"""
+        try:
+            if self.share_slug:
+                from django.urls import reverse
+                return reverse('public_list', kwargs={'share_slug': self.share_slug})
+        except AttributeError:
+            # share_slug field doesn't exist yet (migration not applied)
+            pass
+        return None
+    
+    def get_absolute_url(self):
+        """Get the detail URL for this list"""
+        from django.urls import reverse
+        return reverse('view_packing_list', kwargs={'list_id': self.id})
+    
+    def increment_view_count(self):
+        """Increment the view count for this list"""
+        try:
+            self.view_count += 1
+            self.save(update_fields=['view_count'])
+        except AttributeError:
+            # view_count field doesn't exist yet (migration not applied)
+            pass
+    
+    def get_completion_stats(self):
+        """Get packing completion statistics"""
+        total_items = self.items.count()
+        packed_items = self.items.filter(packed=True).count()
+        required_items = self.items.filter(required=True).count()
+        packed_required = self.items.filter(packed=True, required=True).count()
+        
+        completion_rate = round((packed_items / total_items * 100) if total_items > 0 else 0, 1)
+        required_completion_rate = round((packed_required / required_items * 100) if required_items > 0 else 0, 1)
+        
+        return {
+            'total': total_items,
+            'packed': packed_items,
+            'required': required_items,
+            'packed_required': packed_required,
+            'completion_rate': completion_rate,
+            'required_completion_rate': required_completion_rate,
+        }
+    
     def __str__(self):
         return self.name
 
