@@ -85,7 +85,7 @@ if os.path.exists(os.path.join(BASE_DIR, 'src', 'styles')):
     STATICFILES_DIRS.append(os.path.join(BASE_DIR, 'src', 'styles'))
 
 # WhiteNoise configuration for static file serving
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Static files optimization
 WHITENOISE_USE_FINDERS = False  # Disable in production for better performance
