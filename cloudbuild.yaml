@@ -25,4 +25,4 @@ steps:
   - '--memory=1Gi'
   - '--cpu=1'
   - '--max-instances=10'
-  - '--set-env-vars=DJANGO_SETTINGS_MODULE=community_packing_list.settings_cloud,DEBUG=False'
+  - '--set-env-vars=DJANGO_SETTINGS_MODULE=community_packing_list.settings_cloud,DEBUG=False,SECRET_KEY=BSb7ZRboHbLNa2j7Dnh4BtLdGQT7F9lpXdlgy2L9K6sEUPuVK5ya9_Bsvw4rh5WufzM'
