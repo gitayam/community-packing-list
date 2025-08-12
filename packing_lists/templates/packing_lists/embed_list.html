@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ packing_list.name }} - Embedded Packing List</title>
+    <meta name="robots" content="noindex, nofollow">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            line-height: 1.5;
+            margin: 0;
+            padding: 16px;
+        }
+        
+        .embed-header {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .embed-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .item-row {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .item-row:last-child {
+            border-bottom: none;
+        }
+        
+        .status {
+            margin-right: 8px;
+        }
+        
+        .item-name {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .price {
+            font-weight: bold;
+            color: #059669;
+        }
+    </style>
+</head>
+<body>
+    <div class="embed-header">
+        <div class="embed-title">{{ packing_list.name }}</div>
+        <div style="font-size: 14px; color: #6b7280;">
+            {{ completion_stats.total }} items • {{ completion_stats.completion_rate }}% complete
+        </div>
+    </div>
+    
+    <div style="background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+        {% for item_wp in items_with_prices %}
+        <div class="item-row">
+            <div class="status">
+                {% if item_wp.pli.packed %}✅{% else %}⭕{% endif %}
+            </div>
+            <div class="item-name">{{ item_wp.item.name }}</div>
+            <div class="price">
+                {% if item_wp.prices_with_votes %}
+                    ${{ item_wp.prices_with_votes.0.price.price }}
+                {% else %}
+                    —
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align: center; padding: 20px; color: #6b7280;">
+            No items available
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

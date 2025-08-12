@@ -1,0 +1,94 @@
+{% extends "packing_lists/base.html" %}
+{% load static %}
+
+{% block title %}{{ packing_list.name }} - Community Packing List{% endblock %}
+
+{% block page_header %}
+<div style="display: flex; align-items: center; gap: 12px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-share-2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+    <span>{{ packing_list.name }}</span>
+    <span class="badge public-badge" style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px;">Public</span>
+</div>
+{% endblock %}
+
+{% block content %}
+    <div class="public-list-header">
+        <div class="list-meta">
+            {% if packing_list.school %}
+                <p><strong>School:</strong> {{ packing_list.school.name }}</p>
+            {% endif %}
+            {% if packing_list.description %}
+                <p><em>{{ packing_list.description }}</em></p>
+            {% endif %}
+            <div class="public-stats">
+                <span class="stat-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    {{ packing_list.view_count }} views
+                </span>
+                <span class="stat-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-package"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    {{ completion_stats.total }} items
+                </span>
+            </div>
+        </div>
+    </div>
+
+    {% if completion_stats.total > 0 %}
+    <div class="progress-section">
+        <div class="progress-header">
+            <span>Completion Progress</span>
+            <span class="progress-text">{{ completion_stats.packed }}/{{ completion_stats.total }} items ({{ completion_stats.completion_rate }}%)</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: {{ completion_stats.completion_rate }}%; background: #10b981; height: 4px; border-radius: 2px;"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <h2>Items ({{ items_with_prices|length }})</h2>
+    {% if items_with_prices %}
+        <div class="items-list">
+            {% for item_wp in items_with_prices %}
+            <div class="item-row {% if item_wp.pli.packed %}packed-row{% endif %}" style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee;">
+                <div class="status-cell" style="margin-right: 12px;">
+                    {% if item_wp.pli.packed %}
+                        <span style="color: #059669;">✅</span>
+                    {% else %}
+                        <span style="color: #9ca3af;">⭕</span>
+                    {% endif %}
+                </div>
+                <div class="item-info" style="flex: 1;">
+                    <strong>{{ item_wp.item.name }}</strong>
+                    {% if item_wp.pli.notes %}
+                        <div style="color: #6b7280; font-size: 14px;">{{ item_wp.pli.notes }}</div>
+                    {% endif %}
+                </div>
+                <div class="quantity" style="margin: 0 12px; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 12px;">
+                    Qty: {{ item_wp.pli.quantity }}
+                </div>
+                <div class="price" style="text-align: right;">
+                    {% if item_wp.prices_with_votes and item_wp.prices_with_votes.0.price.store %}
+                        <div style="font-weight: bold;">${{ item_wp.prices_with_votes.0.price.price }}</div>
+                        <div style="font-size: 12px; color: #6b7280;">{{ item_wp.prices_with_votes.0.price.store.name }}</div>
+                    {% else %}
+                        <div style="color: #9ca3af;">No pricing</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state" style="text-align: center; padding: 40px; color: #6b7280;">
+            <h3>No items in this packing list</h3>
+            <p>This list appears to be empty.</p>
+        </div>
+    {% endif %}
+
+    <div class="public-footer" style="margin-top: 40px; text-align: center; padding: 20px; border-top: 1px solid #eee;">
+        <div class="cta-section">
+            <h3>Want to create your own packing list?</h3>
+            <p>Join our community and build customized packing lists with real-time pricing data.</p>
+            <a href="{% url 'home' %}" class="button success">Get Started</a>
+        </div>
+    </div>
+{% endblock %}
