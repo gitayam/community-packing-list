@@ -84,21 +84,8 @@ if os.path.exists(os.path.join(BASE_DIR, 'packing_lists', 'static')):
 if os.path.exists(os.path.join(BASE_DIR, 'src', 'styles')):
     STATICFILES_DIRS.append(os.path.join(BASE_DIR, 'src', 'styles'))
 
-# WhiteNoise configuration for static file serving
+# WhiteNoise configuration for static file serving  
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-
-# Static files optimization
-WHITENOISE_USE_FINDERS = False  # Disable in production for better performance
-WHITENOISE_AUTOREFRESH = False  # Disable auto-refresh in production
-WHITENOISE_MAX_AGE = 31536000  # Cache static files for 1 year
-
-# Add .js and .css MIME types for compression
-WHITENOISE_MIMETYPES = {
-    '.js': 'application/javascript',
-    '.css': 'text/css',
-    '.map': 'application/json',
-    '.svg': 'image/svg+xml',
-}
 
 # Logging configuration
 LOGGING = {

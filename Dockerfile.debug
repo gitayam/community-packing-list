@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     libpq-dev \
+    curl \
+    git \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -35,7 +37,7 @@ RUN mkdir -p logs media static staticfiles && \
     chown -R appuser:appuser /app
 
 # Run migrations and collect static files
-RUN python manage.py collectstatic --noinput
+RUN python manage.py collectstatic --noinput --verbosity=2
 RUN python manage.py migrate --noinput
 
 # Switch to non-root user
