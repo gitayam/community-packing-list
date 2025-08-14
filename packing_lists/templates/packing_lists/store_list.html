@@ -136,8 +136,11 @@
             });
         }
         // Add Store modal logic
-        document.getElementById('add-store-btn').onclick = function() {
-            console.log('Add Store button clicked'); // Debug log
+        const addStoreBtn = document.getElementById('add-store-btn');
+        console.log('Looking for add-store-btn:', addStoreBtn); // Debug - check if button exists
+        if (addStoreBtn) {
+            addStoreBtn.onclick = function() {
+                console.log('Add Store button clicked'); // Debug log
             var modal = document.getElementById('store-modal');
             var modalBody = document.getElementById('store-modal-body');
             modal.style.display = 'flex';
@@ -156,7 +159,10 @@
                     console.error('Fetch error:', error); // Debug log
                     modalBody.innerHTML = '<p style="color:red;">Error loading form. Please try again.</p>';
                 });
-        };
+            };
+        } else {
+            console.error('Add Store button not found!'); // Debug log
+        }
         document.getElementById('close-store-modal').onclick = function() {
             document.getElementById('store-modal').style.display = 'none';
         };
