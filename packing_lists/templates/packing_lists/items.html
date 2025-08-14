@@ -473,607 +473,7 @@
     </div>
 </div>
 
-<!-- JavaScript functionality now handled by TypeScript module in extra_js block -->
-<script>
-/*
-Legacy JavaScript - Commented out to prevent conflicts with TypeScript module
-All functionality moved to src/items.ts
-*/
-/*
-function updateSelection() {
-    const checkboxes = document.querySelectorAll('.item-select:checked');
-    selectedItems = new Set(Array.from(checkboxes).map(cb => cb.value));
-    
-    const bulkActions = document.getElementById('bulkActions');
-    const selectedCount = document.getElementById('selectedCount');
-    
-    if (selectedItems.size > 0) {
-        bulkActions.style.display = 'block';
-        selectedCount.textContent = `${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} selected`;
-    } else {
-        bulkActions.style.display = 'none';
-    }
-}
-
-function clearSelection() {
-    document.querySelectorAll('.item-select').forEach(cb => cb.checked = false);
-    selectedItems.clear();
-    document.getElementById('bulkActions').style.display = 'none';
-}
-
-function createPackingListFromSelected() {
-    if (selectedItems.size === 0) {
-        alert('Please select at least one item.');
-        return;
-    }
-    
-    const params = new URLSearchParams();
-    selectedItems.forEach(itemId => {
-        params.append('selected_items', itemId);
-    });
-    
-    window.location.href = '/create_packing_list_from_items/?' + params.toString();
-}
-
-function togglePrices(itemId) {
-    const pricesDiv = document.getElementById(`prices-${itemId}`);
-    const button = pricesDiv.previousElementSibling;
-    
-    if (pricesDiv.style.display === 'none') {
-        pricesDiv.style.display = 'block';
-        button.textContent = 'Hide Prices';
-    } else {
-        pricesDiv.style.display = 'none';
-        button.textContent = `Show All Prices`;
-    }
-}
-
-function onBaseChange() {
-    const baseSelect = document.getElementById('base');
-    const citySelect = document.getElementById('city');
-    const stateSelect = document.getElementById('state');
-    if (baseSelect.value) {
-        citySelect.disabled = true;
-        stateSelect.disabled = true;
-    } else {
-        citySelect.disabled = false;
-        stateSelect.disabled = false;
-    }
-}
-
-function openPriceModal(itemId, priceId) {
-    console.log('Opening price modal for item:', itemId, 'price:', priceId);
-    const modal = document.getElementById('price-modal');
-    const modalBody = document.getElementById('price-modal-body');
-    
-    // Use a small delay to ensure the click event has finished processing
-    setTimeout(function() {
-        modal.style.display = 'block';
-        
-        // Set modal attributes for accessibility
-        modal.setAttribute('aria-modal', 'true');
-        modal.setAttribute('role', 'dialog');
-        modal.setAttribute('aria-labelledby', 'price-modal-title');
-        
-        // Store the element that had focus before opening modal
-        modal.dataset.previousFocus = document.activeElement?.id || '';
-        
-        modalBody.innerHTML = '<div class="loading-spinner" style="padding:2em;text-align:center;"><div class="spinner"></div>Loading...</div>';
-        
-        let url = `/item/${itemId}/add_price_modal/`;
-        if (priceId) {
-            url += `?price_id=${priceId}`;
-        }
-        console.log('Fetching price modal from:', url);
-        
-        fetch(url, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-            .then(response => {
-                console.log('Price modal response status:', response.status);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Price modal data received:', data);
-                if (data.html) {
-                    modalBody.innerHTML = data.html;
-                    // Set up form submission handler after content is loaded
-                    setupPriceFormHandler();
-                    
-                    // Focus the first input field in the modal
-                    setTimeout(() => {
-                        const firstInput = modal.querySelector('input, select, textarea');
-                        if (firstInput) {
-                            firstInput.focus();
-                        }
-                    }, 100);
-                } else {
-                    console.error('No HTML content received:', data);
-                    modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;"><strong>Error: No content received.</strong><br>Please try again.</div>';
-                }
-            })
-            .catch(error => {
-                console.error('Error loading price modal:', error);
-                modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;"><strong>Error loading form.</strong><br>Please try again or contact support if the issue persists.</div>';
-            });
-    }, 50); // Small delay to prevent event propagation issues
-}
-
-function openItemModal() {
-    console.log('openItemModal called');
-    const modal = document.getElementById('item-modal');
-    const modalBody = document.getElementById('item-modal-body');
-    
-    // Set modal attributes for accessibility
-    modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-labelledby', 'item-modal-title');
-    
-    // Store the element that had focus before opening modal
-    modal.dataset.previousFocus = document.activeElement?.id || '';
-    
-    modal.style.display = 'block';
-    modalBody.innerHTML = '<div style="padding:2em;text-align:center;">Loading...</div>';
-    
-    fetch('{% url "add_item_modal" %}')
-        .then(response => response.json())
-        .then(data => {
-            console.log('Modal data received');
-            modalBody.innerHTML = data.html;
-            // Set up form submission handler after content is loaded
-            setupItemFormHandler();
-            
-            // Focus the first input field in the modal
-            setTimeout(() => {
-                const firstInput = modal.querySelector('input, select, textarea');
-                if (firstInput) {
-                    firstInput.focus();
-                }
-            }, 100);
-        })
-        .catch(error => {
-            console.error('Error loading item modal:', error);
-            modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;">Error loading form. Please try again.</div>';
-        });
-}
-
-function setupPriceFormHandler() {
-    const priceForm = document.getElementById('price-form');
-    if (priceForm) {
-        // Remove any existing listeners by cloning
-        const newForm = priceForm.cloneNode(true);
-        priceForm.parentNode.replaceChild(newForm, priceForm);
-        
-        newForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const submitButton = this.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
-            
-            // Show loading state
-            submitButton.textContent = 'Saving...';
-            submitButton.disabled = true;
-            
-            fetch(this.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => {
-                console.log('Price form response status:', response.status);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Price form response data:', data);
-                if (data.success) {
-                    // Close modal and refresh page to show new price
-                    document.getElementById('price-modal').style.display = 'none';
-                    showSuccessMessage('Price added successfully!');
-                    window.location.reload();
-                } else {
-                    // Replace modal content with error form
-                    if (data.html) {
-                        document.getElementById('price-modal-body').innerHTML = data.html;
-                        setupPriceFormHandler(); // Re-setup handler for new form
-                    } else {
-                        showErrorMessage(data.message || 'Error submitting form. Please try again.');
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while saving the price. Please try again.');
-            })
-            .finally(() => {
-                // Reset button state
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
-            });
-        });
-        
-        // Set up store selection handler
-        const storeSelect = document.getElementById('id_store');
-        const addStoreDiv = document.getElementById('inline-add-store');
-        const storeNameInput = document.getElementById('id_store_name');
-        const storeCityInput = document.getElementById('id_store_city');
-        const storeStateInput = document.getElementById('id_store_state');
-        
-        if (storeSelect && addStoreDiv) {
-            function toggleAddStoreSection() {
-                if (storeSelect.value === '__add_new__') {
-                    addStoreDiv.style.display = 'block';
-                    if (storeNameInput) storeNameInput.required = true;
-                    if (storeCityInput) storeCityInput.required = true;
-                    if (storeStateInput) storeStateInput.required = true;
-                } else {
-                    addStoreDiv.style.display = 'none';
-                    if (storeNameInput) {
-                        storeNameInput.required = false;
-                        storeNameInput.value = '';
-                    }
-                    if (storeCityInput) {
-                        storeCityInput.required = false;
-                        storeCityInput.value = '';
-                    }
-                    if (storeStateInput) {
-                        storeStateInput.required = false;
-                        storeStateInput.value = '';
-                    }
-                }
-            }
-            storeSelect.addEventListener('change', toggleAddStoreSection);
-            toggleAddStoreSection(); // Initial state
-        }
-    }
-}
-
-function setupItemFormHandler() {
-    const itemForm = document.getElementById('item-form');
-    if (itemForm) {
-        // Remove any existing listeners by cloning
-        const newForm = itemForm.cloneNode(true);
-        itemForm.parentNode.replaceChild(newForm, itemForm);
-        
-        newForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const submitButton = this.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
-            
-            // Show loading state
-            submitButton.textContent = 'Creating...';
-            submitButton.disabled = true;
-            
-            fetch('{% url "add_item_modal" %}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Close modal and refresh page to show new item
-                    closeItemModal();
-                    showSuccessMessage('Item created successfully!');
-                    window.location.reload();
-                } else {
-                    // Replace modal content with error form
-                    document.getElementById('item-modal-body').innerHTML = data.html;
-                    setupItemFormHandler(); // Re-setup handler for new form
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showErrorMessage('An error occurred while creating the item. Please try again.');
-            })
-            .finally(() => {
-                // Reset button state
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
-            });
-        });
-    }
-}
-
-function closeItemModal() {
-    const modal = document.getElementById('item-modal');
-    if (modal) {
-        modal.style.display = 'none';
-        
-        // Restore focus to the element that had focus before opening modal
-        const previousFocusId = modal.dataset.previousFocus;
-        if (previousFocusId) {
-            const previousElement = document.getElementById(previousFocusId);
-            if (previousElement) {
-                previousElement.focus();
-            }
-        }
-        
-        // Clear modal attributes
-        modal.removeAttribute('aria-modal');
-        modal.removeAttribute('role');
-        modal.removeAttribute('aria-labelledby');
-    }
-}
-
-function closePriceModal() {
-    const modal = document.getElementById('price-modal');
-    if (modal) {
-        modal.style.display = 'none';
-        
-        // Restore focus to the element that had focus before opening modal
-        const previousFocusId = modal.dataset.previousFocus;
-        if (previousFocusId) {
-            const previousElement = document.getElementById(previousFocusId);
-            if (previousElement) {
-                previousElement.focus();
-            }
-        }
-        
-        // Clear modal attributes
-        modal.removeAttribute('aria-modal');
-        modal.removeAttribute('role');
-        modal.removeAttribute('aria-labelledby');
-    }
-}
-
-function showSuccessMessage(message) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-success';
-    alertDiv.textContent = message;
-    alertDiv.style.position = 'fixed';
-    alertDiv.style.top = '20px';
-    alertDiv.style.right = '20px';
-    alertDiv.style.background = '#28a745';
-    alertDiv.style.color = 'white';
-    alertDiv.style.padding = '15px 20px';
-    alertDiv.style.borderRadius = '5px';
-    alertDiv.style.zIndex = '1001';
-    alertDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-    document.body.appendChild(alertDiv);
-    setTimeout(function() {
-        alertDiv.remove();
-    }, 3000);
-}
-
-function showErrorMessage(message) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-error';
-    alertDiv.textContent = message;
-    alertDiv.style.position = 'fixed';
-    alertDiv.style.top = '20px';
-    alertDiv.style.right = '20px';
-    alertDiv.style.background = '#dc3545';
-    alertDiv.style.color = 'white';
-    alertDiv.style.padding = '15px 20px';
-    alertDiv.style.borderRadius = '5px';
-    alertDiv.style.zIndex = '1001';
-    alertDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-    document.body.appendChild(alertDiv);
-    setTimeout(function() {
-        alertDiv.remove();
-    }, 5000);
-}
-
-// Close price modal handler
-document.addEventListener('DOMContentLoaded', function() {
-    const closePriceModal = document.getElementById('close-price-modal');
-    if (closePriceModal) {
-        closePriceModal.onclick = function(e) {
-            e.stopPropagation();
-            console.log('Close button clicked - CLOSING MODAL');
-            document.getElementById('price-modal').style.display = 'none';
-        };
-    }
-    
-    // Monitor any changes to modal display
-    const modal = document.getElementById('price-modal');
-    if (modal) {
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-                    console.log('Modal style changed:', modal.style.display);
-                    if (modal.style.display === 'none') {
-                        console.trace('Modal was hidden - stack trace above');
-                    }
-                }
-            });
-        });
-        observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
-    }
-});
-
-// Close modals when clicking outside (but not on modal content)
-// Note: This is now handled by the event delegation system above
-function handleModalBackdropClick(event) {
-    const priceModal = document.getElementById('price-modal');
-    const itemModal = document.getElementById('item-modal');
-    
-    // Only close if clicking directly on the modal backdrop
-    if (event.target === priceModal) {
-        priceModal.style.display = 'none';
-    }
-    if (event.target === itemModal) {
-        itemModal.style.display = 'none';
-    }
-}
-
-// Attach the backdrop click handler - TEMPORARILY DISABLED FOR DEBUGGING
-// document.addEventListener('DOMContentLoaded', function() {
-//     document.addEventListener('click', handleModalBackdropClick);
-// });
-
-// Enhanced keyboard shortcuts for better UX
-document.addEventListener('keydown', function(event) {
-    // ESC key - close any open modal
-    if (event.key === 'Escape') {
-        const priceModal = document.getElementById('price-modal');
-        const itemModal = document.getElementById('item-modal');
-        
-        if (priceModal && priceModal.style.display !== 'none') {
-            closePriceModal();
-            event.preventDefault();
-            return;
-        }
-        
-        if (itemModal && itemModal.style.display !== 'none') {
-            closeItemModal();
-            event.preventDefault();
-            return;
-        }
-    }
-    
-    // Ctrl/Cmd + Enter - submit forms
-    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-        const activeElement = document.activeElement;
-        const form = activeElement?.closest('form');
-        
-        if (form) {
-            const submitButton = form.querySelector('button[type="submit"]');
-            if (submitButton && !submitButton.disabled) {
-                submitButton.click();
-                event.preventDefault();
-                return;
-            }
-        }
-    }
-    
-    // Tab key - ensure proper focus management in modals
-    if (event.key === 'Tab') {
-        const priceModal = document.getElementById('price-modal');
-        const itemModal = document.getElementById('item-modal');
-        
-        if (priceModal && priceModal.style.display !== 'none') {
-            const focusableElements = priceModal.querySelectorAll(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-            handleTabNavigation(event, focusableElements);
-        }
-        
-        if (itemModal && itemModal.style.display !== 'none') {
-            const focusableElements = itemModal.querySelectorAll(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-            handleTabNavigation(event, focusableElements);
-        }
-    }
-});
-
-// Handle tab navigation within modals (trap focus)
-function handleTabNavigation(event, focusableElements) {
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-    
-    if (event.shiftKey) {
-        if (document.activeElement === firstElement) {
-            lastElement.focus();
-            event.preventDefault();
-        }
-    } else {
-        if (document.activeElement === lastElement) {
-            firstElement.focus();
-            event.preventDefault();
-        }
-    }
-}
-
-// Initialize selection on page load
-document.addEventListener('DOMContentLoaded', function() {
-    updateSelection();
-    onBaseChange();
-    setupModalEventDelegation();
-});
-
-// Set up event delegation for modal buttons (like packing list detail page)
-function setupModalEventDelegation() {
-    console.log('Setting up modal event delegation');
-    
-    document.addEventListener('click', function(event) {
-        const target = event.target;
-        console.log('Click detected on:', target.tagName, target.className);
-        
-        // Handle Add Price buttons with data attributes
-        if (target.closest('.add-price-btn')) {
-            console.log('Add price button clicked');
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const btn = target.closest('.add-price-btn');
-            const itemId = btn.dataset.itemId || btn.getAttribute('data-item-id');
-            console.log('Item ID:', itemId);
-            
-            if (itemId) {
-                console.log('Calling openPriceModal for item:', itemId);
-                openPriceModal(parseInt(itemId), null);
-            }
-            return;
-        }
-        
-        // Handle Edit Price buttons
-        if (target.closest('.edit-price-btn')) {
-            console.log('Edit price button clicked');
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const btn = target.closest('.edit-price-btn');
-            const itemId = btn.dataset.itemId || btn.getAttribute('data-item-id');
-            const priceId = btn.dataset.priceId || btn.getAttribute('data-price-id');
-            
-            if (itemId && priceId) {
-                openPriceModal(parseInt(itemId), parseInt(priceId));
-            }
-            return;
-        }
-        
-        // Handle Add Item button
-        if (target.closest('.add-item-btn') || target.textContent?.includes('Add New Item')) {
-            console.log('Add item button clicked');
-            event.preventDefault();
-            event.stopPropagation();
-            openItemModal();
-            return;
-        }
-    }, true); // Use capture phase to handle events before other handlers
-}
-
-function setItemsView(view) {
-    var card = document.getElementById('itemsCardView');
-    var table = document.getElementById('itemsTableView');
-    var cardBtn = document.getElementById('cardViewBtn');
-    var tableBtn = document.getElementById('tableViewBtn');
-    if (view === 'table') {
-        card.style.display = 'none';
-        table.style.display = '';
-        cardBtn.classList.remove('active');
-        cardBtn.setAttribute('aria-pressed', 'false');
-        tableBtn.classList.add('active');
-        tableBtn.setAttribute('aria-pressed', 'true');
-    } else {
-        card.style.display = '';
-        table.style.display = 'none';
-        cardBtn.classList.add('active');
-        cardBtn.setAttribute('aria-pressed', 'true');
-        tableBtn.classList.remove('active');
-        tableBtn.setAttribute('aria-pressed', 'false');
-    }
-}
-
-*/
-</script>
+<!-- Cleaned up - moved working JavaScript to extra_js block -->
 
 <style>
 /* Modern Items Page - Enhanced UX/UI Design */
@@ -2861,5 +2261,403 @@ function setItemsView(view) {
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'packing_lists/js/items.js' %}"></script>
+<script>
+// Items page functionality - inline JavaScript to avoid 404 errors
+console.log('Items page JavaScript loaded');
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Items page DOM loaded');
+    updateSelection();
+    onBaseChange();
+    setupModalEventDelegation();
+    
+    // Set up close modal handlers
+    const closePriceModal = document.getElementById('close-price-modal');
+    if (closePriceModal) {
+        closePriceModal.onclick = function(e) {
+            e.stopPropagation();
+            console.log('Close price modal button clicked');
+            document.getElementById('price-modal').style.display = 'none';
+        };
+    }
+});
+
+// Modal functions
+function openPriceModal(itemId, priceId) {
+    console.log('Opening price modal for item:', itemId, 'price:', priceId);
+    const modal = document.getElementById('price-modal');
+    const modalBody = document.getElementById('price-modal-body');
+    
+    modal.style.display = 'block';
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-labelledby', 'price-modal-title');
+    modal.dataset.previousFocus = document.activeElement?.id || '';
+    
+    modalBody.innerHTML = '<div class="loading-spinner" style="padding:2em;text-align:center;"><div class="spinner"></div>Loading...</div>';
+    
+    let url = `/item/${itemId}/add_price_modal/`;
+    if (priceId) {
+        url += `?price_id=${priceId}`;
+    }
+    
+    fetch(url, {
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(data => {
+        if (data.html) {
+            modalBody.innerHTML = data.html;
+            setupPriceFormHandler();
+            setTimeout(() => {
+                const firstInput = modal.querySelector('input, select, textarea');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        } else {
+            modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;"><strong>Error: No content received.</strong><br>Please try again.</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Error loading price modal:', error);
+        modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;"><strong>Error loading form.</strong><br>Please try again.</div>';
+    });
+}
+
+function openItemModal() {
+    console.log('Opening item modal');
+    const modal = document.getElementById('item-modal');
+    const modalBody = document.getElementById('item-modal-body');
+    
+    modal.style.display = 'block';
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-labelledby', 'item-modal-title');
+    modal.dataset.previousFocus = document.activeElement?.id || '';
+    
+    modalBody.innerHTML = '<div style="padding:2em;text-align:center;">Loading...</div>';
+    
+    fetch('{% url "add_item_modal" %}')
+        .then(response => response.json())
+        .then(data => {
+            modalBody.innerHTML = data.html;
+            setupItemFormHandler();
+            setTimeout(() => {
+                const firstInput = modal.querySelector('input, select, textarea');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        })
+        .catch(error => {
+            console.error('Error loading item modal:', error);
+            modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;">Error loading form. Please try again.</div>';
+        });
+}
+
+function setupPriceFormHandler() {
+    const priceForm = document.getElementById('price-form');
+    if (priceForm) {
+        const newForm = priceForm.cloneNode(true);
+        priceForm.parentNode.replaceChild(newForm, priceForm);
+        
+        newForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            
+            submitButton.textContent = 'Saving...';
+            submitButton.disabled = true;
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('price-modal').style.display = 'none';
+                    showSuccessMessage('Price added successfully!');
+                    window.location.reload();
+                } else if (data.html) {
+                    document.getElementById('price-modal-body').innerHTML = data.html;
+                    setupPriceFormHandler();
+                } else {
+                    showErrorMessage(data.message || 'Error submitting form. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the price. Please try again.');
+            })
+            .finally(() => {
+                submitButton.textContent = originalText;
+                submitButton.disabled = false;
+            });
+        });
+        
+        // Set up store selection handler
+        const storeSelect = document.getElementById('id_store');
+        const addStoreDiv = document.getElementById('inline-add-store');
+        if (storeSelect && addStoreDiv) {
+            function toggleAddStoreSection() {
+                if (storeSelect.value === '__add_new__') {
+                    addStoreDiv.style.display = 'block';
+                } else {
+                    addStoreDiv.style.display = 'none';
+                }
+            }
+            storeSelect.addEventListener('change', toggleAddStoreSection);
+            toggleAddStoreSection();
+        }
+    }
+}
+
+function setupItemFormHandler() {
+    const itemForm = document.getElementById('item-form');
+    if (itemForm) {
+        const newForm = itemForm.cloneNode(true);
+        itemForm.parentNode.replaceChild(newForm, itemForm);
+        
+        newForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            
+            submitButton.textContent = 'Creating...';
+            submitButton.disabled = true;
+            
+            fetch('{% url "add_item_modal" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeItemModal();
+                    showSuccessMessage('Item created successfully!');
+                    window.location.reload();
+                } else {
+                    document.getElementById('item-modal-body').innerHTML = data.html;
+                    setupItemFormHandler();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showErrorMessage('An error occurred while creating the item. Please try again.');
+            })
+            .finally(() => {
+                submitButton.textContent = originalText;
+                submitButton.disabled = false;
+            });
+        });
+    }
+}
+
+function closeItemModal() {
+    const modal = document.getElementById('item-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        const previousFocusId = modal.dataset.previousFocus;
+        if (previousFocusId) {
+            const previousElement = document.getElementById(previousFocusId);
+            if (previousElement) previousElement.focus();
+        }
+        modal.removeAttribute('aria-modal');
+        modal.removeAttribute('role');
+        modal.removeAttribute('aria-labelledby');
+    }
+}
+
+function closePriceModal() {
+    const modal = document.getElementById('price-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        const previousFocusId = modal.dataset.previousFocus;
+        if (previousFocusId) {
+            const previousElement = document.getElementById(previousFocusId);
+            if (previousElement) previousElement.focus();
+        }
+        modal.removeAttribute('aria-modal');
+        modal.removeAttribute('role');
+        modal.removeAttribute('aria-labelledby');
+    }
+}
+
+function showSuccessMessage(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success';
+    alertDiv.textContent = message;
+    alertDiv.style.cssText = 'position:fixed;top:20px;right:20px;background:#28a745;color:white;padding:15px 20px;border-radius:5px;z-index:1001;box-shadow:0 4px 12px rgba(0,0,0,0.15)';
+    document.body.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 3000);
+}
+
+function showErrorMessage(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-error';
+    alertDiv.textContent = message;
+    alertDiv.style.cssText = 'position:fixed;top:20px;right:20px;background:#dc3545;color:white;padding:15px 20px;border-radius:5px;z-index:1001;box-shadow:0 4px 12px rgba(0,0,0,0.15)';
+    document.body.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
+}
+
+function updateSelection() {
+    const checkboxes = document.querySelectorAll('.item-select:checked');
+    const selectedItems = new Set(Array.from(checkboxes).map(cb => cb.value));
+    
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    if (selectedItems.size > 0 && bulkActions && selectedCount) {
+        bulkActions.style.display = 'block';
+        selectedCount.textContent = `${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} selected`;
+    } else if (bulkActions) {
+        bulkActions.style.display = 'none';
+    }
+}
+
+function onBaseChange() {
+    const baseSelect = document.getElementById('base');
+    const citySelect = document.getElementById('city');
+    const stateSelect = document.getElementById('state');
+    if (baseSelect && citySelect && stateSelect) {
+        if (baseSelect.value) {
+            citySelect.disabled = true;
+            stateSelect.disabled = true;
+        } else {
+            citySelect.disabled = false;
+            stateSelect.disabled = false;
+        }
+    }
+}
+
+function setItemsView(view) {
+    const card = document.getElementById('itemsCardView');
+    const table = document.getElementById('itemsTableView');
+    const cardBtn = document.getElementById('cardViewBtn');
+    const tableBtn = document.getElementById('tableViewBtn');
+    
+    if (view === 'table') {
+        if (card) card.style.display = 'none';
+        if (table) table.style.display = '';
+        if (cardBtn) {
+            cardBtn.classList.remove('active');
+            cardBtn.setAttribute('aria-pressed', 'false');
+        }
+        if (tableBtn) {
+            tableBtn.classList.add('active');
+            tableBtn.setAttribute('aria-pressed', 'true');
+        }
+    } else {
+        if (card) card.style.display = '';
+        if (table) table.style.display = 'none';
+        if (cardBtn) {
+            cardBtn.classList.add('active');
+            cardBtn.setAttribute('aria-pressed', 'true');
+        }
+        if (tableBtn) {
+            tableBtn.classList.remove('active');
+            tableBtn.setAttribute('aria-pressed', 'false');
+        }
+    }
+}
+
+function togglePrices(itemId) {
+    const pricesDiv = document.getElementById(`prices-${itemId}`);
+    if (pricesDiv) {
+        const button = pricesDiv.previousElementSibling;
+        if (pricesDiv.style.display === 'none') {
+            pricesDiv.style.display = 'block';
+            if (button) button.textContent = 'Hide Prices';
+        } else {
+            pricesDiv.style.display = 'none';
+            if (button) button.textContent = 'Show All Prices';
+        }
+    }
+}
+
+function setupModalEventDelegation() {
+    console.log('Setting up modal event delegation for items page');
+    
+    document.addEventListener('click', function(event) {
+        const target = event.target;
+        
+        // Handle Add Price buttons
+        if (target.closest('.add-price-btn')) {
+            console.log('Add price button clicked');
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const btn = target.closest('.add-price-btn');
+            const itemId = btn.dataset.itemId || btn.getAttribute('data-item-id');
+            
+            if (itemId) {
+                console.log('Opening price modal for item:', itemId);
+                openPriceModal(parseInt(itemId), null);
+            }
+            return;
+        }
+        
+        // Handle Edit Price buttons
+        if (target.closest('.edit-price-btn')) {
+            console.log('Edit price button clicked');
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const btn = target.closest('.edit-price-btn');
+            const itemId = btn.dataset.itemId || btn.getAttribute('data-item-id');
+            const priceId = btn.dataset.priceId || btn.getAttribute('data-price-id');
+            
+            if (itemId && priceId) {
+                openPriceModal(parseInt(itemId), parseInt(priceId));
+            }
+            return;
+        }
+        
+        // Handle Add Item button
+        if (target.closest('.add-item-btn') || target.textContent?.includes('Add New Item')) {
+            console.log('Add item button clicked');
+            event.preventDefault();
+            event.stopPropagation();
+            openItemModal();
+            return;
+        }
+        
+        // Handle Show/Hide Prices buttons
+        if (target.textContent?.includes('Show All Prices') || target.textContent?.includes('Hide Prices')) {
+            const itemId = target.getAttribute('onclick')?.match(/togglePrices\((\d+)\)/)?.[1];
+            if (itemId) {
+                event.preventDefault();
+                togglePrices(parseInt(itemId));
+            }
+            return;
+        }
+    }, true);
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const priceModal = document.getElementById('price-modal');
+        const itemModal = document.getElementById('item-modal');
+        
+        if (priceModal && priceModal.style.display !== 'none') {
+            closePriceModal();
+            event.preventDefault();
+            return;
+        }
+        
+        if (itemModal && itemModal.style.display !== 'none') {
+            closeItemModal();
+            event.preventDefault();
+            return;
+        }
+    }
+});
+</script>
 {% endblock %} 

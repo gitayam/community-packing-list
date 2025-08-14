@@ -101,8 +101,97 @@
         <button type="submit" class="button success">Save</button>
         <a href="{% if packing_list %}{% url 'view_packing_list' packing_list.id %}{% else %}{% url 'home' %}{% endif %}" class="button secondary">Cancel</a>
     </form>
-    <div>
-        <script src="{% static 'packing_lists/js/vendors.js' %}"></script>
-        <script src="{% static 'packing_lists/js/packing-list-form.js' %}"></script>
-    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Packing list form functionality - inline JavaScript to avoid 404 errors
+console.log('Packing list form JavaScript loaded');
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Packing list form DOM loaded');
+    
+    // Handle event type changes
+    const eventTypeField = document.getElementById('id_event_type');
+    const schoolTypeRow = document.getElementById('school-type-row');
+    const assessmentTypeRow = document.getElementById('assessment-type-row');
+    const trainingTypeRow = document.getElementById('training-type-row');
+    const schoolRow = document.getElementById('school-row');
+    
+    if (eventTypeField) {
+        function handleEventTypeChange() {
+            const selectedValue = eventTypeField.value;
+            console.log('Event type changed to:', selectedValue);
+            
+            // Hide all conditional rows first
+            if (schoolTypeRow) schoolTypeRow.style.display = 'none';
+            if (assessmentTypeRow) assessmentTypeRow.style.display = 'none';
+            if (trainingTypeRow) trainingTypeRow.style.display = 'none';
+            if (schoolRow) schoolRow.style.display = 'none';
+            
+            // Show relevant rows based on event type
+            if (selectedValue === 'school') {
+                if (schoolTypeRow) schoolTypeRow.style.display = 'block';
+                if (schoolRow) schoolRow.style.display = 'block';
+            } else if (selectedValue === 'assessment') {
+                if (assessmentTypeRow) assessmentTypeRow.style.display = 'block';
+            } else if (selectedValue === 'training') {
+                if (trainingTypeRow) trainingTypeRow.style.display = 'block';
+            }
+        }
+        
+        // Set up event listener
+        eventTypeField.addEventListener('change', handleEventTypeChange);
+        
+        // Initial state
+        handleEventTypeChange();
+    }
+    
+    // Handle school type changes
+    const schoolTypeField = document.getElementById('id_school_type');
+    if (schoolTypeField && schoolRow) {
+        function handleSchoolTypeChange() {
+            const selectedValue = schoolTypeField.value;
+            console.log('School type changed to:', selectedValue);
+            
+            if (selectedValue === 'specific') {
+                schoolRow.style.display = 'block';
+            } else {
+                schoolRow.style.display = 'none';
+            }
+        }
+        
+        schoolTypeField.addEventListener('change', handleSchoolTypeChange);
+        handleSchoolTypeChange();
+    }
+    
+    // Form validation
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            console.log('Form submitted');
+            
+            // Basic validation
+            const nameField = document.getElementById('id_name');
+            if (nameField && !nameField.value.trim()) {
+                e.preventDefault();
+                alert('Please enter a name for the packing list.');
+                nameField.focus();
+                return false;
+            }
+            
+            // Branch-specific validation
+            const branchField = document.getElementById('id_branch');
+            if (branchField && !branchField.value) {
+                e.preventDefault();
+                alert('Please select a branch of service.');
+                branchField.focus();
+                return false;
+            }
+            
+            console.log('Form validation passed');
+        });
+    }
+});
+</script>
 {% endblock %}
