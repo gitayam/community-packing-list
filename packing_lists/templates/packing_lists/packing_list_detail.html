@@ -422,6 +422,13 @@
         console.log('Modal elements found, setting display to block');
         
         modal.style.display = 'block';
+        
+        // Debug: Check modal visibility after setting display
+        setTimeout(() => {
+            const computedStyles = window.getComputedStyle(modal);
+            console.log('Modal computed styles - display:', computedStyles.display, 'visibility:', computedStyles.visibility, 'zIndex:', computedStyles.zIndex);
+            console.log('Modal getBoundingClientRect:', modal.getBoundingClientRect());
+        }, 100);
         modal.setAttribute('aria-modal', 'true');
         modal.setAttribute('role', 'dialog');
         modal.dataset.previousFocus = document.activeElement?.id || '';
