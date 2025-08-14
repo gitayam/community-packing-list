@@ -467,6 +467,7 @@
 <!-- Item Modal -->
 <div id="item-modal" class="modal" style="display: none;">
     <div class="modal-content" onclick="event.stopPropagation();">
+        <button id="close-item-modal" class="modal-close" style="position:absolute;top:10px;right:15px;font-size:24px;font-weight:bold;cursor:pointer;color:#999;line-height:1;background:none;border:none;">&times;</button>
         <div id="item-modal-body">
             <!-- AJAX-loaded form will go here -->
         </div>
@@ -2280,6 +2281,27 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('price-modal').style.display = 'none';
         };
     }
+    
+    const closeItemModal = document.getElementById('close-item-modal');
+    if (closeItemModal) {
+        closeItemModal.onclick = function(e) {
+            e.stopPropagation();
+            console.log('Close item modal button clicked');
+            document.getElementById('item-modal').style.display = 'none';
+        };
+    }
+    
+    // Prevent backdrop clicks from closing modals accidentally
+    document.addEventListener('click', function(e) {
+        if (e.target.id === 'item-modal') {
+            e.stopPropagation();
+            console.log('Item modal backdrop clicked - not closing to prevent accidental closure');
+        }
+        if (e.target.id === 'price-modal') {
+            e.stopPropagation();
+            console.log('Price modal backdrop clicked - not closing to prevent accidental closure');
+        }
+    });
 });
 
 // Modal functions
@@ -2327,21 +2349,38 @@ function openPriceModal(itemId, priceId) {
 }
 
 function openItemModal() {
-    console.log('Opening item modal');
+    console.log('openItemModal called - starting modal open process');
     const modal = document.getElementById('item-modal');
     const modalBody = document.getElementById('item-modal-body');
     
+    if (!modal) {
+        console.error('Modal element not found!');
+        return;
+    }
+    
+    if (!modalBody) {
+        console.error('Modal body element not found!');
+        return;
+    }
+    
+    console.log('Setting modal display to block');
     modal.style.display = 'block';
     modal.setAttribute('aria-modal', 'true');
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-labelledby', 'item-modal-title');
     modal.dataset.previousFocus = document.activeElement?.id || '';
     
+    console.log('Modal should now be visible');
     modalBody.innerHTML = '<div style="padding:2em;text-align:center;">Loading...</div>';
     
+    console.log('Making fetch request to add_item_modal');
     fetch('{% url "add_item_modal" %}')
-        .then(response => response.json())
+        .then(response => {
+            console.log('Fetch response received:', response.status);
+            return response.json();
+        })
         .then(data => {
+            console.log('Modal data received, updating content');
             modalBody.innerHTML = data.html;
             setupItemFormHandler();
             setTimeout(() => {
@@ -2619,14 +2658,7 @@ function setupModalEventDelegation() {
             return;
         }
         
-        // Handle Add Item button
-        if (target.closest('.add-item-btn') || target.textContent?.includes('Add New Item')) {
-            console.log('Add item button clicked');
-            event.preventDefault();
-            event.stopPropagation();
-            openItemModal();
-            return;
-        }
+        // Handle Add Item button - REMOVED: Using inline onclick handlers instead to avoid conflicts
         
         // Handle Show/Hide Prices buttons
         if (target.textContent?.includes('Show All Prices') || target.textContent?.includes('Hide Prices')) {
