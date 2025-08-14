@@ -435,10 +435,16 @@
         
         modalBody.innerHTML = '<div style="padding:2em;text-align:center;">Loading...</div>';
         
-        let url = `/item/${itemId}/add_price_modal/`;
+        // Get list ID from button's data-list-id attribute
+        const button = document.querySelector(`[data-item-id="${itemId}"].add-price-btn`);
+        const listId = button ? button.getAttribute('data-list-id') : null;
+        
+        let url = listId ? `/item/${itemId}/add_price_modal/to_list/${listId}/` : `/item/${itemId}/add_price_modal/`;
         if (priceId) {
             url += `?price_id=${priceId}`;
         }
+        
+        console.log('Fetching price form from URL:', url);
         
         fetch(url, {
             headers: {'X-Requested-With': 'XMLHttpRequest'}
@@ -522,8 +528,9 @@
             console.log('Add price button clicked');
             event.preventDefault();
             const itemId = target.getAttribute('data-item-id');
+            const listId = target.getAttribute('data-list-id');
             if (itemId) {
-                console.log('Opening price modal for item:', itemId);
+                console.log('Opening price modal for item:', itemId, 'in list:', listId);
                 openPriceModal(parseInt(itemId), null);
             }
             return;
