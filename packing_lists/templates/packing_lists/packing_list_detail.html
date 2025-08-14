@@ -405,6 +405,163 @@
 
     
     <script>
+    // Packing List Detail Page JavaScript
+    console.log('Packing list detail page JavaScript loaded');
+    
+    // Modal functions for Add Price functionality
+    function openPriceModal(itemId, priceId) {
+        console.log('Opening price modal for item:', itemId, 'price:', priceId);
+        const modal = document.getElementById('price-modal');
+        const modalBody = document.getElementById('price-modal-body');
+        
+        if (!modal || !modalBody) {
+            console.error('Price modal elements not found');
+            return;
+        }
+        
+        modal.style.display = 'block';
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('role', 'dialog');
+        modal.dataset.previousFocus = document.activeElement?.id || '';
+        
+        modalBody.innerHTML = '<div style="padding:2em;text-align:center;">Loading...</div>';
+        
+        let url = `/item/${itemId}/add_price_modal/`;
+        if (priceId) {
+            url += `?price_id=${priceId}`;
+        }
+        
+        fetch(url, {
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            if (data.html) {
+                modalBody.innerHTML = data.html;
+                setupPriceFormHandler();
+            } else {
+                modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;">Error loading form.</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading price modal:', error);
+            modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;">Error loading form.</div>';
+        });
+    }
+    
+    function setupPriceFormHandler() {
+        const priceForm = document.getElementById('price-form');
+        if (priceForm) {
+            const newForm = priceForm.cloneNode(true);
+            priceForm.parentNode.replaceChild(newForm, priceForm);
+            
+            newForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalText = submitButton.textContent;
+                
+                submitButton.textContent = 'Saving...';
+                submitButton.disabled = true;
+                
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('price-modal').style.display = 'none';
+                        showSuccessMessage('Price added successfully!');
+                        window.location.reload();
+                    } else if (data.html) {
+                        document.getElementById('price-modal-body').innerHTML = data.html;
+                        setupPriceFormHandler();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while saving the price. Please try again.');
+                })
+                .finally(() => {
+                    submitButton.textContent = originalText;
+                    submitButton.disabled = false;
+                });
+            });
+        }
+    }
+    
+    function showSuccessMessage(message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.textContent = message;
+        alertDiv.style.cssText = 'position:fixed;top:20px;right:20px;background:#28a745;color:white;padding:15px 20px;border-radius:5px;z-index:1001;box-shadow:0 4px 12px rgba(0,0,0,0.15)';
+        document.body.appendChild(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+    }
+    
+    // Event delegation for Add Price and Expand Price buttons
+    document.addEventListener('click', function(event) {
+        const target = event.target.closest('button');
+        if (!target) return;
+        
+        // Handle Add Price buttons
+        if (target.classList.contains('add-price-btn')) {
+            console.log('Add price button clicked');
+            event.preventDefault();
+            const itemId = target.getAttribute('data-item-id');
+            if (itemId) {
+                console.log('Opening price modal for item:', itemId);
+                openPriceModal(parseInt(itemId), null);
+            }
+            return;
+        }
+        
+        // Handle Expand Price buttons  
+        if (target.classList.contains('expand-price-btn')) {
+            console.log('Expand price button clicked');
+            event.preventDefault();
+            const itemId = target.getAttribute('data-item-id');
+            if (itemId) {
+                // Toggle price details visibility
+                const priceDetails = document.querySelector(`[data-item-id="${itemId}"].price-details`);
+                if (priceDetails) {
+                    const isVisible = priceDetails.style.display !== 'none';
+                    priceDetails.style.display = isVisible ? 'none' : 'block';
+                }
+            }
+            return;
+        }
+    });
+    
+    // Close modal handlers
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Packing list detail page DOM loaded');
+        
+        const closePriceModal = document.getElementById('close-price-modal');
+        if (closePriceModal) {
+            closePriceModal.onclick = function(e) {
+                e.stopPropagation();
+                console.log('Close price modal button clicked');
+                document.getElementById('price-modal').style.display = 'none';
+            };
+        }
+        
+        // ESC key to close modals
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const priceModal = document.getElementById('price-modal');
+                if (priceModal && priceModal.style.display !== 'none') {
+                    priceModal.style.display = 'none';
+                    event.preventDefault();
+                }
+            }
+        });
+    });
+    
     // Share menu functionality
     function toggleShareMenu() {
         const menu = document.getElementById('shareMenu');
