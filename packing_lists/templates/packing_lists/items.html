@@ -2374,7 +2374,7 @@ function openItemModal() {
     modalBody.innerHTML = '<div style="padding:2em;text-align:center;">Loading...</div>';
     
     console.log('Making fetch request to add_item_modal');
-    fetch('{% url "add_item_modal" %}')
+    fetch('/item/add_modal/')
         .then(response => {
             console.log('Fetch response received:', response.status);
             return response.json();
@@ -2469,7 +2469,7 @@ function setupItemFormHandler() {
             submitButton.textContent = 'Creating...';
             submitButton.disabled = true;
             
-            fetch('{% url "add_item_modal" %}', {
+            fetch('/item/add_modal/', {
                 method: 'POST',
                 body: formData,
                 headers: {'X-Requested-With': 'XMLHttpRequest'}
