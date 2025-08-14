@@ -137,15 +137,24 @@
         }
         // Add Store modal logic
         document.getElementById('add-store-btn').onclick = function() {
+            console.log('Add Store button clicked'); // Debug log
             var modal = document.getElementById('store-modal');
             var modalBody = document.getElementById('store-modal-body');
             modal.style.display = 'flex';
             modalBody.innerHTML = '<p>Loading...</p>';
             fetch('{% url 'add_store_modal' %}', {headers: {'x-requested-with': 'XMLHttpRequest'}})
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Response status:', response.status); // Debug log
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Response data:', data); // Debug log
                     modalBody.innerHTML = data.html;
                     bindStoreFormAjax();
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error); // Debug log
+                    modalBody.innerHTML = '<p style="color:red;">Error loading form. Please try again.</p>';
                 });
         };
         document.getElementById('close-store-modal').onclick = function() {

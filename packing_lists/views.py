@@ -615,6 +615,11 @@ def price_form_partial(request, item_id, list_id=None):
     return render(request, 'packing_lists/price_form_modal.html', context)
 
 def add_store_modal(request):
+    # Debug logging
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"add_store_modal: method={request.method}, x-requested-with={request.headers.get('x-requested-with')}, all_headers={dict(request.headers)}")
+    
     if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         form = StoreForm(request.POST)
         if form.is_valid():
