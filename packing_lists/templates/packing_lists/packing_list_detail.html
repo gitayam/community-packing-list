@@ -147,8 +147,6 @@
 
     <h2>Items</h2>
     {% if items_with_prices %}
-        <form method="post" id="packing-list-items-form">
-            {% csrf_token %}
             <div class="modern-table-wrapper">
                 <table class="modern-table">
                     <thead>
@@ -343,7 +341,6 @@
                     </tbody>
                 </table>
             </div>
-        </form>
     {% else %}
         <div class="empty-state">
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather feather-package"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
@@ -445,25 +442,43 @@
         }
         
         console.log('Fetching price form from URL:', url);
+        console.log('Fetch starting at:', new Date().toISOString());
         
         fetch(url, {
             headers: {'X-Requested-With': 'XMLHttpRequest'}
         })
         .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
+            console.log('Fetch response received:', response.status, response.statusText);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+            console.log('Response OK:', response.ok);
+            
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
+            }
             return response.json();
         })
         .then(data => {
+            console.log('JSON data parsed successfully:', data);
+            console.log('Data has html property:', !!data.html);
+            console.log('HTML length:', data.html ? data.html.length : 'N/A');
+            
             if (data.html) {
+                console.log('Setting modal body innerHTML');
                 modalBody.innerHTML = data.html;
+                console.log('Modal body innerHTML set, calling setupPriceFormHandler');
                 setupPriceFormHandler();
+                console.log('setupPriceFormHandler completed');
             } else {
-                modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;">Error loading form.</div>';
+                console.error('No HTML in response data:', data);
+                modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;">Error: No form HTML received.</div>';
             }
         })
         .catch(error => {
-            console.error('Error loading price modal:', error);
-            modalBody.innerHTML = '<div style="padding:2em;text-align:center;color:red;">Error loading form.</div>';
+            console.error('FETCH ERROR - Full details:', error);
+            console.error('Error type:', error.constructor.name);
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+            modalBody.innerHTML = `<div style="padding:2em;text-align:center;color:red;">Fetch Error: ${error.message}<br><small>Check console for details</small></div>`;
         });
     }
     
@@ -520,18 +535,32 @@
     
     // Event delegation for Add Price and Expand Price buttons
     document.addEventListener('click', function(event) {
+        console.log('Click detected on:', event.target.tagName, event.target.className);
         const target = event.target.closest('button');
+        console.log('Closest button found:', target ? target.className : 'none');
+        
         if (!target) return;
         
         // Handle Add Price buttons
         if (target.classList.contains('add-price-btn')) {
-            console.log('Add price button clicked');
+            console.log('Add price button clicked - SUCCESS!');
             event.preventDefault();
+            event.stopPropagation();
+            
             const itemId = target.getAttribute('data-item-id');
             const listId = target.getAttribute('data-list-id');
+            console.log('ItemId:', itemId, 'ListId:', listId);
+            
             if (itemId) {
-                console.log('Opening price modal for item:', itemId, 'in list:', listId);
-                openPriceModal(parseInt(itemId), null);
+                console.log('About to call openPriceModal for item:', itemId, 'in list:', listId);
+                try {
+                    openPriceModal(parseInt(itemId), null);
+                    console.log('openPriceModal called successfully');
+                } catch (error) {
+                    console.error('Error calling openPriceModal:', error);
+                }
+            } else {
+                console.error('No itemId found on button');
             }
             return;
         }
@@ -556,6 +585,15 @@
     // Close modal handlers
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Packing list detail page DOM loaded');
+        
+        // Debug: Check if modal elements exist
+        const modal = document.getElementById('price-modal');
+        const modalBody = document.getElementById('price-modal-body');
+        console.log('Modal element found:', !!modal);
+        console.log('Modal body element found:', !!modalBody);
+        if (modal) {
+            console.log('Modal initial display style:', modal.style.display);
+        }
         
         const closePriceModal = document.getElementById('close-price-modal');
         if (closePriceModal) {
