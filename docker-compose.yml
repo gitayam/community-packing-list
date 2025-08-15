@@ -33,7 +33,7 @@ services:
   web:
     build: 
       context: .
-      target: production
+      
     container_name: packing_list_web
     command: ${WEB_COMMAND:-gunicorn community_packing_list.wsgi:application --bind 0.0.0.0:8000 --workers 4 --log-level info}
     volumes:
@@ -54,7 +54,7 @@ services:
   web-dev:
     build: 
       context: .
-      target: production
+      
     container_name: packing_list_web_dev
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
