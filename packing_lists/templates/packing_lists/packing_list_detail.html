@@ -108,56 +108,23 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <div class="price-info">
+                                <div class="price-info price-info-compact">
                                     {% if item_wp.prices_with_votes %}
-                                        <ul>
-                                        {% for price_data in item_wp.prices_with_votes %}
-                                            <li class="{% if forloop.first %}best-value{% endif %}">
-                                                {% if forloop.first %}
-                                                    <span class="best-value-tag">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-award"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 17 17 23 15.79 13.88"></polyline></svg>
-                                                        Best Value
-                                                    </span>
-                                                    <br>
-                                                {% endif %}
-                                                <strong>${{ price_data.price.price }}</strong> for {{ price_data.price.quantity }} at {{ price_data.price.store.name }}
-                                                {% if price_data.price.date_purchased %}({{ price_data.price.date_purchased|date:"Y-m-d" }}){% endif %}
-                                                <br>
-                                                <small>
-                                                    <span class="text-muted">${{ price_data.price_per_unit|floatformat:2 }}/unit</span>
-                                                    {% if price_data.vote_confidence > 0 %}
-                                                        <span class="text-success">• High confidence</span>
-                                                    {% elif price_data.vote_confidence < 0 %}
-                                                        <span class="text-danger">• Low confidence</span>
-                                                    {% else %}
-                                                        <span class="text-warning">• No votes yet</span>
-                                                    {% endif %}
-                                                </small>
-
-                                                <span class="vote-count">
-                                                    (<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-up"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>{{ price_data.upvotes }} /
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-down"><path d="M10 15v7a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg>{{ price_data.downvotes }})
-                                                </span>
-
-                                                <span class="vote-buttons">
-                                                    <form action="{% url 'handle_vote' %}" method="post">
-                                                        {% csrf_token %}
-                                                        <input type="hidden" name="price_id" value="{{ price_data.price.id }}">
-                                                        <button type="submit" name="upvote_price_id" value="{{ price_data.price.id }}" class="button success button-icon-sm">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-up"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
-                                                        </button>
-                                                    </form>
-                                                    <form action="{% url 'handle_vote' %}" method="post">
-                                                        {% csrf_token %}
-                                                        <input type="hidden" name="price_id" value="{{ price_data.price.id }}">
-                                                        <button type="submit" name="downvote_price_id" value="{{ price_data.price.id }}" class="button danger button-icon-sm">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-thumbs-down"><path d="M10 15v7a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path></svg>
-                                                        </button>
-                                                    </form>
-                                                </span>
-                                            </li>
-                                        {% endfor %}
-                                        </ul>
+                                        {% with first_price=item_wp.prices_with_votes.0 %}
+                                        <div class="price-summary">
+                                            <span class="best-value-tag">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 17 17 23 15.79 13.88"></polyline></svg>
+                                                BEST VALUE
+                                            </span>
+                                            <strong>${{ first_price.price.price }}</strong> at {{ first_price.price.store.name }}
+                                            {% if item_wp.prices_with_votes|length > 1 %}
+                                                <button class="expand-prices-btn" onclick="togglePriceDetails(this)" type="button">
+                                                    <span class="more-indicator">(+{{ item_wp.prices_with_votes|length|add:"-1" }} more)</span>
+                                                    <svg class="expand-icon" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                        {% endwith %}
                                     {% else %}
                                         <p class="no-prices">No pricing information yet.</p>
                                     {% endif %}
@@ -317,6 +284,28 @@
           });
       });
     });
+    // Toggle price details function
+    window.togglePriceDetails = function(button) {
+      const priceInfo = button.closest(".price-info-compact");
+      let detailsDiv = priceInfo.querySelector(".price-details");
+      
+      if (!detailsDiv) {
+        // Create details div if it doesn't exist
+        detailsDiv = document.createElement("div");
+        detailsDiv.className = "price-details";
+        detailsDiv.style.display = "none";
+        priceInfo.appendChild(detailsDiv);
+        // TODO: Load full price details via AJAX if needed
+      }
+      
+      if (detailsDiv.style.display === "none") {
+        detailsDiv.style.display = "block";
+        button.querySelector(".expand-icon").style.transform = "rotate(180deg)";
+      } else {
+        detailsDiv.style.display = "none";
+        button.querySelector(".expand-icon").style.transform = "rotate(0deg)";
+      }
+    };
     document.getElementById('close-price-modal').onclick = function() {
       document.getElementById('price-modal').style.display = 'none';
     };
