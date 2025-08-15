@@ -40,14 +40,12 @@
                     <tr>
                         <th>Section</th>
                         <th>Packed?</th>
-                        <th>Item Name</th>
-                        <th>Quantity</th>
+                        <th class="item-name-header">Item Name</th>
+                        <th>Qty</th>
                         <th>NSN/LIN</th>
                         <th>Required?</th>
-                        <th>Notes</th>
-                        <th>Instructions</th>
-                        <th>Recommended Store</th>
-                        <th>Pricing Info</th>
+                        <th>Store</th>
+                        <th>Pricing</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -56,7 +54,7 @@
                     {% for section in sectioned_items %}
                         {% if section.grouper %}
                         <tr class="section-header">
-                            <td colspan="10"><strong>{{ section.grouper }}</strong></td>
+                            <td colspan="9"><strong>{{ section.grouper }}</strong></td>
                         </tr>
                         {% endif %}
                         {% for item_wp in section.list %}
@@ -73,7 +71,7 @@
                                     {% endif %}
                                 </button>
                             </td>
-                            <td>{{ item_wp.item.name }}</td>
+                            <td class="item-name-cell"><strong>{{ item_wp.item.name }}</strong></td>
                             <td>{{ item_wp.pli.quantity }}</td>
                             <td>{% if item_wp.pli.nsn_lin %}{{ item_wp.pli.nsn_lin }}{% else %}-{% endif %}</td>
                             <td>
@@ -81,20 +79,6 @@
                                     <span class="status-tag status-required-yes">Yes</span>
                                 {% else %}
                                     <span class="status-tag status-required-no">No</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if item_wp.pli.notes %}
-                                    <span class="item-notes">{{ item_wp.pli.notes }}</span>
-                                {% else %}
-                                    <span class="item-notes text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if item_wp.pli.instructions %}
-                                    <span class="item-instructions-highlight">{{ item_wp.pli.instructions }}</span>
-                                {% else %}
-                                    <span class="item-instructions text-muted">-</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -124,11 +108,25 @@
                                                 </button>
                                             {% endif %}
                                         </div>
+                                        {% if item_wp.prices_with_votes|length > 1 %}
+                                        <div class="price-details" style="display: none;">
+                                            <ul>
+                                            {% for price_data in item_wp.prices_with_votes %}
+                                                <li>
+                                                    <strong>${{ price_data.price.price }}</strong> for {{ price_data.price.quantity }} at {{ price_data.price.store.name }}
+                                                    {% if price_data.price.date_purchased %}<br><small>({{ price_data.price.date_purchased|date:"Y-m-d" }})</small>{% endif %}
+                                                    <br>
+                                                    <small class="text-muted">${{ price_data.price_per_unit|floatformat:2 }}/unit</small>
+                                                </li>
+                                            {% endfor %}
+                                            </ul>
+                                        </div>
+                                        {% endif %}
                                         {% endwith %}
                                     {% else %}
                                         <p class="no-prices">No pricing information yet.</p>
                                     {% endif %}
-                                    <a href="{% url 'add_price_for_item' item_id=item_wp.item.id list_id=packing_list.id %}" class="button text-small mt-1 add-price-modal-link" data-url="{% url 'add_price_for_item_modal' item_id=item_wp.item.id list_id=packing_list.id %}">
+                                    <a href="{% url 'add_price_for_item'  item_id=item_wp.item.id list_id=packing_list.id %}" class="button text-small mt-1 add-price-modal-link" data-url="{% url 'add_price_for_item_modal' item_id=item_wp.item.id list_id=packing_list.id %}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus-circle"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                                         Add Price
                                     </a>
