@@ -7,7 +7,7 @@ import dj_database_url
 from .settings import *
 
 # Override settings for cloud deployment
-DEBUG = False
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 # Cloud environment variables
 SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -22,6 +22,7 @@ ALLOWED_HOSTS = [
     '.appspot.com',
     'localhost',
     '127.0.0.1',
+    'community-packing-list-496146455129.us-central1.run.app',
 ]
 
 # Add any custom domain hosts from environment
@@ -50,14 +51,19 @@ CSRF_TRUSTED_ORIGINS = [
 if CUSTOM_DOMAIN:
     CSRF_TRUSTED_ORIGINS.append(f'https://{CUSTOM_DOMAIN}')
 
-# Database configuration using DATABASE_URL
-DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+# Database configuration - simplified for deployment
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL)
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'db.sqlite3',
+        }
+    }
 
 # Security settings for production
 SECURE_BROWSER_XSS_FILTER = True
@@ -74,26 +80,14 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Include only necessary directories in static files
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'packing_lists', 'static'),
-    os.path.join(BASE_DIR, 'src', 'styles'),  # Only include the styles directory from src
-]
+STATICFILES_DIRS = []
+if os.path.exists(os.path.join(BASE_DIR, 'packing_lists', 'static')):
+    STATICFILES_DIRS.append(os.path.join(BASE_DIR, 'packing_lists', 'static'))
+if os.path.exists(os.path.join(BASE_DIR, 'src', 'styles')):
+    STATICFILES_DIRS.append(os.path.join(BASE_DIR, 'src', 'styles'))
 
-# WhiteNoise configuration for static file serving
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Static files optimization
-WHITENOISE_USE_FINDERS = False  # Disable in production for better performance
-WHITENOISE_AUTOREFRESH = False  # Disable auto-refresh in production
-WHITENOISE_MAX_AGE = 31536000  # Cache static files for 1 year
-
-# Add .js and .css MIME types for compression
-WHITENOISE_MIMETYPES = {
-    '.js': 'application/javascript',
-    '.css': 'text/css',
-    '.map': 'application/json',
-    '.svg': 'image/svg+xml',
-}
+# WhiteNoise configuration for static file serving  
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Logging configuration
 LOGGING = {
@@ -124,13 +118,90 @@ LOGGING = {
     },
 }
 
-# Media files configuration
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Media files configuration - Cloud Storage for production
+USE_CLOUD_STORAGE = os.environ.get('USE_CLOUD_STORAGE', 'false').lower() == 'true'
 
-# Cache configuration (can be enhanced with Redis/Memcached)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+if USE_CLOUD_STORAGE:
+    # Google Cloud Storage settings
+    DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+    GS_BUCKET_NAME = os.environ.get('GS_BUCKET_NAME', 'community-packing-list-media')
+    GS_PROJECT_ID = os.environ.get('GS_PROJECT_ID')
+    GS_DEFAULT_ACL = 'publicRead'
+    GS_FILE_OVERWRITE = False
+    GS_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+    
+    # CDN for media files
+    GS_CUSTOM_ENDPOINT = os.environ.get('GS_CUSTOM_ENDPOINT')  # CDN endpoint
+    MEDIA_URL = f'https://{GS_CUSTOM_ENDPOINT}/' if GS_CUSTOM_ENDPOINT else f'https://storage.googleapis.com/{GS_BUCKET_NAME}/'
+    
+    # Static files via Cloud Storage + CDN
+    STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+    GS_STATIC_BUCKET_NAME = os.environ.get('GS_STATIC_BUCKET_NAME', 'community-packing-list-static')
+    STATIC_URL = f'https://storage.googleapis.com/{GS_STATIC_BUCKET_NAME}/'
+    
+else:
+    # Local development settings
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Cache configuration - Redis for production, LocMem for development
+REDIS_URL = os.environ.get('REDIS_URL')
+if REDIS_URL:
+    # Production Redis configuration
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'CONNECTION_POOL_KWARGS': {
+                    'max_connections': 50,
+                    'retry_on_timeout': True,
+                },
+                'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+                'IGNORE_EXCEPTIONS': True,  # Don't fail if Redis is down
+            },
+            'TIMEOUT': 300,  # Default timeout
+            'KEY_PREFIX': 'cpl',
+        }
     }
-}
+    
+    # Use Redis for sessions as well
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
+else:
+    # Fallback to local memory cache for development
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+            'TIMEOUT': 300,
+        }
+    }
+
+# Cache middleware settings
+CACHE_MIDDLEWARE_ALIAS = 'default'
+CACHE_MIDDLEWARE_SECONDS = 300  # 5 minutes
+CACHE_MIDDLEWARE_KEY_PREFIX = 'cpl'
+
+# Celery Configuration
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', REDIS_URL)
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL)
+
+if CELERY_BROKER_URL:
+    # Celery task configuration
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_TIMEZONE = 'UTC'
+    CELERY_TASK_TRACK_STARTED = True
+    CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+    CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+    CELERY_TASK_ACKS_LATE = True
+    
+    # Configure task routing
+    CELERY_TASK_ROUTES = {
+        'packing_lists.tasks.update_price_scores': {'queue': 'high_priority'},
+        'packing_lists.tasks.process_uploaded_file': {'queue': 'file_processing'},
+        'packing_lists.tasks.send_notification_email': {'queue': 'notifications'},
+    }

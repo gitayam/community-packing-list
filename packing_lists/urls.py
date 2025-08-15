@@ -59,4 +59,15 @@ urlpatterns = [
     
     # Health check endpoint
     path('health/', views.health_check, name='health_check'),
+    
+    # Migration endpoint for debugging
+    path('run-migrations/', views.run_migrations, name='run_migrations'),
+    
+    # Database write test endpoint
+    path('test-db-write/', views.test_database_write, name='test_database_write'),
+    
+    # Sharing and community features
+    path('share/<slug:share_slug>/', views.public_list_view, name='public_list'),
+    path('embed/<slug:share_slug>/', views.embed_list_view, name='embed_list'),
+    path('discover/', views.discover_lists, name='discover_lists'),
 ]

@@ -1,0 +1,8 @@
+FROM gcr.io/buildpacks/builder:v1
+USER root
+WORKDIR /workspace
+COPY . .
+RUN python -m pip install --upgrade pip
+RUN pip install -r requirements.txt
+EXPOSE 8080
+CMD python manage.py migrate && gunicorn --bind :8080 --workers 1 community_packing_list.wsgi

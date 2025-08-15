@@ -31,8 +31,11 @@ SECRET_KEY = os.getenv('SECRET_KEY', "django-insecure-fallback-key-for-dev-only-
 # Convert string "True" or "False" to boolean
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS_STRING = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost 127.0.0.1 [::1]')
+ALLOWED_HOSTS_STRING = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost 127.0.0.1 [::1] 0.0.0.0')
 ALLOWED_HOSTS = ALLOWED_HOSTS_STRING.split(' ') if ALLOWED_HOSTS_STRING else []
+# Add wildcard for development
+if DEBUG:
+    ALLOWED_HOSTS += ['*']
 
 
 # Application definition

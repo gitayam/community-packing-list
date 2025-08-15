@@ -1,0 +1,76 @@
+# Google Cloud CDN configuration for static assets optimization
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cdn-config
+data:
+  # Cloud CDN configuration for static assets
+  cdn-config.yaml: |
+    # Backend bucket configuration
+    backend_buckets:
+      - name: community-packing-list-static
+        bucket_name: community-packing-list-static-assets
+        enable_cdn: true
+        cdn_policy:
+          cache_key_policy:
+            include_protocol: true
+            include_host: true
+            include_query_string: false
+          default_ttl: 86400  # 24 hours
+          max_ttl: 31536000   # 1 year
+          client_ttl: 3600    # 1 hour
+          negative_caching: true
+          negative_caching_policy:
+            - code: 404
+              ttl: 300  # 5 minutes
+            - code: 410
+              ttl: 300
+        compression_mode: AUTOMATIC
+        
+    # URL map for routing
+    url_map:
+      name: community-packing-list-lb
+      default_service: community-packing-list-backend
+      host_rules:
+        - hosts:
+          - "cdn.community-packing-list.com"
+          - "static.community-packing-list.com"
+          path_matcher: static-matcher
+      path_matchers:
+        - name: static-matcher
+          path_rules:
+            - paths: ["/static/*", "/media/*"]
+              service: community-packing-list-static
+            - paths: ["/*"]
+              service: community-packing-list-backend
+              
+    # Security configuration
+    security_policy:
+      name: community-packing-list-security
+      rules:
+        - priority: 1000
+          action: allow
+          match:
+            versioned_expr: SRC_IPS_V1
+            config:
+              src_ip_ranges: ["*"]
+          rate_limit_options:
+            conform_action: allow
+            exceed_action: deny_503
+            enforce_on_key: IP
+            rate_limit_threshold:
+              count: 1000
+              interval_sec: 60
+        - priority: 2000
+          action: throttle
+          match:
+            versioned_expr: SRC_IPS_V1
+            config:
+              src_ip_ranges: ["*"]
+          rate_limit_options:
+            conform_action: allow
+            exceed_action: deny_429
+            enforce_on_key: ALL
+            rate_limit_threshold:
+              count: 10000
+              interval_sec: 60
