@@ -305,12 +305,9 @@
                                 </td>
                                 <td class="actions-cell">
                                     <div class="action-buttons">
-                                        <button type="button" class="action-btn add-price-btn" 
-                                                data-item-id="{{ item_wp.item.id }}" 
-                                                data-list-id="{{ packing_list.id }}" 
-                                                title="Add Price">
+                                        <a href="{% url 'add_price_for_item' item_id=item_wp.item.id list_id=packing_list.id %}" class="action-btn add-price-modal-link" data-url="{% url 'add_price_for_item_modal' item_id=item_wp.item.id list_id=packing_list.id %}" title="Add Price">
                                             <span class="btn-icon">$</span>
-                                        </button>
+                                        </a>
                                         <button type="button" class="action-btn expand-price-btn" data-item-id="{{ item_wp.item.id }}" title="View All Prices">
                                             <span class="btn-icon">📊</span>
                                         </button>
@@ -403,6 +400,8 @@
     
     <script>
     // Packing List Detail Page JavaScript
+    console.log('🟢 SCRIPT BLOCK STARTED - JavaScript is executing');
+    alert('JavaScript is working! Check console for debug messages.');
     console.log('Packing list detail page JavaScript loaded');
     
     // Modal functions for Add Price functionality
@@ -533,37 +532,34 @@
         setTimeout(() => alertDiv.remove(), 3000);
     }
     
-    // Event delegation for Add Price and Expand Price buttons
-    document.addEventListener('click', function(event) {
-        console.log('Click detected on:', event.target.tagName, event.target.className);
-        const target = event.target.closest('button');
-        console.log('Closest button found:', target ? target.className : 'none');
-        
-        if (!target) return;
-        
-        // Handle Add Price buttons
-        if (target.classList.contains('add-price-btn')) {
-            console.log('Add price button clicked - SUCCESS!');
-            event.preventDefault();
-            event.stopPropagation();
+    // Test if JavaScript is executing 
+    console.log('🟢 JAVASCRIPT LOADED - Setting up working modal links');
+    
+    // Working Add Price modal implementation from feat/improve-military-frontend branch  
+    document.querySelectorAll('.add-price-modal-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('🟢 Add Price link clicked - SUCCESS!');
+            var url = this.getAttribute('data-url');
+            console.log('🟢 Fetching from URL:', url);
+            var modal = document.getElementById('price-modal');
+            var modalBody = document.getElementById('price-modal-body');
+            modal.style.display = 'block';
+            modalBody.innerHTML = '<p style="padding: 2em; text-align:center;">Loading...</p>';
             
-            const itemId = target.getAttribute('data-item-id');
-            const listId = target.getAttribute('data-list-id');
-            console.log('ItemId:', itemId, 'ListId:', listId);
-            
-            if (itemId) {
-                console.log('About to call openPriceModal for item:', itemId, 'in list:', listId);
-                try {
-                    openPriceModal(parseInt(itemId), null);
-                    console.log('openPriceModal called successfully');
-                } catch (error) {
-                    console.error('Error calling openPriceModal:', error);
-                }
-            } else {
-                console.error('No itemId found on button');
-            }
-            return;
-        }
+            fetch(url, {headers: {'x-requested-with': 'XMLHttpRequest'}})
+                .then(response => response.json())
+                .then(data => {
+                    console.log('🟢 Modal data received successfully');
+                    modalBody.innerHTML = data.html;
+                    setupPriceFormHandler();
+                })
+                .catch(error => {
+                    modalBody.innerHTML = '<p style="color:red; padding: 2em; text-align:center;">Error loading content. Please try again.</p>';
+                    console.error('🔴 Error fetching modal content:', error);
+                });
+        });
+    });
         
         // Handle Expand Price buttons  
         if (target.classList.contains('expand-price-btn')) {
