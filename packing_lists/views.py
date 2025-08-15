@@ -6,6 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from .models import PackingList, Item, PackingListItem, School, Price, Vote, Store, Base
 from .forms import PackingListForm, PriceForm, VoteForm, PackingListItemForm, StoreForm, ItemForm
 from django.db.models import Q
+from django.core.paginator import Paginator
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -26,21 +27,7 @@ def home(request):
     Home page view.
     Displays existing packing lists and links to create/upload new ones.
     """
-    try:
-        packing_lists = PackingList.objects.all().order_by('-id') # Show newest first, or by name, etc.
-    except Exception as e:
-        # Handle case where database tables don't exist yet - try auto-migration
-        if 'relation' in str(e) or 'table' in str(e).lower():
-            try:
-                from django.core.management import call_command
-                call_command('migrate', verbosity=0)
-                # Try again after migration
-                packing_lists = PackingList.objects.all().order_by('-id')
-            except Exception:
-                packing_lists = []
-        else:
-            packing_lists = []
-    
+    packing_lists = PackingList.objects.all().order_by('-id') # Show newest first, or by name, etc.
     context = {
         'packing_lists': packing_lists,
     }
@@ -50,6 +37,10 @@ def create_packing_list(request):
     """
     View for creating a new PackingList manually.
     """
+    # Access control: only authenticated users can create packing lists
+    if not getattr(request, 'user', None) or not request.user.is_authenticated:
+        messages.error(request, "Please sign in to create packing lists.")
+        return redirect('home')
     if request.method == 'POST':
         form = PackingListForm(request.POST)
         if form.is_valid():
@@ -505,6 +496,10 @@ def edit_item_in_list(request, list_id, pli_id):
     return render(request, 'packing_lists/packing_listitem_form.html', context)
 
 def store_edit(request, store_id):
+    # Access control: only authenticated users can edit stores
+    if not getattr(request, 'user', None) or not request.user.is_authenticated:
+        messages.error(request, 'Please sign in to edit stores.')
+        return redirect('store_list')
     store = get_object_or_404(Store, id=store_id)
     if request.method == 'POST':
         form = StoreForm(request.POST, instance=store)
@@ -615,11 +610,12 @@ def price_form_partial(request, item_id, list_id=None):
     return render(request, 'packing_lists/price_form_modal.html', context)
 
 def add_store_modal(request):
-    # Debug logging
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info(f"add_store_modal: method={request.method}, x-requested-with={request.headers.get('x-requested-with')}, all_headers={dict(request.headers)}")
-    
+    # Access control: only authenticated users can add stores
+    if not getattr(request, 'user', None) or not request.user.is_authenticated:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'html': '<div class="alert alert-danger">Please sign in to add stores.</div>'})
+        messages.error(request, 'Please sign in to add stores.')
+        return redirect('store_list')
     if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         form = StoreForm(request.POST)
         if form.is_valid():
@@ -675,8 +671,20 @@ def lists_page(request):
     Lists all packing lists and provides a button to create a new list.
     """
     packing_lists = PackingList.objects.all().order_by('-id')
+    paginator = Paginator(packing_lists, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Preserve non-page query params
+    query = request.GET.copy()
+    query.pop('page', None)
+    querystring = query.urlencode()
+
     return render(request, 'packing_lists/lists.html', {
-        'packing_lists': packing_lists,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'is_paginated': page_obj.has_other_pages(),
+        'querystring': querystring,
     })
 
 
@@ -867,8 +875,22 @@ def items_page(request):
         })
     # Sort items by name
     items_with_data.sort(key=lambda x: x['item'].name.lower())
+
+    # Paginate items (24 per page)
+    paginator = Paginator(items_with_data, 24)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Preserve query params except page for pagination links
+    query = request.GET.copy()
+    query.pop('page', None)
+    querystring = query.urlencode()
+
     context = {
-        'items_with_data': items_with_data,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'is_paginated': page_obj.has_other_pages(),
+        'querystring': querystring,
         'categories': categories,
         'packing_lists': packing_lists,
         'stores': stores,
@@ -997,6 +1019,10 @@ def merge_packing_lists(request):
     """
     Merge two packing lists into one, deduping items and keeping highest quantity/required.
     """
+    # Access control: only authenticated users can merge lists
+    if not getattr(request, 'user', None) or not request.user.is_authenticated:
+        messages.error(request, 'Please sign in to merge packing lists.')
+        return redirect('lists')
     if request.method == 'POST':
         list1_id = request.POST.get('list1_id')
         list2_id = request.POST.get('list2_id')
@@ -1089,6 +1115,10 @@ def delete_packing_lists(request):
     """
     Delete one or more packing lists.
     """
+    # Access control: only authenticated users can delete lists
+    if not getattr(request, 'user', None) or not request.user.is_authenticated:
+        messages.error(request, 'Please sign in to delete packing lists.')
+        return redirect('lists')
     if request.method == 'POST':
         list_ids = request.POST.getlist('list_ids')
         
@@ -1219,9 +1249,8 @@ def export_packing_list_pdf(request, list_id):
     )
     normal_style = styles['Normal']
     
-    # Add title with military branding
-    story.append(Paragraph("🎖️ MILITARY PACKING LIST", ParagraphStyle('MilitaryHeader', parent=title_style, fontSize=16, textColor=colors.darkblue, spaceAfter=5)))
-    story.append(Paragraph(f"{packing_list.name}", title_style))
+    # Add title
+    story.append(Paragraph(f"Packing List: {packing_list.name}", title_style))
     story.append(Spacer(1, 20))
     
     # Add list details
@@ -1253,96 +1282,57 @@ def export_packing_list_pdf(request, list_id):
     list_items = packing_list.items.select_related('item').prefetch_related('item__prices__store').order_by('item__name')
     
     if list_items:
-        story.append(Paragraph("Items Checklist", heading_style))
-        story.append(Paragraph("✓ = Packed | ☐ = Not Packed | ✎ = Manual Check", ParagraphStyle('Legend', parent=normal_style, fontSize=8, textColor=colors.grey, spaceAfter=10)))
+        story.append(Paragraph("Items", heading_style))
         
-        # Create items table with packed status
+        # Create items table
         items_data = [
-            [Paragraph('<b>Packed</b>', normal_style), Paragraph('<b>Item</b>', normal_style), Paragraph('<b>Qty</b>', normal_style), Paragraph('<b>Required</b>', normal_style), Paragraph('<b>Notes</b>', normal_style), Paragraph('<b>Best Price</b>', normal_style), Paragraph('<b>Store</b>', normal_style)]
+            [Paragraph('Item', normal_style), Paragraph('Qty', normal_style), Paragraph('Required', normal_style), Paragraph('Notes', normal_style), Paragraph('Best Price', normal_style), Paragraph('Store', normal_style)]
         ]
+        # Add a row of checkboxes (empty squares) below the header
+        checkbox = '☐'  # Unicode empty checkbox
+        items_data.append([checkbox, '', '', '', '', ''])
 
         for pli in list_items:
-            # Determine checkbox status based on packed status
-            if pli.packed:
-                checkbox = '✓'  # Checked box for packed items
-            else:
-                checkbox = '☐'  # Empty box for unpacked items
-            
             best_price = None
             if pli.item.prices.exists():
                 prices = pli.item.prices.all()
                 best_price = min(prices, key=lambda p: p.price)
-            
             # Use Paragraph for all cells to enable wrapping
-            packed_cell = Paragraph(f'<font size="14">{checkbox}</font>', normal_style)
             item_name = Paragraph(pli.item.name, normal_style)
             qty = Paragraph(str(pli.quantity), normal_style)
             required = Paragraph("Yes" if pli.required else "No", normal_style)
             notes = Paragraph((pli.notes or ""), normal_style)
             price_info = Paragraph(f"${best_price.price:.2f}" if best_price else "", normal_style)
             store_info = Paragraph(best_price.store.name if best_price and best_price.store else "", normal_style)
-            items_data.append([packed_cell, item_name, qty, required, notes, price_info, store_info])
+            items_data.append([item_name, qty, required, notes, price_info, store_info])
         
-        # Add extra rows for manual checking
-        story.append(Spacer(1, 10))
-        manual_check_style = ParagraphStyle('ManualCheck', parent=normal_style, fontSize=9, textColor=colors.grey)
-        story.append(Paragraph("Additional Items (Manual Entry):", manual_check_style))
-        
-        # Add 5 blank rows for manual additions
-        for i in range(5):
-            blank_checkbox = '☐'
-            items_data.append([
-                Paragraph(f'<font size="14">{blank_checkbox}</font>', normal_style),
-                Paragraph('_' * 30, normal_style),  # Blank line for item name
-                Paragraph('___', normal_style),     # Blank for quantity
-                Paragraph('___', normal_style),     # Blank for required
-                Paragraph('_' * 20, normal_style),  # Blank for notes
-                Paragraph('_____', normal_style),   # Blank for price
-                Paragraph('_' * 15, normal_style)   # Blank for store
-            ])
-        
-        # Create table with proper styling - adjusted column widths for packed status
-        items_table = Table(items_data, colWidths=[0.6*inch, 2.2*inch, 0.5*inch, 0.7*inch, 1.2*inch, 0.8*inch, 1.0*inch])
+        # Create table with proper styling
+        items_table = Table(items_data, colWidths=[2.5*inch, 0.5*inch, 0.7*inch, 1.2*inch, 0.8*inch, 1.3*inch])
         items_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Center align packed column
-            ('ALIGN', (1, 0), (-1, -1), 'LEFT'),   # Left align other columns
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 0), (-1, 0), 9),
-            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
-            ('TOPPADDING', (0, 1), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            # Highlight packed items with light green background
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ]))
         
         story.append(items_table)
         story.append(Spacer(1, 20))
         
-        # Add summary with packing progress
+        # Add summary
         total_items = len(list_items)
         required_items = sum(1 for pli in list_items if pli.required)
-        packed_items = sum(1 for pli in list_items if pli.packed)
-        packed_required = sum(1 for pli in list_items if pli.packed and pli.required)
         items_with_prices = sum(1 for pli in list_items if pli.item.prices.exists())
-        
-        # Calculate completion percentage
-        completion_percentage = round((packed_items / total_items) * 100) if total_items > 0 else 0
-        required_completion = round((packed_required / required_items) * 100) if required_items > 0 else 0
         
         summary_data = [
             ['Total Items:', str(total_items)],
             ['Required Items:', str(required_items)],
             ['Items with Prices:', str(items_with_prices)],
-            ['', ''],  # Spacer row
-            ['Packed Items:', f'{packed_items} ({completion_percentage}%)'],
-            ['Required Packed:', f'{packed_required} ({required_completion}%)'],
-            ['Remaining to Pack:', str(total_items - packed_items)],
         ]
         
         summary_table = Table(summary_data, colWidths=[1.5*inch, 1*inch])
@@ -1354,25 +1344,10 @@ def export_packing_list_pdf(request, list_id):
             ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ]))
         
-        story.append(Paragraph("Packing Summary", heading_style))
+        story.append(Paragraph("Summary", heading_style))
         story.append(summary_table)
-        story.append(Spacer(1, 30))
     else:
         story.append(Paragraph("No items in this packing list.", normal_style))
-        story.append(Spacer(1, 30))
-    
-    # Add instructions and footer
-    instructions_style = ParagraphStyle('Instructions', parent=normal_style, fontSize=9, textColor=colors.grey)
-    story.append(Paragraph("<b>Instructions:</b>", instructions_style))
-    story.append(Paragraph("• Check (✓) items as you pack them", instructions_style))
-    story.append(Paragraph("• Use the manual entry rows for additional items", instructions_style))
-    story.append(Paragraph("• Verify all required items are packed before departure", instructions_style))
-    story.append(Spacer(1, 20))
-    
-    # Add footer
-    footer_style = ParagraphStyle('Footer', parent=normal_style, fontSize=8, textColor=colors.grey, alignment=1)
-    from datetime import datetime
-    story.append(Paragraph(f"Generated on {datetime.now().strftime('%B %d, %Y at %H:%M')} | Community Packing List System", footer_style))
     
     # Build the PDF
     doc.build(story)
@@ -1431,70 +1406,8 @@ def health_check(request):
     from django.http import JsonResponse
     return JsonResponse({'status': 'healthy', 'service': 'community-packing-list'})
 
-def run_migrations(request):
-    """Run database migrations via web endpoint - for debugging only"""
-    from django.http import JsonResponse
-    
-    if request.method != 'POST':
-        return JsonResponse({'error': 'POST required'}, status=405)
-    
-    try:
-        from django.core.management import call_command
-        from io import StringIO
-        import sys
-        
-        # Capture output
-        old_stdout = sys.stdout
-        sys.stdout = output = StringIO()
-        
-        # Run migrations
-        call_command('migrate', verbosity=2)
-        
-        # Restore stdout
-        sys.stdout = old_stdout
-        
-        return JsonResponse({
-            'status': 'success',
-            'output': output.getvalue()
-        })
-    except Exception as e:
-        return JsonResponse({
-            'status': 'error',
-            'error': str(e)
-        }, status=500)
 
-def test_database_write(request):
-    """Test database write functionality - for debugging only"""
-    from django.http import JsonResponse
-    from django.utils import timezone
-    
-    try:
-        # Try to create a simple test record
-        from .models import PackingList
-        
-        test_list = PackingList.objects.create(
-            name=f"Test List {timezone.now().strftime('%Y%m%d-%H%M%S')}",
-            description="Test database write functionality"
-        )
-        
-        # Try to update it
-        test_list.description = "Updated test description"
-        test_list.save()
-        
-        # Clean up
-        test_list.delete()
-        
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Database write operations working correctly',
-            'test_id': test_list.id if test_list else 'deleted'
-        })
-    except Exception as e:
-        return JsonResponse({
-            'status': 'error',
-            'error': str(e)
-        }, status=500)
-
+# Sharing functionality views
 def public_list_view(request, share_slug):
     """Public view of a packing list for sharing"""
     try:
@@ -1542,6 +1455,7 @@ def public_list_view(request, share_slug):
     }
     
     return render(request, 'packing_lists/public_list.html', context)
+
 
 def embed_list_view(request, share_slug):
     """Embeddable widget view of a packing list"""
@@ -1592,6 +1506,7 @@ def embed_list_view(request, share_slug):
     response = render(request, 'packing_lists/embed_list.html', context)
     response['X-Frame-Options'] = 'ALLOWALL'  # Allow embedding in iframes
     return response
+
 
 def discover_lists(request):
     """Community discovery page showing popular and recent lists"""

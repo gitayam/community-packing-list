@@ -46,6 +46,11 @@ urlpatterns = [
     path('lists/delete/', views.delete_packing_lists, name='delete_packing_lists'),
     path('list/<int:list_id>/clone/', views.clone_packing_list, name='clone_packing_list'),
     path('list/<int:list_id>/export_pdf/', views.export_packing_list_pdf, name='export_packing_list_pdf'),
+    
+    # Sharing URLs
+    path('share/<slug:share_slug>/', views.public_list_view, name='public_list'),
+    path('embed/<slug:share_slug>/', views.embed_list_view, name='embed_list'),
+    path('discover/', views.discover_lists, name='discover_lists'),
 
     path('list/<int:list_id>/item/<int:pli_id>/edit_modal/', views.edit_item_modal, name='edit_item_modal'),
     

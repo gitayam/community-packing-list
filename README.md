@@ -276,6 +276,10 @@ The application uses a modern design system with:
 - **Accessibility**: ARIA attributes, focus management, keyboard navigation
 - **Performance**: Optimized animations and lazy loading
 
+## 🧭 Roadmap
+
+See the living roadmap for product and UX/UI work: `ROADMAP.md`.
+
 ## 📱 Usage
 
 ### Creating Packing Lists

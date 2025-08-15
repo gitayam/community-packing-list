@@ -3,52 +3,6 @@
 
 {% block title %}{{ packing_list.name }} - Community Packing List{% endblock %}
 
-{% block extra_head %}
-<!-- SEO Meta Tags -->
-<meta name="description" content="Community-shared military packing list: {{ packing_list.name }}. {{ packing_list.description|default:'Comprehensive packing list for military personnel.' }}">
-<meta name="keywords" content="military packing list, {{ packing_list.name }}, army gear, deployment checklist, community shared">
-<meta name="author" content="Community Packing List">
-
-<!-- Open Graph Meta Tags for Social Media -->
-<meta property="og:title" content="{{ packing_list.name }} - Community Packing List">
-<meta property="og:description" content="{{ packing_list.description|default:'Community-shared military packing list with pricing and availability information.' }}">
-<meta property="og:type" content="article">
-<meta property="og:url" content="{{ request.build_absolute_uri }}">
-<meta property="og:site_name" content="Community Packing List">
-<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'packing_lists/img/logo-social.png' %}">
-
-<!-- Twitter Card Meta Tags -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{{ packing_list.name }} - Community Packing List">
-<meta name="twitter:description" content="{{ packing_list.description|default:'Community-shared military packing list with pricing and availability information.' }}">
-<meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'packing_lists/img/logo-social.png' %}">
-
-<!-- Schema.org JSON-LD for Rich Snippets -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Article",
-  "headline": "{{ packing_list.name }}",
-  "description": "{{ packing_list.description|default:'Community-shared military packing list' }}",
-  "author": {
-    "@type": "Organization",
-    "name": "Community Packing List"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "Community Packing List",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "{{ request.scheme }}://{{ request.get_host }}{% static 'packing_lists/img/logo.png' %}"
-    }
-  },
-  "dateCreated": "{{ packing_list.created_at|date:'c' }}",
-  "dateModified": "{{ packing_list.updated_at|date:'c' }}",
-  "url": "{{ request.build_absolute_uri }}"
-}
-</script>
-{% endblock %}
-
 {% block page_header %}
 <div style="display: flex; align-items: center; gap: 12px;">
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-share-2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
@@ -75,45 +29,10 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-package"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                     {{ completion_stats.total }} items
                 </span>
-                <span class="stat-item">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                    {{ packing_list.updated_at|date:"M d, Y" }}
-                </span>
-            </div>
-        </div>
-        
-        <div class="public-actions">
-            <div class="share-options">
-                <h4>Share this list:</h4>
-                <div class="social-share-buttons">
-                    <a href="https://twitter.com/intent/tweet?text=Check%20out%20this%20military%20packing%20list%3A%20{{ packing_list.name|urlencode }}&url={{ request.build_absolute_uri }}" target="_blank" class="social-btn twitter">
-                        Twitter
-                    </a>
-                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="social-btn facebook">
-                        Facebook
-                    </a>
-                    <a href="https://www.reddit.com/submit?url={{ request.build_absolute_uri }}&title={{ packing_list.name|urlencode }}" target="_blank" class="social-btn reddit">
-                        Reddit
-                    </a>
-                    <a href="mailto:?subject=Military%20Packing%20List%3A%20{{ packing_list.name|urlencode }}&body=Check%20out%20this%20packing%20list%3A%20{{ request.build_absolute_uri }}" class="social-btn email">
-                        Email
-                    </a>
-                </div>
-            </div>
-            
-            <div class="list-actions">
-                <a href="{% url 'export_packing_list_pdf' packing_list.id %}" class="button primary" title="Export to PDF">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    Export PDF
-                </a>
-                <button onclick="copyCurrentUrl()" class="button secondary">
-                    Copy Link
-                </button>
             </div>
         </div>
     </div>
 
-    <!-- Progress Bar -->
     {% if completion_stats.total > 0 %}
     <div class="progress-section">
         <div class="progress-header">
@@ -121,146 +40,55 @@
             <span class="progress-text">{{ completion_stats.packed }}/{{ completion_stats.total }} items ({{ completion_stats.completion_rate }}%)</span>
         </div>
         <div class="progress-bar">
-            <div class="progress-fill" style="width: {{ completion_stats.completion_rate }}%"></div>
+            <div class="progress-fill" style="width: {{ completion_stats.completion_rate }}%; background: #10b981; height: 4px; border-radius: 2px;"></div>
         </div>
     </div>
     {% endif %}
 
     <h2>Items ({{ items_with_prices|length }})</h2>
     {% if items_with_prices %}
-        <div class="modern-table-wrapper">
-            <table class="modern-table public-table">
-                <thead>
-                    <tr>
-                        <th>
-                            <span class="th-content">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-square"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-                                Status
-                            </span>
-                        </th>
-                        <th><span class="th-content">Item Name</span></th>
-                        <th><span class="th-content">Qty</span></th>
-                        <th><span class="th-content">Required</span></th>
-                        <th><span class="th-content">Best Store</span></th>
-                        <th><span class="th-content">Price</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% regroup items_with_prices by pli.section as sectioned_items %}
-                    {% for section in sectioned_items %}
-                        {% if section.grouper %}
-                        <tr class="section-header-row">
-                            <td colspan="6" class="section-header-cell">
-                                <strong>{{ section.grouper }}</strong>
-                            </td>
-                        </tr>
-                        {% endif %}
-                        {% for item_wp in section.list %}
-                        <tr class="item-row {% if item_wp.pli.packed %}packed-row{% endif %}">
-                            <td class="status-cell">
-                                {% if item_wp.pli.packed %}
-                                    <span class="status-badge packed">✅ Packed</span>
-                                {% else %}
-                                    <span class="status-badge unpacked">⭕ Not Packed</span>
-                                {% endif %}
-                            </td>
-                            <td class="item-name-cell">
-                                <strong>{{ item_wp.item.name }}</strong>
-                                {% if item_wp.pli.notes %}
-                                    <div class="item-notes">{{ item_wp.pli.notes }}</div>
-                                {% endif %}
-                            </td>
-                            <td class="quantity-cell">
-                                <span class="quantity-badge">{{ item_wp.pli.quantity }}</span>
-                            </td>
-                            <td class="required-cell">
-                                {% if item_wp.pli.required %}
-                                    <span class="status-badge required">Required</span>
-                                {% else %}
-                                    <span class="status-badge optional">Optional</span>
-                                {% endif %}
-                            </td>
-                            <td class="store-cell">
-                                {% if item_wp.prices_with_votes and item_wp.prices_with_votes.0.price.store %}
-                                    <div class="store-info">
-                                        🏪 {{ item_wp.prices_with_votes.0.price.store.name }}
-                                    </div>
-                                {% else %}
-                                    <span class="no-store">No store data</span>
-                                {% endif %}
-                            </td>
-                            <td class="price-cell">
-                                {% if item_wp.prices_with_votes %}
-                                    <div class="price-display">
-                                        <span class="best-price">${{ item_wp.prices_with_votes.0.price.price }}</span>
-                                    </div>
-                                {% else %}
-                                    <span class="no-price">No pricing</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="items-list">
+            {% for item_wp in items_with_prices %}
+            <div class="item-row {% if item_wp.pli.packed %}packed-row{% endif %}" style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee;">
+                <div class="status-cell" style="margin-right: 12px;">
+                    {% if item_wp.pli.packed %}
+                        <span style="color: #059669;">✅</span>
+                    {% else %}
+                        <span style="color: #9ca3af;">⭕</span>
+                    {% endif %}
+                </div>
+                <div class="item-info" style="flex: 1;">
+                    <strong>{{ item_wp.item.name }}</strong>
+                    {% if item_wp.pli.notes %}
+                        <div style="color: #6b7280; font-size: 14px;">{{ item_wp.pli.notes }}</div>
+                    {% endif %}
+                </div>
+                <div class="quantity" style="margin: 0 12px; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 12px;">
+                    Qty: {{ item_wp.pli.quantity }}
+                </div>
+                <div class="price" style="text-align: right;">
+                    {% if item_wp.prices_with_votes and item_wp.prices_with_votes.0.price.store %}
+                        <div style="font-weight: bold;">${{ item_wp.prices_with_votes.0.price.price }}</div>
+                        <div style="font-size: 12px; color: #6b7280;">{{ item_wp.prices_with_votes.0.price.store.name }}</div>
+                    {% else %}
+                        <div style="color: #9ca3af;">No pricing</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
         </div>
     {% else %}
-        <div class="empty-state">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather feather-package"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        <div class="empty-state" style="text-align: center; padding: 40px; color: #6b7280;">
             <h3>No items in this packing list</h3>
             <p>This list appears to be empty.</p>
         </div>
     {% endif %}
 
-    <div class="public-footer">
+    <div class="public-footer" style="margin-top: 40px; text-align: center; padding: 20px; border-top: 1px solid #eee;">
         <div class="cta-section">
             <h3>Want to create your own packing list?</h3>
             <p>Join our community and build customized packing lists with real-time pricing data.</p>
             <a href="{% url 'home' %}" class="button success">Get Started</a>
         </div>
-        
-        <div class="attribution">
-            <p>
-                <small>
-                    Shared via <a href="{% url 'home' %}">Community Packing List</a> • 
-                    Updated {{ packing_list.updated_at|date:"M d, Y" }} • 
-                    View count: {{ packing_list.view_count }}
-                </small>
-            </p>
-        </div>
     </div>
-
-    <script>
-    function copyCurrentUrl() {
-        navigator.clipboard.writeText(window.location.href).then(() => {
-            const button = event.target;
-            const originalText = button.textContent;
-            button.textContent = 'Copied!';
-            button.style.background = '#28a745';
-            button.style.color = 'white';
-            
-            setTimeout(() => {
-                button.textContent = originalText;
-                button.style.background = '';
-                button.style.color = '';
-            }, 2000);
-        }).catch(() => {
-            // Fallback
-            const textArea = document.createElement('textarea');
-            textArea.value = window.location.href;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            
-            const button = event.target;
-            const originalText = button.textContent;
-            button.textContent = 'Copied!';
-            
-            setTimeout(() => {
-                button.textContent = originalText;
-            }, 2000);
-        });
-    }
-    </script>
 {% endblock %}

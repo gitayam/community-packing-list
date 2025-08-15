@@ -6,28 +6,28 @@
 
 {% block content %}
     <div class="actions-bar">
-        <a href="{% url 'create_packing_list' %}" class="button success">Create New List</a>
+        <a href="{% url 'create_packing_list' %}" class="btn btn--success">Create New List</a>
     </div>
     <h2 class="section-title">Available Packing Lists</h2>
-    {% if packing_lists %}
+{% if page_obj %}
         <form id="bulkActionsForm" method="post">
             {% csrf_token %}
-            <div class="bulk-actions" id="bulkActions" style="display: none; margin-bottom: 1.5rem;">
-                <button type="button" class="btn btn-primary" id="mergeBtn" disabled onclick="mergeLists()">Merge</button>
-                <button type="button" class="btn btn-danger" id="deleteBtn" disabled onclick="deleteLists()">Delete</button>
+            <div class="bulk-actions hidden" id="bulkActions">
+                <button type="button" class="btn btn--primary" id="mergeBtn" disabled onclick="mergeLists()">Merge</button>
+                <button type="button" class="btn btn--danger" id="deleteBtn" disabled onclick="deleteLists()">Delete</button>
                 <span id="selectedCount">0 selected</span>
             </div>
             <ul class="packing-lists-ul">
-                {% for plist in packing_lists %}
+                {% for plist in page_obj.object_list %}
                     <li class="packing-list-entry">
-                        <div class="list-entry-header" style="display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;">
-                            <div class="list-entry-title-group" style="display: flex; align-items: center; gap: 1rem; min-width: 0; flex: 1 1 60%;">
-                                <label class="list-checkbox" style="margin: 0;">
+                        <div class="list-entry-header">
+                            <div class="list-entry-title-group">
+                                <label class="list-checkbox">
                                     <input type="checkbox" class="list-select" value="{{ plist.id }}" onchange="updateBulkActions()">
                                     <span class="checkmark"></span>
                                 </label>
-                                <h3 style="margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; min-width: 0; font-size: 1.1em;">
-                                    <a href="{% url 'view_packing_list' plist.id %}" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; max-width: 100%; vertical-align: middle;">{{ plist.name }}</a>
+                                <h3 class="list-entry-title">
+                                    <a href="{% url 'view_packing_list' plist.id %}" class="truncate">{{ plist.name }}</a>
                                 </h3>
                                 {% if plist.school %}
                                     <span class="school-tag">
@@ -36,13 +36,13 @@
                                     </span>
                                 {% endif %}
                             </div>
-                            <div class="list-actions" style="display: flex; gap: 0.3rem; align-items: center; flex-shrink: 0;">
-                                <a href="{% url 'view_packing_list' plist.id %}" class="button text-small" style="padding: 0.25em 0.7em; font-size: 0.92em; min-width: 60px;">
+                            <div class="list-actions">
+                                <a href="{% url 'view_packing_list' plist.id %}" class="btn btn--secondary btn--sm">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                     View
                                 </a>
-                                <a href="{% url 'clone_packing_list' plist.id %}" class="button text-small" style="padding: 0.25em 0.7em; font-size: 0.92em; min-width: 60px;">Clone</a>
-                                <a href="{% url 'export_packing_list_pdf' plist.id %}" class="button text-small" style="padding: 0.25em 0.7em; font-size: 0.92em; min-width: 80px;">Export PDF</a>
+                                <a href="{% url 'clone_packing_list' plist.id %}" class="btn btn--secondary btn--sm">Clone</a>
+                                <a href="{% url 'export_packing_list_pdf' plist.id %}" class="btn btn--secondary btn--sm">Export PDF</a>
                             </div>
                         </div>
                         {% if plist.description %}
@@ -53,6 +53,17 @@
                     </li>
                 {% endfor %}
             </ul>
+            {% if is_paginated %}
+            <nav class="pagination" aria-label="Pagination">
+                {% if page_obj.has_previous %}
+                    <a class="btn btn--secondary btn--sm" href="?page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">Previous</a>
+                {% endif %}
+                <span class="mx-2">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                    <a class="btn btn--secondary btn--sm" href="?page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">Next</a>
+                {% endif %}
+            </nav>
+            {% endif %}
         </form>
     {% else %}
         <div class="info-box no-lists-box">
@@ -107,31 +118,5 @@ function deleteLists() {
 }
 document.addEventListener('DOMContentLoaded', updateBulkActions);
 </script>
-
-<style>
-.packing-list-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-.list-checkbox {
-    margin-right: 10px;
-}
-.list-actions {
-    margin-left: auto;
-    display: flex;
-    gap: 8px;
-}
-.bulk-actions {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius);
-    padding: 10px 20px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-</style>
+ 
 {% endblock %} 

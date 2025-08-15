@@ -236,16 +236,26 @@ This scaling implementation provides a solid foundation for further growth to 10
 ## Development Patterns
 
 ### Frontend Development
-- Use consistent CSS classes and avoid inline styles
-- Implement loading states for all AJAX operations
-- Provide keyboard accessibility (ESC to close modals)
-- Use SVG icons instead of emojis for professional appearance
+- Use consistent CSS classes and avoid inline styles; extract page-specific inline styles into `src/styles/main.css` utilities.
+- Implement loading states for all AJAX operations.
+- Provide keyboard accessibility (ESC to close modals, focus trap, restore focus to trigger).
+- Use SVG icons instead of emojis for professional appearance; include `aria-label` on icon-only buttons.
+- Prefer toggling visibility with utility classes (e.g., `hidden`) instead of inline `style` attributes for easier state control.
 
 ### Backend Development
-- Implement proper form validation and error handling
-- Use Django's built-in security features
-- Create comprehensive test suites
-- Handle edge cases in parsers and data processing
+- Implement proper form validation and error handling.
+- Use Django's built-in security features.
+- Create comprehensive test suites.
+- Handle edge cases in parsers and data processing.
+- Gate mutating actions (create/edit Stores, create/merge/delete/clone Packing Lists) behind authentication.
+- Allow anonymous price submissions with rate limiting and trust scoring; mask IPs in UI (partial hash).
+- Provide time-series endpoints for items’ price history to enable macro analysis.
+
+### UI State & Preferences
+- Persist non-sensitive UI preferences such as list view mode and dark mode in `localStorage` for better user experience.
+
+### Accessibility Testing
+- Run axe DevTools on key pages (Home, Lists, Items, Packing List Detail) and treat critical/serious issues as blockers.
 
 ### Database Management
 - Always create migrations for schema changes

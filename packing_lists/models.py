@@ -94,11 +94,11 @@ class PackingList(models.Model):
     direct_url = models.URLField(blank=True, null=True, help_text="Direct URL to the official or source list")
     uploaded_file = models.FileField(upload_to="packing_list_uploads/", blank=True, null=True, help_text="Upload a file for this list (CSV, Excel, PDF, etc.)")
     
-    # Sharing and community features
+    # Sharing functionality fields
     is_public = models.BooleanField(default=True, help_text="Allow this list to be shared publicly")
-    share_slug = models.SlugField(max_length=100, unique=True, blank=True, null=True, help_text="Unique URL slug for sharing")
+    share_slug = models.SlugField(max_length=100, unique=True, null=True, blank=True, help_text="Unique URL slug for sharing")
     view_count = models.PositiveIntegerField(default=0, help_text="Number of times this list has been viewed")
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     # user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True) # If user-specific lists
@@ -148,15 +148,18 @@ class PackingList(models.Model):
         required_items = self.items.filter(required=True).count()
         packed_required = self.items.filter(packed=True, required=True).count()
         
+        completion_rate = round((packed_items / total_items * 100) if total_items > 0 else 0, 1)
+        required_completion_rate = round((packed_required / required_items * 100) if required_items > 0 else 0, 1)
+        
         return {
             'total': total_items,
             'packed': packed_items,
             'required': required_items,
             'packed_required': packed_required,
-            'completion_rate': round((packed_items / total_items) * 100) if total_items > 0 else 0,
-            'required_completion_rate': round((packed_required / required_items) * 100) if required_items > 0 else 0,
+            'completion_rate': completion_rate,
+            'required_completion_rate': required_completion_rate,
         }
-
+    
     def __str__(self):
         return self.name
 

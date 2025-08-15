@@ -17,6 +17,8 @@ if not SECRET_KEY:
 # Allowed hosts for cloud deployment
 ALLOWED_HOSTS = [
     '.run.app',
+    '*.run.app',
+    'community-packing-list-nesvf2duwa-uc.a.run.app',
     '.appspot.com',
     'localhost',
     '127.0.0.1',
