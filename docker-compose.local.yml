@@ -15,7 +15,7 @@ services:
       - POSTGRES_USER=packinglist_user
       - POSTGRES_PASSWORD=localdevpassword
     ports:
-      - "5433:5432"
+      - "5434:5432"  # Changed from 5433 to avoid conflicts
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U packinglist_user -d packinglist_dev"]
       interval: 10s
@@ -29,7 +29,7 @@ services:
     image: redis:7-alpine
     container_name: packing_list_redis_local
     ports:
-      - "6379:6379"
+      - "6380:6379"  # Changed from 6379 to avoid conflicts
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -55,7 +55,7 @@ services:
       - static_volume_local:/app/staticfiles
       - media_volume_local:/app/media
     ports:
-      - "8000:8000"
+      - "8001:8000"  # Changed from 8000 to avoid conflicts with OmniCore
     env_file:
       - .env.local
     environment:
@@ -93,7 +93,7 @@ services:
     environment:
       - NODE_ENV=development
     ports:
-      - "3000:3000"  # If webpack-dev-server is configured
+      - "3001:3000"  # Changed from 3000 to avoid conflicts
     networks:
       - packing_list_network
 
@@ -116,8 +116,8 @@ services:
     image: mailhog/mailhog:latest
     container_name: packing_list_mailhog_local
     ports:
-      - "1025:1025"  # SMTP server
-      - "8025:8025"  # Web UI
+      - "1026:1025"  # SMTP server - changed to avoid conflicts
+      - "8026:8025"  # Web UI - changed to avoid conflicts
     networks:
       - packing_list_network
 

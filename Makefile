@@ -178,9 +178,17 @@ setup: ## Initial project setup
 .PHONY: quick-start
 quick-start: setup dev-build migrate createsuperuser ## Quick start for new developers
 	@echo "Development environment is ready!"
-	@echo "Access the application at http://localhost:8000"
-	@echo "Access the admin at http://localhost:8000/admin"
-	@echo "Access Mailhog at http://localhost:8025"
+	@echo "Access the application at http://localhost:8001"
+	@echo "Access the admin at http://localhost:8001/admin"
+	@echo "Access Mailhog at http://localhost:8026"
+	@echo ""
+	@echo "Port mappings (to avoid conflicts with OmniCore):"
+	@echo "  - Web App: 8001 (internal: 8000)"
+	@echo "  - PostgreSQL: 5434 (internal: 5432)"
+	@echo "  - Redis: 6380 (internal: 6379)"
+	@echo "  - Mailhog SMTP: 1026 (internal: 1025)"
+	@echo "  - Mailhog Web: 8026 (internal: 8025)"
+	@echo "  - Frontend Dev: 3001 (internal: 3000)"
 
 # Default target
 .DEFAULT_GOAL := help
