@@ -321,8 +321,8 @@ h3 {
   color: var(--military-navy);
 }
 
-/* Military Buttons */
-button, .button, a.button {
+/* Military Buttons - Only apply to specific button classes, not all buttons */
+.button, a.button, button.military {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -346,7 +346,7 @@ button, .button, a.button {
   overflow: hidden;
 }
 
-button::before, .button::before, a.button::before {
+.button::before, a.button::before, button.military::before {
   content: '';
   position: absolute;
   top: 0;
@@ -357,11 +357,11 @@ button::before, .button::before, a.button::before {
   transition: left 0.5s;
 }
 
-button:hover::before, .button:hover::before, a.button:hover::before {
+.button:hover::before, a.button:hover::before, button.military:hover::before {
   left: 100%;
 }
 
-button:hover, .button:hover, a.button:hover {
+.button:hover, a.button:hover, button.military:hover {
   background: linear-gradient(135deg, var(--military-olive) 0%, var(--military-navy) 100%);
   color: var(--text-light);
   text-decoration: none;
@@ -370,32 +370,32 @@ button:hover, .button:hover, a.button:hover {
   border-color: var(--military-khaki);
 }
 
-button.secondary, a.button.secondary {
+.button.secondary, a.button.secondary, button.military.secondary {
   background: linear-gradient(135deg, var(--military-khaki) 0%, #B8A98A 100%);
   border-color: var(--military-khaki);
   color: var(--military-dark);
 }
 
-button.secondary:hover, a.button.secondary:hover {
+.button.secondary:hover, a.button.secondary:hover, button.military.secondary:hover {
   background: linear-gradient(135deg, #B8A98A 0%, var(--military-khaki) 100%);
   color: var(--military-dark);
 }
 
-button.success, a.button.success {
+.button.success, a.button.success, button.military.success {
   background: linear-gradient(135deg, var(--status-complete) 0%, #1E7E34 100%);
   border-color: var(--status-complete);
 }
 
-button.success:hover, a.button.success:hover {
+.button.success:hover, a.button.success:hover, button.military.success:hover {
   background: linear-gradient(135deg, #1E7E34 0%, var(--status-complete) 100%);
 }
 
-button.danger, a.button.danger {
+.button.danger, a.button.danger, button.military.danger {
   background: linear-gradient(135deg, var(--status-required) 0%, #B02A37 100%);
   border-color: var(--status-required);
 }
 
-button.danger:hover, a.button.danger:hover {
+.button.danger:hover, a.button.danger:hover, button.military.danger:hover {
   background: linear-gradient(135deg, #B02A37 0%, var(--status-required) 100%);
 }
 

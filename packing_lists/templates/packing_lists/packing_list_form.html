@@ -98,7 +98,7 @@
             </p>
             {% endif %}
         {% endfor %}
-        <button type="submit" class="button success">Save</button>
+        <button type="submit" class="button success military">Save</button>
         <a href="{% if packing_list %}{% url 'view_packing_list' packing_list.id %}{% else %}{% url 'home' %}{% endif %}" class="button secondary">Cancel</a>
     </form>
     <div>
