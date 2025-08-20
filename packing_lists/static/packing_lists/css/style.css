@@ -2204,7 +2204,7 @@ a:focus {
 }
 
 .action-btn {
-  background: none;
+  background: white;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-sm);
   width: 32px;
@@ -2216,6 +2216,14 @@ a:focus {
   color: var(--text-secondary);
   transition: all 0.2s ease;
   text-decoration: none;
+}
+
+.action-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
 }
 
 .action-btn:hover {
