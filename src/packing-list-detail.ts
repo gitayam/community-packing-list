@@ -1,4 +1,4 @@
-import { DOMUtils, FormUtils } from './common';
+import { DOMUtils, FormUtils, UIUtils } from './common';
 import { apiService } from './services/ApiService';
 import { logger } from './services/Logger';
 import { appState, StateUtils } from './services/StateManager';
