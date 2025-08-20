@@ -2204,18 +2204,27 @@ a:focus {
 }
 
 .action-btn {
-  background: white;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--text-secondary);
+  /* Force button appearance */
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background: white !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-sm) !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  color: var(--text-secondary) !important;
   transition: all 0.2s ease;
   text-decoration: none;
+  padding: 0 !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
 }
 
 .action-btn svg {
@@ -2224,6 +2233,19 @@ a:focus {
   stroke: currentColor;
   fill: none;
   stroke-width: 2;
+}
+
+/* Specifically target button elements with action-btn class */
+button.action-btn {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  /* Reset any inherited button styles */
+  background: white !important;
+  border: 1px solid var(--border-color) !important;
+  text-transform: none !important;
+  font-weight: normal !important;
+  letter-spacing: normal !important;
 }
 
 .action-btn:hover {
