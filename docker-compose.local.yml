@@ -1,0 +1,132 @@
+# Docker Compose for Local Development
+# Usage: docker-compose -f docker-compose.local.yml up
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: packing_list_db_local
+    volumes:
+      - postgres_data_local:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=packinglist_dev
+      - POSTGRES_USER=packinglist_user
+      - POSTGRES_PASSWORD=localdevpassword
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U packinglist_user -d packinglist_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - packing_list_network
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: packing_list_redis_local
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - packing_list_network
+
+  # Django Web Application (Development Mode)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: packing_list_web_local
+    command: >
+      sh -c "
+        python manage.py migrate &&
+        python manage.py collectstatic --noinput &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+    volumes:
+      - .:/app
+      - static_volume_local:/app/staticfiles
+      - media_volume_local:/app/media
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.local
+    environment:
+      - DEBUG=True
+      - DJANGO_SETTINGS_MODULE=community_packing_list.settings
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=packinglist_dev
+      - DB_USER=packinglist_user
+      - DB_PASS=localdevpassword
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+      - NODE_ENV=development
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - packing_list_network
+
+  # TypeScript/Webpack Development Server (Hot Reload)
+  frontend:
+    image: node:18-alpine
+    container_name: packing_list_frontend_local
+    working_dir: /app
+    volumes:
+      - .:/app
+      - node_modules_local:/app/node_modules
+    command: >
+      sh -c "
+        npm install &&
+        npm run dev
+      "
+    environment:
+      - NODE_ENV=development
+    ports:
+      - "3000:3000"  # If webpack-dev-server is configured
+    networks:
+      - packing_list_network
+
+  # CSS Watcher for PostCSS
+  css:
+    image: node:18-alpine
+    container_name: packing_list_css_local
+    working_dir: /app
+    volumes:
+      - .:/app
+      - node_modules_local:/app/node_modules
+    command: npm run css:dev
+    environment:
+      - NODE_ENV=development
+    networks:
+      - packing_list_network
+
+  # Mailhog for email testing (optional)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: packing_list_mailhog_local
+    ports:
+      - "1025:1025"  # SMTP server
+      - "8025:8025"  # Web UI
+    networks:
+      - packing_list_network
+
+networks:
+  packing_list_network:
+    driver: bridge
+
+volumes:
+  postgres_data_local:
+  static_volume_local:
+  media_volume_local:
+  node_modules_local:
