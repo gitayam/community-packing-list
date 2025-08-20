@@ -17,9 +17,30 @@ from datetime import datetime
 from reportlab.lib.utils import simpleSplit
 from django.template.loader import render_to_string
 import logging
+import math
 
 # Requires login for actions that modify data if user accounts are active
 # from django.contrib.auth.decorators import login_required
+
+def haversine(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great circle distance between two points 
+    on the earth (specified in decimal degrees)
+    Returns distance in miles
+    """
+    # Convert decimal degrees to radians
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    
+    # Haversine formula
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    
+    # Radius of earth in miles
+    r = 3959
+    
+    return c * r
 
 
 def home(request):

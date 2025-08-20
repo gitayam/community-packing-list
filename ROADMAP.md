@@ -1,15 +1,89 @@
-# Community Packing List — Product & UX/UI Roadmap
+# Community Packing List — Comprehensive Development Roadmap
 
-This roadmap focuses on elevating usability, accessibility, and visual quality while keeping performance and maintainability at the forefront. All development should follow the Docker-only workflow and Django + TypeScript best practices in this repo.
+This roadmap provides a complete development strategy focusing on critical infrastructure fixes, security hardening, UI/UX modernization, and Docker deployment setup. All development follows Django + TypeScript best practices with a security-first approach.
+
+## 🚨 Critical Issues (Immediate Action Required)
+
+### Security Vulnerabilities
+- **DEBUG=True in production** - Exposes sensitive information
+- **Weak SECRET_KEY** - Uses Django's insecure default
+- **Missing security headers** - No HSTS, CSP, secure cookies
+- **No rate limiting** - Vulnerable to brute force attacks
+
+### Test Infrastructure Failures
+- **22 Django test errors** - Missing URLs, undefined functions
+- **8 Django test failures** - Form validation, model issues
+- **Jest environment broken** - Missing jest-environment-jsdom
+- **ESLint configuration broken** - Missing TypeScript packages
+
+### Code Quality Issues
+- **Console.log in production** - Debug code left in TypeScript files
+- **Missing type safety** - Any types throughout codebase
+- **Inconsistent error handling** - Mix of alert() and Modal.alert()
+- **No pre-commit hooks** - No automated quality checks
 
 ## Guiding Principles
-- Accessibility first (keyboard navigation, ARIA, color contrast)
-- Mobile-first responsive layouts
-- Don’t ship unnecessary data to the client (server-side filtering/pagination)
-- Consistent components and design tokens (CSS custom properties already in use)
-- Progressive enhancement: fast, resilient features with graceful fallbacks
+- **Security first** - All changes must pass security review
+- **Test-driven development** - Fix tests before adding features
+- **Accessibility first** (keyboard navigation, ARIA, color contrast)
+- **Mobile-first responsive layouts**
+- **Docker-based deployment** - Consistent environments
+- **Progressive enhancement** - Fast, resilient features with graceful fallbacks
+- **Clean code** - No console.log, proper types, consistent patterns
 
-## Phase 1 — Foundation and Quick Wins (1–2 sprints)
+## Branch Strategy & Git Workflow
+
+### Branch Naming Convention
+- `fix/` - Bug fixes and corrections
+- `feat/` - New features
+- `perf/` - Performance improvements
+- `docs/` - Documentation updates
+- `test/` - Test additions/fixes
+- `refactor/` - Code refactoring
+- `style/` - UI/UX improvements
+- `chore/` - Build/config updates
+- `security/` - Security fixes
+
+### Recommended Branches for Each Phase
+1. **Phase 0 (Today):** `security/critical-fixes` - Security hardening
+2. **Phase 0 (Today):** `fix/test-infrastructure` - Fix Jest and Django tests
+3. **Phase 1:** `feat/docker-local-deployment` - Docker compose setup
+4. **Phase 2:** `style/ui-modernization` - CSS improvements, dark mode
+5. **Phase 3:** `feat/complete-features` - Geographic features, auth
+6. **Phase 4:** `perf/optimization` - Code splitting, caching
+
+## Phase 0 — Critical Security & Infrastructure Fixes (TODAY - 2 days)
+**Branch:** `security/critical-fixes` and `fix/test-infrastructure`
+
+### Security Hardening (URGENT)
+- [ ] Generate new SECRET_KEY using Django's get_random_secret_key()
+- [ ] Set DEBUG=False for production settings
+- [ ] Add SECURE_HSTS_SECONDS = 31536000
+- [ ] Enable SECURE_SSL_REDIRECT = True
+- [ ] Set SESSION_COOKIE_SECURE = True
+- [ ] Set CSRF_COOKIE_SECURE = True
+- [ ] Implement rate limiting middleware
+- [ ] Add CSP headers configuration
+- [ ] Remove .env from git tracking
+
+### Test Infrastructure Restoration
+- [ ] Install jest-environment-jsdom
+- [ ] Fix ESLint configuration and install missing packages
+- [ ] Fix haversine function import in views.py
+- [ ] Add missing URL patterns in urls.py
+- [ ] Fix Item model nsn_lin field reference
+- [ ] Update form validation for price limits
+- [ ] Run and fix all Django tests
+- [ ] Set up pre-commit hooks
+
+### Development Tooling
+- [ ] Remove all console.log statements from production code
+- [ ] Replace 'any' types with proper TypeScript types
+- [ ] Standardize error handling (use Modal.alert consistently)
+- [ ] Configure TypeScript strict mode
+
+## Phase 1 — Docker Local Deployment (Days 3-5)
+**Branch:** `feat/docker-local-deployment`
 
 - Navigation & IA
   - Add global quick search entry in the header to find Lists, Items, and Stores.

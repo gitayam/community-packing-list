@@ -657,28 +657,22 @@ class PackingListDetailManager {
     const addStoreDiv = form.querySelector('#inline-add-store') as HTMLElement;
     const storeNameInput = form.querySelector('#id_store_name') as HTMLInputElement;
 
-    console.log('Setting up store selection:', { storeSelect, addStoreDiv, storeNameInput });
 
     if (!storeSelect || !addStoreDiv) {
-      console.log('Missing store selection elements');
       return;
     }
 
     // Log all available options
     const options = Array.from(storeSelect.options);
-    console.log('Store dropdown options:', options.map(opt => ({ value: opt.value, text: opt.text })));
 
     storeSelect.addEventListener('change', () => {
-      console.log('Store selection changed to:', storeSelect.value);
       if (storeSelect.value === '__add_new__') {
-        console.log('Showing add store section');
         addStoreDiv.style.display = 'block';
         if (storeNameInput) {
           storeNameInput.required = true;
           storeNameInput.focus();
         }
       } else {
-        console.log('Hiding add store section');
         addStoreDiv.style.display = 'none';
         if (storeNameInput) {
           storeNameInput.required = false;
@@ -689,7 +683,6 @@ class PackingListDetailManager {
 
     // Initialize the correct state
     if (storeSelect.value === '__add_new__') {
-      console.log('Initializing add store section as visible');
       addStoreDiv.style.display = 'block';
       if (storeNameInput) {
         storeNameInput.required = true;
@@ -991,7 +984,6 @@ class PackingListDetailManager {
   }
 
   private injectActionButtonIcons(): void {
-    console.log('Injecting SVG icons into action buttons...');
     
     // Define SVG icons
     const icons = {
@@ -1007,41 +999,33 @@ class PackingListDetailManager {
       
       // Add price buttons
       const addPriceBtns = document.querySelectorAll('.add-price-btn .btn-icon');
-      console.log(`Attempt ${attempt}: Found ${addPriceBtns.length} add-price button icons`);
       addPriceBtns.forEach((icon: Element) => {
         if (icon.textContent?.trim() === '$' || icon.innerHTML.trim() === '') {
           icon.innerHTML = icons.addPrice;
-          console.log('Injected add-price icon');
         }
       });
 
       // Expand price buttons  
       const expandPriceBtns = document.querySelectorAll('.expand-price-btn .btn-icon');
-      console.log(`Attempt ${attempt}: Found ${expandPriceBtns.length} expand-price button icons`);
       expandPriceBtns.forEach((icon: Element) => {
         if (icon.textContent?.includes('📊') || icon.innerHTML.trim() === '') {
           icon.innerHTML = icons.expandPrice;
-          console.log('Injected expand-price icon');
         }
       });
 
       // Edit item buttons
       const editItemBtns = document.querySelectorAll('.edit-item-btn .btn-icon');
-      console.log(`Attempt ${attempt}: Found ${editItemBtns.length} edit-item button icons`);
       editItemBtns.forEach((icon: Element) => {
         if (icon.textContent?.trim() === '✏' || icon.innerHTML.trim() === '') {
           icon.innerHTML = icons.editItem;
-          console.log('Injected edit-item icon');
         }
       });
 
       // Review buttons
       const reviewBtns = document.querySelectorAll('.review-btn .btn-icon');
-      console.log(`Attempt ${attempt}: Found ${reviewBtns.length} review button icons`);
       reviewBtns.forEach((icon: Element) => {
         if (icon.textContent?.trim() === '★' || icon.innerHTML.trim() === '') {
           icon.innerHTML = icons.review;
-          console.log('Injected review icon');
         }
       });
 
@@ -1049,13 +1033,10 @@ class PackingListDetailManager {
       const totalButtons = addPriceBtns.length + expandPriceBtns.length + editItemBtns.length + reviewBtns.length;
       const iconsInjected = document.querySelectorAll('.action-btn svg').length;
       
-      console.log(`Total buttons: ${totalButtons}, Icons injected: ${iconsInjected}`);
       
       if (iconsInjected === 0 && attempt < maxAttempts && totalButtons > 0) {
-        console.log(`No icons injected on attempt ${attempt}, retrying in 100ms...`);
         setTimeout(() => injectIcons(attempt + 1), 100);
       } else {
-        console.log(`Icon injection complete. Attempt ${attempt}, ${iconsInjected} icons injected.`);
       }
     };
 
