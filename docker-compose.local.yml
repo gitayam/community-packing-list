@@ -15,7 +15,7 @@ services:
       - POSTGRES_USER=packinglist_user
       - POSTGRES_PASSWORD=localdevpassword
     ports:
-      - "5434:5432"  # Changed from 5433 to avoid conflicts
+      - "5435:5432"  # Changed to 5435 to avoid conflicts
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U packinglist_user -d packinglist_dev"]
       interval: 10s
@@ -93,7 +93,7 @@ services:
     environment:
       - NODE_ENV=development
     ports:
-      - "3001:3000"  # Changed from 3000 to avoid conflicts
+      - "3003:3000"  # Changed to 3003 to avoid conflicts
     networks:
       - packing_list_network
 

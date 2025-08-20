@@ -773,6 +773,102 @@ a:hover {
     grid-template-columns: 1fr;
     gap: var(--space-4);
   }
+
+/* Inline-style replacements and utilities */
+.home-auth-box {
+  margin-bottom: var(--space-8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+  flex-direction: column;
+  text-align: center;
+}
+
+@media (min-width: 600px) {
+  .home-auth-box {
+    flex-direction: row;
+    text-align: left;
+  }
+  .home-auth-box .btn {
+    min-width: 120px;
+  }
+  .home-auth-content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    justify-content: flex-start;
+  }
+}
+
+.home-auth-actions {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: center;
+  margin-top: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.hero-title { margin-bottom: 0.5rem; }
+.lead { margin-bottom: 0.5rem; }
+
+/* Lists page layout helpers */
+.list-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.list-entry-title-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+  flex: 1 1 60%;
+}
+
+.list-entry-title { 
+  margin: 0; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  white-space: nowrap; 
+  flex: 1 1 auto; 
+  min-width: 0; 
+  font-size: 1.1em; 
+}
+
+.list-actions { 
+  display: flex; 
+  gap: 0.3rem; 
+  align-items: center; 
+  flex-shrink: 0; 
+}
+
+/* Grid utilities */
+.auto-grid-200 { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+/* Icon helpers */
+.icon { display: inline-block; vertical-align: middle; }
+.icon-sm { width: 16px; height: 16px; }
+.icon-md { width: 20px; height: 20px; }
+.icon-inline { margin-right: 4px; }
+
+/* Image helpers */
+.item-image { 
+  max-width: 100%; 
+  height: auto; 
+  border-radius: var(--radius-md);
+}
+
+/* Visibility helpers */
+.hidden { display: none !important; }
 }
 /* Enhanced Button States and Interactions */
 .btn {
