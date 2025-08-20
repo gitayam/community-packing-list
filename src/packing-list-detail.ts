@@ -4,6 +4,7 @@ import { logger } from './services/Logger';
 import { appState, StateUtils } from './services/StateManager';
 import { cacheService, CacheConfigs } from './services/CacheService';
 import type { TableSortState, FilterState, PriceDetailsData, TableRowData } from './types';
+import { Modal } from './components/Modal';
 
 class PackingListDetailManager {
   private filterInput: HTMLInputElement | null = null;
@@ -379,7 +380,7 @@ class PackingListDetailManager {
       if (!priceId) return;
       
       try {
-        const response = await apiClient.get(`/api/price/${priceId}/anonymous-info/`);
+        const response = await apiService.get(`/api/price/${priceId}/anonymous-info/`);
         
         if (response.success && response.data) {
           this.showAnonymousPopup(indicator, response.data);
@@ -492,35 +493,114 @@ class PackingListDetailManager {
     
     // Add Price: open add price modal
     if (target.closest('.add-price-btn')) {
+      event.preventDefault();
+      event.stopPropagation();
+      
       const btn = target.closest('.add-price-btn') as HTMLElement;
       const itemId = btn.dataset.itemId;
       const listId = btn.dataset.listId;
-      if (!itemId || !listId) {
-        return Promise.resolve();
-      }
-      UIUtils.showLoading(btn as HTMLButtonElement);
+      
+      if (!itemId || !listId) return;
+      
+      this.showButtonLoading(btn as HTMLButtonElement);
+      
       try {
         const url = `/item/${itemId}/add_price_modal/to_list/${listId}/`;
-        const response = await apiClient.get(url);
+        const response = await apiService.get(url, { useCache: false });
+        
         if (response.html) {
-          const modal = DOMUtils.getElement<HTMLElement>('#price-modal');
-          const modalBody = DOMUtils.getElement<HTMLElement>('#price-modal-body');
-          if (modal && modalBody) {
-            modalBody.innerHTML = response.html;
-            UIUtils.showModal('price-modal');
-            const form = modalBody.querySelector('form') as HTMLFormElement;
+          // Create content element first so we can query it
+          const contentElement = document.createElement('div');
+          contentElement.innerHTML = response.html;
+          
+          // Create and open modal using Modal component
+          const modal = new Modal({
+            title: 'Add Price',
+            content: contentElement,
+            size: 'md',
+          });
+          
+          // Set up form submission handler
+          modal.on('open', () => {
+            const form = contentElement.querySelector('form') as HTMLFormElement;
             if (form) {
               this.setupPriceFormSubmission(form, itemId, listId);
             }
-          }
+            
+            // Focus first input
+            setTimeout(() => {
+              const firstInput = contentElement.querySelector('input, select, textarea') as HTMLElement;
+              if (firstInput) {
+                firstInput.focus();
+              }
+            }, 100);
+          });
+          
+          await modal.open();
         }
       } catch (error) {
-        console.error('Error loading price form:', error);
-        UIUtils.showNotification('Error loading price form. Please try again.', 'error');
+        logger.error('Error loading add price modal', 'packing_list', error);
+        StateUtils.addNotification('Error loading price form. Please try again.', 'error');
       } finally {
-        UIUtils.hideLoading(btn as HTMLButtonElement, 'Add Price');
+        this.hideButtonLoading(btn as HTMLButtonElement, 'Add Price');
       }
     }
+    
+    // Edit Price: open edit price modal
+    else if (target.closest('.edit-price-btn')) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const btn = target.closest('.edit-price-btn') as HTMLElement;
+      const priceId = btn.dataset.priceId;
+      const listId = btn.dataset.listId;
+      
+      if (!priceId || !listId) return;
+      
+      this.showButtonLoading(btn as HTMLButtonElement);
+      
+      try {
+        const url = `/list/${listId}/price/${priceId}/edit_modal/`;
+        const response = await apiService.get(url, { useCache: false });
+        
+        if (response.html) {
+          // Create content element first so we can query it
+          const contentElement = document.createElement('div');
+          contentElement.innerHTML = response.html;
+          
+          // Create and open modal using Modal component
+          const modal = new Modal({
+            title: 'Edit Price',
+            content: contentElement,
+            size: 'md',
+          });
+          
+          // Set up form submission handler
+          modal.on('open', () => {
+            const form = contentElement.querySelector('form') as HTMLFormElement;
+            if (form) {
+              this.setupPriceFormSubmission(form, '', listId);
+            }
+            
+            // Focus first input
+            setTimeout(() => {
+              const firstInput = contentElement.querySelector('input, select, textarea') as HTMLElement;
+              if (firstInput) {
+                firstInput.focus();
+              }
+            }, 100);
+          });
+          
+          await modal.open();
+        }
+      } catch (error) {
+        logger.error('Error loading edit price modal', 'packing_list', error);
+        StateUtils.addNotification('Error loading price form. Please try again.', 'error');
+      } finally {
+        this.hideButtonLoading(btn as HTMLButtonElement, 'Edit');
+      }
+    }
+    
     // Expand Price: open price details
     else if (target.closest('.expand-price-btn')) {
       const btn = target.closest('.expand-price-btn') as HTMLElement;
@@ -678,15 +758,15 @@ class PackingListDetailManager {
         const storeName = formData.get('store_name');
         
         if (!price) {
-          UIUtils.showNotification('Price is required', 'error');
+          StateUtils.addNotification('Price is required', 'error');
           return;
         }
         if (!quantity) {
-          UIUtils.showNotification('Quantity is required', 'error');
+          StateUtils.addNotification('Quantity is required', 'error');
           return;
         }
         if (!store && !storeName) {
-          UIUtils.showNotification('Please select a store or enter a new store name', 'error');
+          StateUtils.addNotification('Please select a store or enter a new store name', 'error');
           return;
         }
         
@@ -706,8 +786,7 @@ class PackingListDetailManager {
         const data = await response.json();
 
         if (data.success) {
-          UIUtils.hideModal('price-modal');
-          UIUtils.showNotification('Price added successfully!', 'success');
+          Modal.alert('Price added successfully!', 'Success');
           location.reload(); // Refresh to show new price
         } else if (data.html) {
           const modalBody = DOMUtils.getElement<HTMLElement>('#price-modal-body');
@@ -719,16 +798,16 @@ class PackingListDetailManager {
             }
           }
         } else if (data.message) {
-          UIUtils.showNotification(data.message, 'error');
+          StateUtils.addNotification(data.message, 'error');
         } else {
-          UIUtils.showNotification('Unknown error occurred', 'error');
+          StateUtils.addNotification('Unknown error occurred', 'error');
         }
       } catch (error) {
-        UIUtils.showNotification('Error adding price. Please try again.', 'error');
+        StateUtils.addNotification('Error adding price. Please try again.', 'error');
       } finally {
         // Remove loading state
         if (submitBtn) {
-          UIUtils.hideLoading(submitBtn, 'Save Price');
+          this.hideButtonLoading(submitBtn, 'Save Price');
         }
       }
     });
@@ -736,37 +815,60 @@ class PackingListDetailManager {
 
   private async handleEditItemModalClick(event: Event): Promise<void> {
     const target = event.target as HTMLElement;
-    if (target.closest('.edit-item-btn') || target.closest('.edit-item-link')) {
-      const btn = target.closest('.edit-item-btn, .edit-item-link') as HTMLElement;
-      const listId = btn.dataset.listId;
+    
+    if (target.closest('.edit-item-btn')) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const btn = target.closest('.edit-item-btn') as HTMLElement;
       const pliId = btn.dataset.pliId;
-      if (!listId || !pliId) return Promise.resolve();
-      // Prevent default if it's a link
-      if (btn.classList.contains('edit-item-link')) {
-        event.preventDefault();
-      }
-      UIUtils.showLoading(btn as HTMLButtonElement);
+      const listId = btn.dataset.listId;
+      
+      if (!pliId || !listId) return;
+      
+      this.showButtonLoading(btn as HTMLButtonElement);
+      
       try {
-        const response = await apiClient.get(`/list/${listId}/item/${pliId}/edit_modal/`);
+        const response = await apiService.get(`/list/${listId}/item/${pliId}/edit_modal/`);
+        
         if (response.html) {
-          const modal = DOMUtils.getElement<HTMLElement>('#edit-item-modal');
-          const modalBody = DOMUtils.getElement<HTMLElement>('#edit-item-modal-body');
-          if (modal && modalBody) {
-            modalBody.innerHTML = response.html;
-            UIUtils.showModal('edit-item-modal');
-            const form = modalBody.querySelector('form') as HTMLFormElement;
+          // Create content element first so we can query it
+          const contentElement = document.createElement('div');
+          contentElement.innerHTML = response.html;
+          
+          // Create and open modal using Modal component
+          const modal = new Modal({
+            title: 'Edit Item',
+            content: contentElement,
+            size: 'md',
+          });
+          
+          // Set up form submission handler
+          modal.on('open', () => {
+            const form = contentElement.querySelector('form') as HTMLFormElement;
             if (form) {
-              this.setupEditItemFormSubmission(form, listId, pliId);
+              this.setupEditItemFormSubmission(form, pliId, listId);
             }
-          }
+            
+            // Focus first input
+            setTimeout(() => {
+              const firstInput = contentElement.querySelector('input, select, textarea') as HTMLElement;
+              if (firstInput) {
+                firstInput.focus();
+              }
+            }, 100);
+          });
+          
+          await modal.open();
         }
       } catch (error) {
-        UIUtils.showNotification('Error loading edit form. Please try again.', 'error');
+        logger.error('Error loading edit item modal', 'packing_list', error);
+        StateUtils.addNotification('Error loading edit form. Please try again.', 'error');
       } finally {
-        UIUtils.hideLoading(btn as HTMLButtonElement, 'Edit');
+        this.hideButtonLoading(btn as HTMLButtonElement, 'Edit');
       }
+      return Promise.resolve();
     }
-    return Promise.resolve();
   }
 
   private setupEditItemFormSubmission(form: HTMLFormElement, listId: string, pliId: string): void {
@@ -781,10 +883,10 @@ class PackingListDetailManager {
 
       try {
         const formData = FormUtils.getFormData(form);
-        const response = await apiClient.post(form.action, formData);
+        const response = await apiService.post(form.action, formData);
 
         if (response.success) {
-          UIUtils.hideModal('edit-item-modal');
+          Modal.alert('Item updated successfully!', 'Success');
           location.reload(); // Refresh to show changes
         } else if (response.html) {
           const modalBody = DOMUtils.getElement<HTMLElement>('#edit-item-modal-body');
@@ -797,11 +899,11 @@ class PackingListDetailManager {
           }
         }
       } catch (error) {
-        UIUtils.showNotification('Error updating item. Please try again.', 'error');
+        StateUtils.addNotification('Error updating item. Please try again.', 'error');
       } finally {
         // Remove loading state
         if (submitBtn) {
-          UIUtils.hideLoading(submitBtn, 'Save Changes');
+          this.hideButtonLoading(submitBtn, 'Save Changes');
         }
       }
     });
@@ -818,7 +920,7 @@ class PackingListDetailManager {
       (target as HTMLButtonElement).disabled = true;
 
       try {
-        const response = await apiClient.vote(parseInt(priceId), isUpvote ? 'up' : 'down');
+        const response = await apiService.vote(parseInt(priceId), isUpvote ? 'up' : 'down');
         
         if (response.success) {
           // Update vote counts
@@ -842,10 +944,10 @@ class PackingListDetailManager {
             target.textContent = originalText;
           }, 1000);
         } else {
-          UIUtils.showNotification(response.message || 'Error voting. Please try again.', 'error');
+          StateUtils.addNotification(response.message || 'Error voting. Please try again.', 'error');
         }
       } catch (error) {
-        UIUtils.showNotification('Error voting. Please try again.', 'error');
+        StateUtils.addNotification('Error voting. Please try again.', 'error');
       } finally {
         // Re-enable button
         (target as HTMLButtonElement).disabled = false;

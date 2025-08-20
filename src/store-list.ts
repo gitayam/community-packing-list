@@ -1,4 +1,6 @@
-import { DOMUtils, UIUtils, apiClient, FormUtils, GeolocationUtils } from './common';
+import { DOMUtils, apiClient, FormUtils, GeolocationUtils } from './common';
+import { StateUtils } from './services/StateManager';
+import { Modal } from './components/Modal';
 import type { StoreFormData } from './types';
 
 class StoreListManager {
@@ -7,6 +9,7 @@ class StoreListManager {
   private storeModal: HTMLElement | null = null;
   private storeModalBody: HTMLElement | null = null;
   private closeStoreModalButton: HTMLButtonElement | null = null;
+  private currentModal: Modal | null = null;
 
   constructor() {
     this.initialize();
@@ -33,7 +36,7 @@ class StoreListManager {
 
     // Add store modal functionality
     if (this.addStoreButton) {
-      this.addStoreButton.addEventListener('click', this.handleAddStore.bind(this));
+      this.addStoreButton.addEventListener('click', this.handleAddStoreClick.bind(this));
     }
 
     // Close modal functionality
@@ -84,33 +87,61 @@ class StoreListManager {
         userMessage += 'An unknown error occurred.';
       }
       
-      UIUtils.showNotification(userMessage, 'error');
+      StateUtils.addNotification(userMessage, 'error');
     }
   }
 
-  private async handleAddStore(): Promise<void> {
-    if (!this.storeModal || !this.storeModalBody) return;
-
-    UIUtils.showModal('store-modal');
-    this.storeModalBody.innerHTML = '<p>Loading...</p>';
-
+  private async handleAddStoreClick(event: Event): Promise<void> {
+    event.preventDefault();
+    
+    // Show loading state
+    const target = event.currentTarget as HTMLButtonElement;
+    const originalText = target.textContent || 'Add Store';
+    this.showButtonLoading(target);
+    
     try {
       const response = await apiClient.get('/stores/add/modal/');
       
       if (response.html) {
-        this.storeModalBody.innerHTML = response.html;
-        this.bindStoreFormAjax();
+        // Create content element first so we can query it
+        const contentElement = document.createElement('div');
+        contentElement.innerHTML = response.html;
+        
+        // Create and open modal using Modal component
+        this.currentModal = new Modal({
+          title: 'Add Store',
+          content: contentElement,
+          size: 'md',
+        });
+        
+        // Set up form submission handler
+        this.currentModal.on('open', () => {
+          const form = contentElement.querySelector('form') as HTMLFormElement;
+          if (form) {
+            this.bindStoreFormAjax(form);
+          }
+          
+          // Focus first input
+          setTimeout(() => {
+            const firstInput = contentElement.querySelector('input, select, textarea') as HTMLElement;
+            if (firstInput) {
+              firstInput.focus();
+            }
+          }, 100);
+        });
+        
+        await this.currentModal.open();
       }
     } catch (error) {
-      console.error('Error loading store form:', error);
-      UIUtils.showNotification('Error loading store form. Please try again.', 'error');
-      this.storeModalBody.innerHTML = '<p>Error loading form. Please try again.</p>';
+      Modal.alert('Error loading form. Please try again.', 'Error');
+    } finally {
+      this.hideButtonLoading(target, originalText);
     }
   }
 
   private handleCloseModal(): void {
-    if (this.storeModal) {
-      UIUtils.hideModal('store-modal');
+    if (this.currentModal) {
+      this.currentModal.close();
     }
   }
 
@@ -121,8 +152,8 @@ class StoreListManager {
     }
   }
 
-  private bindStoreFormAjax(): void {
-    const storeForm = DOMUtils.getElement<HTMLFormElement>('#store-form');
+  private bindStoreFormAjax(form?: HTMLFormElement): void {
+    const storeForm = form || DOMUtils.getElement<HTMLFormElement>('#store-form');
     if (!storeForm) return;
 
     storeForm.addEventListener('submit', async (e) => {
@@ -130,30 +161,35 @@ class StoreListManager {
 
       const submitBtn = storeForm.querySelector('button[type="submit"]') as HTMLButtonElement;
       if (submitBtn) {
-        UIUtils.showLoading(submitBtn);
+        this.showButtonLoading(submitBtn);
       }
 
       try {
-        const formData = FormUtils.getFormData(storeForm);
-        const response = await apiClient.post(storeForm.action || window.location.href, formData);
-
-        if (response.success) {
-          this.handleCloseModal();
-          window.location.reload();
-        } else if (response.html) {
-          if (this.storeModalBody) {
-            this.storeModalBody.innerHTML = response.html;
-            this.bindStoreFormAjax();
+        const formData = new FormData(storeForm);
+        const response = await apiClient.post('/stores/add/', formData);
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          Modal.alert('Store added successfully!', 'Success');
+          location.reload(); // Refresh to show new store
+        } else if (data.html) {
+          const modalBody = DOMUtils.getElement<HTMLElement>('#store-modal-body');
+          if (modalBody) {
+            modalBody.innerHTML = data.html;
+            this.bindStoreFormAjax(storeForm);
           }
-        } else if (response.errors) {
-          FormUtils.showFormErrors(storeForm, response.errors);
+        } else if (data.message) {
+          StateUtils.addNotification(data.message, 'error');
+        } else {
+          StateUtils.addNotification('Unknown error occurred', 'error');
         }
       } catch (error) {
-        console.error('Error submitting store form:', error);
-        UIUtils.showNotification('Error saving store. Please try again.', 'error');
+        StateUtils.addNotification('Error adding store. Please try again.', 'error');
       } finally {
+        // Remove loading state
         if (submitBtn) {
-          UIUtils.hideLoading(submitBtn, 'Save Store');
+          this.hideButtonLoading(submitBtn, 'Add Store');
         }
       }
     });
