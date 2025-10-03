@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Layout } from '@/components/layout/Layout';
 import { HomePage } from '@/pages/HomePage';
@@ -62,6 +63,31 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#fff',
+              color: '#2C2C2C',
+              border: '1px solid #E5E7EB',
+              borderRadius: '0.5rem',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            },
+            success: {
+              iconTheme: {
+                primary: '#28A745',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#DC3545',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </ErrorBoundary>

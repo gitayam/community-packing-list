@@ -1,7 +1,10 @@
-import { useState, Suspense } from 'react';
-import { Plus, MapPin, ExternalLink, Trash2, AlertCircle } from 'lucide-react';
+import { useState, Suspense, useEffect } from 'react';
+import { Plus, MapPin, ExternalLink, Trash2, AlertCircle, Store as StoreIcon, Globe } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { ListSkeleton } from '@/components/ui/Skeleton';
@@ -15,11 +18,13 @@ function StoresContent() {
   const { data: stores, error } = useStores();
   const deleteMutation = useDeleteStore();
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this store?')) {
+  const handleDelete = async (id: number, name: string) => {
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
       try {
         await deleteMutation.mutateAsync(id);
+        toast.success(`${name} deleted successfully`);
       } catch (error) {
+        toast.error('Failed to delete store. Please try again.');
         console.error('Failed to delete store:', error);
       }
     }
@@ -37,73 +42,91 @@ function StoresContent() {
   }
 
   return stores && stores.length > 0 ? (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {stores.map((store) => (
-        <Card key={store.id}>
-          <div className="flex items-start justify-between mb-3">
-            <h3 className="text-xl font-semibold text-military-navy">{store.name}</h3>
+        <Card key={store.id} className="hover:shadow-lg transition-all duration-300 hover:border-military-olive/40">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start gap-3 flex-1">
+              <div className="rounded-lg bg-military-sand/40 p-2.5">
+                <StoreIcon className="text-military-olive" size={20} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-military-navy mb-1 truncate">{store.name}</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {store.is_online && (
+                    <Badge variant="info" size="sm">
+                      <Globe size={10} />
+                      Online
+                    </Badge>
+                  )}
+                  {store.is_in_person && (
+                    <Badge variant="success" size="sm">
+                      <MapPin size={10} />
+                      In-Person
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
             <Button
               size="sm"
               variant="danger"
-              onClick={() => handleDelete(store.id)}
+              onClick={() => handleDelete(store.id, store.name)}
               disabled={deleteMutation.isPending}
+              className="flex-shrink-0"
             >
-              <Trash2 size={16} />
+              <Trash2 size={14} />
             </Button>
           </div>
 
-          <div className="space-y-2 text-sm">
-            {(store.address_line1 || store.city) && (
+          {/* Address */}
+          {(store.address_line1 || store.city) && (
+            <div className="bg-gray-50 rounded-lg p-3 mb-3">
               <div className="flex items-start gap-2">
-                <MapPin size={16} className="text-gray-500 mt-0.5 flex-shrink-0" />
-                <div className="text-gray-600">
-                  {store.address_line1 && <div>{store.address_line1}</div>}
+                <MapPin size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-gray-700 flex-1">
+                  {store.address_line1 && <div className="font-medium">{store.address_line1}</div>}
                   {store.address_line2 && <div>{store.address_line2}</div>}
                   {(store.city || store.state) && (
-                    <div>
+                    <div className="text-gray-600">
                       {store.city}{store.city && store.state ? ', ' : ''}{store.state} {store.zip_code}
                     </div>
                   )}
                 </div>
               </div>
-            )}
-
-            {store.url && (
-              <div className="flex items-center gap-2">
-                <ExternalLink size={16} className="text-gray-500" />
-                <a
-                  href={store.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-military-navy hover:underline truncate"
-                >
-                  Visit Website
-                </a>
-              </div>
-            )}
-
-            <div className="flex flex-wrap gap-2 mt-3">
-              {store.is_online && (
-                <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
-                  Online
-                </span>
-              )}
-              {store.is_in_person && (
-                <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
-                  In-Person
-                </span>
-              )}
             </div>
-          </div>
+          )}
+
+          {/* Website Link */}
+          {store.url && (
+            <a
+              href={store.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-military-navy/5 hover:bg-military-navy/10 text-military-navy rounded-lg transition-colors text-sm font-medium group"
+            >
+              <ExternalLink size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              Visit Website
+            </a>
+          )}
         </Card>
       ))}
     </div>
   ) : (
-    <Card>
-      <p className="text-gray-600 text-center py-8">
-        No stores found. Add your first store to get started!
-      </p>
-    </Card>
+    <EmptyState
+      icon={StoreIcon}
+      title="No Stores Added Yet"
+      description="Add stores where you can purchase packing list items. Help the community find the best deals!"
+      action={{
+        label: 'Add Your First Store',
+        onClick: () => {
+          const event = new CustomEvent('open-store-modal');
+          window.dispatchEvent(event);
+        },
+        icon: Plus,
+      }}
+    />
   );
 }
 
@@ -124,12 +147,21 @@ export function StoreListPage() {
     },
   });
 
+  // Listen for custom event from EmptyState
+  useEffect(() => {
+    const handleOpenModal = () => setIsModalOpen(true);
+    window.addEventListener('open-store-modal', handleOpenModal);
+    return () => window.removeEventListener('open-store-modal', handleOpenModal);
+  }, []);
+
   const onSubmit = async (data: CreateStoreInput) => {
     try {
       await createMutation.mutateAsync(data);
+      toast.success(`${data.name} added successfully!`);
       setIsModalOpen(false);
       reset();
     } catch (error) {
+      toast.error('Failed to add store. Please try again.');
       console.error('Failed to create store:', error);
     }
   };
