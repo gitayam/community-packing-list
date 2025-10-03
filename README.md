@@ -1,10 +1,18 @@
 # Community Packing List
 
-A production-ready Django web application for creating, sharing, and managing structured packing lists for military schools, training courses, and deployments.
+A modern full-stack web application for creating, sharing, and managing structured packing lists for military schools, training courses, and deployments.
 
 [![Production Status](https://img.shields.io/badge/status-production--ready-green.svg)](https://github.com/gitayam/community-packing-list)
-[![Django Version](https://img.shields.io/badge/django-4.2-blue.svg)](https://www.djangoproject.com/)
+[![React Version](https://img.shields.io/badge/react-19-61dafb.svg)](https://react.dev/)
+[![Django Version](https://img.shields.io/badge/django-5.2-blue.svg)](https://www.djangoproject.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+## 🏗️ Architecture
+
+**Frontend**: React 19 + TypeScript + Vite → Deployed on Cloudflare Pages
+**Backend**: Django 5.2 + Django REST Framework → PostgreSQL
+
+**Live Demo**: https://community-packing-list.pages.dev
 
 ## 🚀 Features
 
@@ -29,120 +37,154 @@ A production-ready Django web application for creating, sharing, and managing st
 - **Enhanced Item Display**: Bold item names and organized information
 - **Accessibility**: ARIA labels, keyboard navigation, and focus management
 
+## 🛠️ Tech Stack
+
+### Frontend
+- **React 19** - Latest React with modern patterns
+- **TypeScript 5.9** - Type safety and developer experience
+- **Vite 7** - Lightning-fast build tool
+- **TanStack Query 5** - Server state management
+- **React Router 7** - Client-side routing
+- **React Hook Form + Zod** - Form handling and validation
+- **Tailwind CSS 4** - Utility-first styling
+- **Cloudflare Pages** - Edge deployment
+
+### Backend
+- **Django 5.2** - Python web framework
+- **Django REST Framework 3.15** - RESTful API
+- **PostgreSQL** - Relational database
+- **django-cors-headers** - CORS middleware
+- **Gunicorn** - Production WSGI server
+
 ## 🛠️ Quick Start
 
-### Production Deployment (Google Cloud Run)
+### React Frontend (Development)
 
 ```bash
 # Clone the repository
 git clone https://github.com/gitayam/community-packing-list.git
-cd community-packing-list
+cd community-packing-list/frontend-react
 
-# Deploy to Google Cloud Run
-./deployment/deploy-cloud.sh
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+
+# Visit http://localhost:5173
 ```
 
-### Local Development
+### Django Backend (Development)
 
 ```bash
-# Clone the repository
-git clone https://github.com/gitayam/community-packing-list.git
-cd community-packing-list
+# Install Python dependencies
+pip install -r requirements.txt
 
-# Start local development environment
-./deployment/deploy-local.sh
+# Run migrations
+python manage.py migrate
 
-# Access the application
-open http://localhost:8000
+# Create sample data
+python manage.py create_example_data
+
+# Start Django server
+python manage.py runserver
+
+# API available at http://localhost:8000/api
 ```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for production deployment instructions.
 
 ## 📁 Project Structure
 
 ```
 community-packing-list/
+├── frontend-react/              # React 19 frontend
+│   ├── src/
+│   │   ├── components/         # UI components
+│   │   ├── pages/              # Route components
+│   │   ├── hooks/              # React Query hooks
+│   │   ├── lib/                # API client, schemas, utils
+│   │   └── types/              # TypeScript definitions
+│   ├── package.json           # Node dependencies
+│   └── vite.config.ts         # Vite configuration
 ├── community_packing_list/     # Django project configuration
-├── packing_lists/             # Main Django application
-│   ├── models.py             # Database models
-│   ├── views.py              # View logic
-│   ├── templates/            # HTML templates
-│   ├── static/               # CSS, JavaScript, images
-│   └── migrations/           # Database migrations
-├── deployment/               # Deployment scripts and configurations
-│   ├── deploy-cloud.sh       # Google Cloud Run deployment
-│   └── deploy-local.sh       # Local development setup
-├── docs/                     # Documentation
-│   ├── LessonsLearned.md     # Development lessons
-│   ├── SCALING_ROADMAP.md    # Scaling plans
-│   └── LOCAL_DEVELOPMENT.md  # Local development guide
-├── Dockerfile               # Production container configuration
-├── docker-compose.yml       # Local development containers
-├── docker-compose.cloud.yml # Cloud deployment containers
-├── requirements.txt         # Python dependencies
-├── manage.py               # Django management commands
-├── ROADMAP.md              # Feature roadmap
-└── README.md               # This file
+│   └── settings.py            # DRF + CORS configuration
+├── packing_lists/             # Django REST API
+│   ├── models.py              # Database models
+│   ├── serializers.py         # DRF serializers
+│   ├── api_views.py           # API ViewSets
+│   ├── api_urls.py            # API routing
+│   ├── views.py               # Django template views (legacy)
+│   └── migrations/            # Database migrations
+├── deployment/                # Deployment scripts
+├── requirements.txt           # Python dependencies (includes DRF)
+├── manage.py                  # Django management commands
+├── API.md                     # REST API documentation
+├── DEPLOYMENT.md              # Deployment guide
+├── ROADMAP.md                 # Feature roadmap
+└── README.md                  # This file
 ```
 
 ## 🚀 Deployment Options
 
-### 1. Google Cloud Run (Recommended for Production)
+### Frontend Deployment (Cloudflare Pages)
 
-The application is optimized for Google Cloud Run deployment:
-
+**Automatic (GitHub Integration):**
 ```bash
-# Set up Google Cloud authentication
-gcloud auth login
-gcloud config set project YOUR_PROJECT_ID
+# Push to GitHub
+git push origin main
 
-# Deploy to Cloud Run
+# Cloudflare Pages auto-deploys
+# Build command: cd frontend-react && npm run build
+# Build output: frontend-react/dist
+```
+
+**Manual (Wrangler CLI):**
+```bash
+cd frontend-react
+npx wrangler login
+npm run build
+npx wrangler pages deploy dist --project-name=community-packing-list
+```
+
+**Live URL**: https://community-packing-list.pages.dev
+
+### Backend Deployment (Django REST API)
+
+**Option 1: Railway**
+```bash
+railway login
+railway init
+railway add postgresql
+railway up
+```
+
+**Option 2: Render**
+- Build Command: `pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate`
+- Start Command: `gunicorn community_packing_list.wsgi:application`
+
+**Option 3: Google Cloud Run**
+```bash
+gcloud auth login
 ./deployment/deploy-cloud.sh
 ```
 
-**Features:**
-- Auto-scaling based on traffic
-- HTTPS by default
-- PostgreSQL Cloud SQL integration
-- Static file serving via Cloud Storage
-- Health checks and monitoring
-
-### 2. Local Development
-
-For local development with Docker:
-
-```bash
-# Start all services
-./deployment/deploy-local.sh
-
-# Or manually with Docker Compose
-docker-compose up -d
-
-# Create admin user
-python manage.py createsuperuser
-```
-
-**Services included:**
-- Django application (port 8000)
-- PostgreSQL database
-- Redis (for caching)
-- Static file serving
-
-### 3. Docker Production
-
-For self-hosted production deployment:
-
-```bash
-# Build production image
-docker build -t community-packing-list .
-
-# Run with docker-compose
-docker-compose -f docker-compose.cloud.yml up -d
-```
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 
 ## 🔧 Configuration
 
-### Environment Variables
+### Frontend Environment Variables
 
-Create a `.env` file based on `.env.example`:
+Create `frontend-react/.env.local`:
+
+```bash
+VITE_API_URL=http://localhost:8000/api  # Development
+# VITE_API_URL=https://your-backend.railway.app/api  # Production
+```
+
+### Backend Environment Variables
+
+Create a `.env` file at the root:
 
 ```bash
 # Database
@@ -153,8 +195,8 @@ DJANGO_SECRET_KEY=your-secret-key-here
 DJANGO_DEBUG=False
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,your-domain.com
 
-# Cloud Storage (optional)
-GCS_BUCKET_NAME=your-bucket-name
+# CORS (for React frontend)
+CORS_ALLOWED_ORIGINS=http://localhost:5173,https://community-packing-list.pages.dev
 ```
 
 ### Database Setup
@@ -228,6 +270,16 @@ Production security features:
 
 ## 🌟 Recent Improvements
 
+### React Migration (v3.0.0 - October 2025)
+- **Complete frontend rewrite** in React 19 with TypeScript
+- **Modern React patterns**: Suspense, ErrorBoundary, skeleton loading
+- **TanStack Query**: Optimized server state management with caching
+- **Cloudflare Pages**: Edge deployment for global performance
+- **Django REST API**: Full REST API with Django REST Framework
+- **Type safety**: Complete TypeScript coverage
+- **Modern build tools**: Vite 7 for lightning-fast builds
+- **Tailwind CSS 4**: Preserved military theme with utility-first CSS
+
 ### Modal and UX Enhancements (v2.1.0)
 - Fixed modal functionality for Add Price/Add Item buttons
 - Implemented compact pricing display with expandable details
@@ -244,10 +296,11 @@ Production security features:
 
 ## 📚 Documentation
 
-- [Deployment Guide](docs/LOCAL_DEVELOPMENT.md)
-- [Scaling Roadmap](docs/SCALING_ROADMAP.md)
-- [Development Lessons](docs/LessonsLearned.md)
+- **[API Documentation](API.md)** - Complete REST API reference
+- **[Deployment Guide](DEPLOYMENT.md)** - Production deployment instructions
+- **[React Frontend README](frontend-react/README.md)** - React app documentation
 - [Feature Roadmap](ROADMAP.md)
+- [Legacy Development Docs](docs/) - Django template version docs
 
 ## 🤝 Contributing
 
