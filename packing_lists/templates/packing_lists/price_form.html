@@ -1,0 +1,97 @@
+{% extends "packing_lists/base.html" %}
+
+{% block title %}{{ title }} - Packing Lists{% endblock %}
+
+{% block page_header %}{{ title }}{% endblock %}
+
+{% block content %}
+    <p class="mb-2">Adding price for item: <strong>{{ item.name }}</strong></p>
+
+    <form method="post" id="price-form">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <ul class="form-field-errors">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {# Render all fields except store_name #}
+        {% for field in form %}
+            {% if field.name != 'store_name' %}
+            <p>
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                    <span class="helptext">{{ field.help_text|safe }}</span>
+                {% endif %}
+                {% if field.errors %}
+                    <ul class="form-field-errors">
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </p>
+            {% endif %}
+        {% endfor %}
+
+        <p>
+            <a href="#" id="show-add-store" onclick="document.getElementById('inline-add-store').style.display='block'; return false;">Add new store</a>
+        </p>
+
+        <div id="inline-add-store" style="display:none; margin-bottom:1em;">
+            <fieldset style="border:1px solid #ccc; padding:1em;">
+                <legend>Add New Store</legend>
+                <div id="add-store-form">
+                    <label for="new_store_name">Store Name:</label>
+                    <input type="text" name="new_store_name" id="new_store_name"><br>
+                    <label for="new_store_address">Address:</label>
+                    <input type="text" name="new_store_address" id="new_store_address"><br>
+                    <button type="button" disabled>Add Store (modal only, not implemented)</button>
+                </div>
+                <noscript>
+                    <p>Submit this form to add a new store. The page will reload and the new store will appear in the dropdown.</p>
+                </noscript>
+            </fieldset>
+        </div>
+
+        {# store_name field for fallback/manual entry #}
+        <p>
+            {{ form.store_name.label_tag }}
+            {{ form.store_name }}
+            {% if form.store_name.help_text %}
+                <span class="helptext">{{ form.store_name.help_text|safe }}</span>
+            {% endif %}
+            {% if form.store_name.errors %}
+                <ul class="form-field-errors">
+                    {% for error in form.store_name.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </p>
+
+        <button type="submit" class="button success">Save Price</button>
+        {% if list_id %}
+            <a href="/list/{{ list_id }}/" class="button secondary">Cancel</a>
+        {% else %}
+            <a href="/" class="button secondary">Cancel</a>
+        {% endif %}
+    </form>
+
+    <script>
+    // Simple JS for inline add store (no AJAX for now)
+    document.addEventListener('DOMContentLoaded', function() {
+        var addStoreForm = document.getElementById('add-store-form');
+        if (addStoreForm) {
+            addStoreForm.addEventListener('submit', function(e) {
+                // Let the form submit normally - it will reload the page
+                // The store will be created and available in the dropdown
+            });
+        }
+    });
+    </script>
+{% endblock %}

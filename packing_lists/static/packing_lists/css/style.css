@@ -1,0 +1,1179 @@
+/* Military Design System - Community Packing List */
+
+/* CSS Custom Properties for Military Color Palette */
+:root {
+  /* Primary Military Colors */
+  --military-olive: #4B5320;
+  --military-navy: #1B365D;
+  --military-khaki: #C3B091;
+  --military-sand: #F4F1DE;
+  --military-dark: #2C2C2C;
+
+  /* RGB versions for opacity */
+  --military-olive-rgb: 75, 83, 32;
+  --military-navy-rgb: 27, 54, 93;
+  --military-khaki-rgb: 195, 176, 145;
+  --military-sand-rgb: 244, 241, 222;
+  --military-dark-rgb: 44, 44, 44;
+  
+  /* Status Colors */
+  --status-required: #DC3545;
+  --status-optional: #FFC107;
+  --status-complete: #28A745;
+  --status-pending: #6C757D;
+  
+  /* Functional Colors */
+  --text-primary: #2C2C2C;
+  --text-secondary: #6C757D;
+  --text-light: #FFFFFF;
+  --border-color: #DEE2E6;
+  --background-light: #F8F9FA;
+  --background-white: #FFFFFF;
+  
+  /* Spacing System */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-xxl: 3rem;
+  
+  /* Typography */
+  --font-family-primary: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: 'Courier New', 'Monaco', 'Consolas', monospace;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-xxl: 1.5rem;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  
+  /* Border Radius */
+  --border-radius-sm: 4px;
+  --border-radius-md: 6px;
+  --border-radius-lg: 8px;
+}
+
+/* Reset and Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family-primary);
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, var(--military-sand) 0%, var(--background-light) 100%);
+  color: var(--text-primary);
+  line-height: 1.6;
+  font-size: var(--font-size-base);
+  min-height: 100vh;
+}
+
+/* Military Header */
+header.main-header {
+  background: linear-gradient(135deg, var(--military-navy) 0%, var(--military-olive) 100%);
+  color: var(--text-light);
+  padding: var(--spacing-lg) 0;
+  text-align: center;
+  margin-bottom: 0;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.header-content-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg); /* 1.5rem */
+  position: relative; /* Ensure it's above the ::before pseudo-element */
+  z-index: 1;
+}
+
+.logo-container {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--military-olive-rgb), 0.12);
+  border-radius: 50%;
+  border: 2px solid var(--military-olive);
+}
+
+/* Ensure the SVG or img inside logo-container is sized if needed, though inline SVG has width/height */
+.logo-container svg,
+.logo-container img {
+  width: 40px; /* Corresponds to original inline style */
+  height: 40px; /* Corresponds to original inline style */
+}
+
+header.main-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="military-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23military-pattern)"/></svg>');
+  opacity: 0.3;
+}
+
+header.main-header h1 {
+  margin: 0; /* Override default h1 margins */
+  font-size: var(--font-size-xxl);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Military Navigation */
+nav.main-nav {
+  background: var(--military-dark);
+  padding: var(--spacing-md) 0;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  border-bottom: 3px solid var(--military-olive);
+}
+
+nav.main-nav ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+nav.main-nav ul li {
+  display: inline;
+}
+
+nav.main-nav ul li a {
+  color: var(--text-light);
+  text-decoration: none;
+  font-weight: 600;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: var(--font-size-sm);
+  letter-spacing: 1px;
+  border: 2px solid transparent;
+}
+
+nav.main-nav ul li a:hover,
+nav.main-nav ul li a.active {
+  background: var(--military-olive);
+  border-color: var(--military-khaki);
+  color: var(--text-light);
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Main Container */
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: var(--spacing-xl) auto;
+  padding: var(--spacing-xl);
+  background: var(--background-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--military-navy);
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+h1 { 
+  font-size: var(--font-size-xxl);
+  border-bottom: 3px solid var(--military-olive);
+  padding-bottom: var(--spacing-sm);
+}
+
+h2 { 
+  font-size: var(--font-size-xl);
+  color: var(--military-olive);
+}
+
+h3 { 
+  font-size: var(--font-size-lg);
+  color: var(--military-navy);
+}
+
+/* Military Buttons */
+button, .button, a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-light);
+  background: linear-gradient(135deg, var(--military-navy) 0%, var(--military-olive) 100%);
+  border: 2px solid var(--military-navy);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  margin-right: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: var(--font-family-primary);
+  min-height: 44px;
+  position: relative;
+  overflow: hidden;
+}
+
+button::before, .button::before, a.button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+button:hover::before, .button:hover::before, a.button:hover::before {
+  left: 100%;
+}
+
+button:hover, .button:hover, a.button:hover {
+  background: linear-gradient(135deg, var(--military-olive) 0%, var(--military-navy) 100%);
+  color: var(--text-light);
+  text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--military-khaki);
+}
+
+button.secondary, a.button.secondary {
+  background: linear-gradient(135deg, var(--military-khaki) 0%, #B8A98A 100%);
+  border-color: var(--military-khaki);
+  color: var(--military-dark);
+}
+
+button.secondary:hover, a.button.secondary:hover {
+  background: linear-gradient(135deg, #B8A98A 0%, var(--military-khaki) 100%);
+  color: var(--military-dark);
+}
+
+button.success, a.button.success {
+  background: linear-gradient(135deg, var(--status-complete) 0%, #1E7E34 100%);
+  border-color: var(--status-complete);
+}
+
+button.success:hover, a.button.success:hover {
+  background: linear-gradient(135deg, #1E7E34 0%, var(--status-complete) 100%);
+}
+
+button.danger, a.button.danger {
+  background: linear-gradient(135deg, var(--status-required) 0%, #B02A37 100%);
+  border-color: var(--status-required);
+}
+
+button.danger:hover, a.button.danger:hover {
+  background: linear-gradient(135deg, #B02A37 0%, var(--status-required) 100%);
+}
+
+/* Military Forms */
+form p {
+  margin-bottom: var(--spacing-lg);
+}
+
+label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 600;
+  color: var(--military-navy);
+  text-transform: uppercase;
+  font-size: var(--font-size-sm);
+  letter-spacing: 1px;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="file"],
+input[type="date"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+  width: 100%;
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  box-sizing: border-box;
+  font-size: var(--font-size-base);
+  font-family: var(--font-family-primary);
+  transition: all 0.3s ease;
+  background: var(--background-white);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="file"]:focus,
+input[type="date"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--military-olive);
+  box-shadow: 0 0 0 3px rgba(75, 83, 32, 0.1);
+  transform: translateY(-1px);
+}
+
+input[type="number"] { 
+  -moz-appearance: textfield; 
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
+textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: var(--font-family-primary);
+}
+
+.helptext {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  display: block;
+  margin-top: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  font-style: italic;
+}
+
+.form-field-errors {
+  color: var(--status-required);
+  font-size: var(--font-size-sm);
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: var(--spacing-sm);
+  background: rgba(220, 53, 69, 0.1);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  border-left: 4px solid var(--status-required);
+}
+
+.form-field-errors li { 
+  margin-bottom: var(--spacing-xs); 
+}
+
+/* Military Messages */
+.messages {
+  list-style-type: none;
+  padding: 0;
+  margin-bottom: var(--spacing-xl);
+}
+
+.messages li {
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  border: 2px solid transparent;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+}
+
+.messages li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.messages li.success { 
+  background: linear-gradient(135deg, #D4EDDA 0%, #C3E6CB 100%);
+  color: #155724; 
+  border-color: var(--status-complete);
+}
+
+.messages li.success::before {
+  background: var(--status-complete);
+}
+
+.messages li.error { 
+  background: linear-gradient(135deg, #F8D7DA 0%, #F5C6CB 100%);
+  color: #721C24; 
+  border-color: var(--status-required);
+}
+
+.messages li.error::before {
+  background: var(--status-required);
+}
+
+.messages li.warning { 
+  background: linear-gradient(135deg, #FFF3CD 0%, #FFEBA 100%);
+  color: #856404; 
+  border-color: var(--status-optional);
+}
+
+.messages li.warning::before {
+  background: var(--status-optional);
+}
+
+.messages li.info { 
+  background: linear-gradient(135deg, #D1ECF1 0%, #BEE5EB 100%);
+  color: #0C5460; 
+  border-color: var(--military-navy);
+}
+
+.messages li.info::before {
+  background: var(--military-navy);
+}
+
+/* Military Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  background: var(--background-white);
+}
+
+th, td {
+  border: 1px solid var(--border-color);
+  padding: var(--spacing-md);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: linear-gradient(135deg, var(--military-navy) 0%, var(--military-olive) 100%);
+  color: var(--text-light);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: var(--font-size-sm);
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+tr:nth-child(even) {
+  background: var(--background-light);
+}
+
+tr:hover {
+  background: rgba(75, 83, 32, 0.05);
+  transform: scale(1.001);
+  transition: all 0.2s ease;
+}
+
+/* Military Status Indicators */
+.status-required {
+  color: var(--status-required);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: var(--font-size-sm);
+}
+
+.status-optional {
+  color: var(--status-optional);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: var(--font-size-sm);
+}
+
+.status-complete {
+  color: var(--status-complete);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: var(--font-size-sm);
+}
+
+/* Packing Status Styling */
+tr.packed-true td:not(:last-child):not(:first-child) {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+tr.packed-true { 
+  background: linear-gradient(135deg, #E6FFE6 0%, #D4EDDA 100%) !important;
+  border-left: 4px solid var(--status-complete);
+}
+
+tr.packed-true:hover {
+  background: linear-gradient(135deg, #D4EDDA 0%, #C3E6CB 100%) !important;
+}
+
+/* Section Headers */
+.section-header {
+  background: linear-gradient(135deg, var(--military-khaki) 0%, #B8A98A 100%) !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--military-dark);
+  text-align: center;
+  font-size: var(--font-size-lg);
+}
+
+.section-header td {
+  padding: var(--spacing-lg) var(--spacing-md);
+  border: none;
+}
+
+/* Price Information */
+.price-info { 
+  margin-top: var(--spacing-sm); 
+}
+
+.price-info ul { 
+  list-style-type: none; 
+  margin-left: 0; 
+  padding-left: 0; 
+}
+
+.price-info li { 
+  margin-bottom: var(--spacing-sm); 
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--background-light);
+  transition: all 0.3s ease;
+}
+
+.price-info li:hover {
+  background: var(--background-white);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.price-info li:last-child { 
+  border-bottom: none; 
+}
+
+.price-info li.best-value {
+  border: 2px solid var(--status-complete);
+  padding: var(--spacing-md);
+  margin: var(--spacing-sm) 0;
+  background: linear-gradient(135deg, #F8FFF9 0%, #E6FFE6 100%);
+  border-radius: var(--border-radius-md);
+  position: relative;
+}
+
+.price-info li.best-value::before {
+  content: '🏆 BEST VALUE';
+  position: absolute;
+  top: -10px;
+  left: var(--spacing-sm);
+  background: var(--status-complete);
+  color: var(--text-light);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Vote Buttons */
+.vote-buttons form { 
+  display: inline; 
+  margin-left: var(--spacing-sm); 
+}
+
+.vote-buttons button {
+  font-size: var(--font-size-sm) !important;
+  padding: var(--spacing-xs) var(--spacing-sm) !important;
+  min-height: auto;
+  margin: var(--spacing-xs);
+}
+
+.vote-count { 
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-left: var(--spacing-sm);
+  font-weight: 600;
+}
+
+/* Filter Forms */
+.filter-form {
+  background: linear-gradient(135deg, var(--background-light) 0%, var(--military-sand) 100%);
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-lg);
+  margin-bottom: var(--spacing-xl);
+  border: 2px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-form form div {
+  margin-bottom: var(--spacing-md);
+}
+
+.filter-form label {
+  font-weight: 600;
+  color: var(--military-navy);
+  text-transform: uppercase;
+  font-size: var(--font-size-sm);
+  letter-spacing: 1px;
+}
+
+.filter-form input[type="text"],
+.filter-form select {
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: all 0.3s ease;
+}
+
+.filter-form input[type="text"]:focus,
+.filter-form select:focus {
+  border-color: var(--military-olive);
+  box-shadow: 0 0 0 3px rgba(75, 83, 32, 0.1);
+}
+
+.filter-form .actions-row { 
+  margin-top: var(--spacing-lg); 
+}
+
+.filter-form .actions-row button, 
+.filter-form .actions-row a { 
+  margin-right: var(--spacing-md); 
+}
+
+.filter-form .gps-button { 
+  background: linear-gradient(135deg, var(--status-complete) 0%, #1E7E34 100%);
+  border-color: var(--status-complete);
+}
+
+.filter-form .gps-button:hover { 
+  background: linear-gradient(135deg, #1E7E34 0%, var(--status-complete) 100%);
+}
+
+/* Utility Classes */
+.text-muted { 
+  color: var(--text-secondary); 
+}
+
+.text-small { 
+  font-size: var(--font-size-sm); 
+}
+
+.mt-1 { 
+  margin-top: var(--spacing-sm); 
+}
+
+.mt-2 { 
+  margin-top: var(--spacing-md); 
+}
+
+.mb-1 { 
+  margin-bottom: var(--spacing-sm); 
+}
+
+.mb-2 { 
+  margin-bottom: var(--spacing-md); 
+}
+
+/* Military Footer */
+footer.main-footer {
+  text-align: center;
+  padding: var(--spacing-xl);
+  margin-top: var(--spacing-xxl);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  border-top: 3px solid var(--military-olive);
+  background: linear-gradient(135deg, var(--military-dark) 0%, var(--military-navy) 100%);
+  color: var(--text-light);
+}
+
+/* Specific Page Elements */
+#packing-list-items-form td button {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  min-height: auto;
+}
+
+.actions-bar {
+  margin-bottom: var(--spacing-xl);
+  margin-top: var(--spacing-md);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.actions-bar a.button, 
+.actions-bar button {
+  margin-right: var(--spacing-md);
+}
+
+.info-box {
+  background: linear-gradient(135deg, var(--background-light) 0%, var(--military-sand) 100%);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-xl);
+  font-size: var(--font-size-base);
+  border: 2px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Military Modal */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: var(--background-white);
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-lg);
+  max-width: 600px;
+  margin: var(--spacing-xl) auto;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+  border: 3px solid var(--military-olive);
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  font-size: var(--font-size-xl);
+  background: none;
+  border: none;
+  color: var(--military-navy);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: var(--status-required);
+  color: var(--text-light);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    width: 95%;
+    padding: var(--spacing-md);
+    margin: var(--spacing-md) auto;
+  }
+  
+  nav.main-nav ul {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+  
+  nav.main-nav ul li a {
+    display: block;
+    padding: var(--spacing-md);
+  }
+  
+  table {
+    font-size: var(--font-size-sm);
+  }
+  
+  th, td {
+    padding: var(--spacing-sm);
+  }
+  
+  .actions-bar {
+    flex-direction: column;
+  }
+  
+  .actions-bar a.button,
+  .actions-bar button {
+    margin-right: 0;
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  header.main-header h1 {
+    font-size: var(--font-size-xl);
+  }
+}
+
+/* --- Home Page Specific Styles --- */
+.home-hero-section {
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-lg);
+  margin-bottom: var(--spacing-xxl);
+}
+
+.home-hero-section .hero-title {
+  font-size: var(--font-size-xxl); /* Or even larger, e.g., 2rem or 2.5rem */
+  color: var(--military-navy);
+  margin-top: 0;
+  margin-bottom: var(--spacing-sm);
+}
+
+.home-hero-section .lead {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xl);
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.home-hero-section .hero-actions .button svg {
+  margin-right: var(--spacing-sm);
+  vertical-align: middle; /* Better alignment */
+}
+
+.section-title { /* General purpose section title, if needed beyond default h2 */
+  margin-top: var(--spacing-xxl);
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+  border-bottom: 2px solid var(--military-khaki);
+  padding-bottom: var(--spacing-md);
+  color: var(--military-navy);
+}
+
+.packing-lists-ul .packing-list-entry {
+  /* Uses existing .item-list li styles, can add specifics if needed */
+  /* Example: border-left: 4px solid var(--military-olive); */
+}
+
+.packing-list-entry .list-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.packing-list-entry .list-entry-title-group {
+  flex: 1;
+  min-width: 0; /* Prevents overflow issues with flex items */
+}
+
+.packing-list-entry .list-entry-title-group h3 {
+  margin-bottom: var(--spacing-xs); /* Reduced margin for h3 in this context */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.packing-list-entry .list-entry-title-group h3 a {
+  text-decoration: none;
+  color: var(--military-navy);
+}
+.packing-list-entry .list-entry-title-group h3 a:hover {
+  color: var(--military-olive);
+  text-decoration: underline;
+}
+
+
+.packing-list-entry .school-tag {
+  display: inline-flex; /* Changed to inline-flex */
+  align-items: center;
+  gap: var(--spacing-xs);
+  background-color: rgba(var(--military-khaki-rgb), 0.2); /* Using RGB for opacity */
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-md); /* Consistent border radius */
+  font-size: var(--font-size-sm); /* Smaller font size for tags */
+  color: var(--military-olive); /* Darker text for better contrast */
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%; /* Ensure it doesn't overflow its container */
+}
+
+.packing-list-entry .school-tag svg {
+  width: 14px; /* Explicit size for icon */
+  height: 14px;
+  stroke-width: 2.5; /* Slightly bolder for small icon */
+}
+
+.packing-list-entry .button svg {
+  margin-right: var(--spacing-xs);
+  vertical-align: middle; /* Better alignment */
+}
+
+.no-lists-box { /* Specific styling for the "no lists" box on home page if needed */
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+.no-lists-box .no-lists { /* Ensure the p tag inside also behaves as expected */
+   font-size: var(--font-size-lg);
+   color: var(--text-secondary);
+}
+
+/* --- Packing List Detail Page Specific Styles --- */
+.list-meta {
+  background-color: rgba(var(--military-khaki-rgb), 0.1);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-xl);
+  border-left: 4px solid var(--military-khaki);
+}
+.list-meta p {
+  margin-bottom: var(--spacing-sm);
+}
+.list-meta p:last-child {
+  margin-bottom: 0;
+}
+
+.list-controls {
+  margin-bottom: var(--spacing-lg);
+}
+
+.item-filter-input { /* Was input#item-table-filter */
+  margin-bottom: var(--spacing-md); /* Was 10px */
+  width: 300px; /* Was 250px, increased slightly */
+  max-width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md); /* Adjusted padding */
+}
+
+#packing-list-items-form th {
+  white-space: nowrap;
+}
+
+#packing-list-items-form th.sort-asc::after,
+#packing-list-items-form th.sort-desc::after {
+  content: '';
+  display: inline-block;
+  margin-left: var(--spacing-sm);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+}
+
+#packing-list-items-form th.sort-asc::after {
+  border-bottom: 5px solid var(--text-light); /* Arrow up */
+}
+
+#packing-list-items-form th.sort-desc::after {
+  border-top: 5px solid var(--text-light); /* Arrow down */
+}
+
+
+.status-tag {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-light); /* Default text color, overridden by specific status */
+}
+
+.status-required-yes {
+  background-color: var(--status-complete); /* Green */
+}
+
+.status-required-no {
+  background-color: var(--status-optional); /* Yellow/Orange */
+  color: var(--military-dark); /* Darker text for yellow background */
+}
+
+.item-instructions-highlight {
+  color: var(--status-required); /* Red */
+  font-weight: 600;
+}
+
+.recommended-store {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-weight: 600;
+  color: var(--military-olive);
+}
+.recommended-store svg {
+  stroke-width: 2.5;
+}
+
+.best-value-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-weight: bold;
+  color: var(--status-complete); /* Green to match existing .best-value border */
+}
+.best-value-tag svg {
+  stroke-width: 2.5;
+}
+
+/* Styles for SVG icons in buttons */
+.button-icon svg,
+.actions-bar .button svg, /* For Add New Item button */
+.packing-list-entry .button svg, /* For View button on homepage */
+.price-info .button svg, /* For Add Price button */
+#packing-list-items-form .button svg /* For Edit button in table */
+ {
+  margin-right: var(--spacing-sm);
+  vertical-align: middle; /* Or text-bottom, adjust as needed */
+  width: 16px; /* Default icon size */
+  height: 16px;
+}
+
+.button-icon-sm svg { /* For smaller buttons like vote buttons */
+  margin-right: var(--spacing-xs); /* Less margin for smaller buttons */
+  width: 14px;
+  height: 14px;
+}
+/* If icons are standalone, no margin needed */
+.vote-buttons button.button-icon-sm svg {
+    margin-right: 0;
+}
+
+
+.vote-count svg {
+  vertical-align: middle;
+  margin-right: var(--spacing-xs);
+  margin-left: var(--spacing-xs);
+  width: 12px;
+  height: 12px;
+}
+.vote-count svg.feather-thumbs-up {
+    color: var(--status-complete);
+}
+.vote-count svg.feather-thumbs-down {
+    color: var(--status-required);
+}
+
+
+#price-modal-content {
+  /* Overrides for the price modal if needed, e.g. max-width */
+  /* max-width: 500px; */ /* If specific size is still desired */
+}
+
+
+/* Military Loading States */
+.loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Military Focus States */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus,
+a:focus {
+  outline: 3px solid var(--military-olive);
+  outline-offset: 2px;
+}
+
+/* Specific List Styles */
+.item-list, .store-list, .packing-lists-ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.item-list li, .store-list li, .packing-lists-ul li {
+  background: var(--background-white);
+  border: 2px solid var(--border-color);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+}
+
+.item-list li:hover, .store-list li:hover, .packing-lists-ul li:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--military-olive);
+}
+
+.item-list h3, .store-list h3, .packing-lists-ul h3 { 
+  margin-top: 0; 
+  color: var(--military-navy);
+}
+
+.item-notes, .price-info ul li, .store-item p, .packing-lists-ul p {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.no-items, .no-lists, .no-prices, .no-stores {
+  font-style: italic;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: var(--spacing-xl);
+  background: var(--background-light);
+  border-radius: var(--border-radius-md);
+  border: 2px dashed var(--border-color);
+}
+
+/* Military Print Styles */
+@media print {
+  .main-nav,
+  .actions-bar,
+  .vote-buttons,
+  .modal {
+    display: none !important;
+  }
+  
+  .container {
+    box-shadow: none;
+    border: none;
+    margin: 0;
+    padding: var(--spacing-md);
+  }
+  
+  table {
+    box-shadow: none;
+    border: 1px solid var(--text-primary);
+  }
+  
+  th {
+    background: var(--text-primary) !important;
+    color: var(--text-light) !important;
+    -webkit-print-color-adjust: exact;
+  }
+}

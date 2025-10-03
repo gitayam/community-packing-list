@@ -1,0 +1,180 @@
+{% extends "packing_lists/base.html" %}
+
+{% block title %}{{ title }} - Community Packing Lists{% endblock %}
+
+{% block page_header %}{{ title }}{% endblock %}
+
+{% block content %}
+    <div class="filter-form">
+        <form method="get" action="{% url 'store_list' %}">
+            <div>
+                <label for="city">City:</label>
+                <input type="text" name="city" id="city" value="{{ current_filters.city }}">
+            </div>
+            <div>
+                <label for="state">State:</label>
+                <input type="text" name="state" id="state" value="{{ current_filters.state }}">
+            </div>
+            <div>
+                <label for="zip_code">Zip Code:</label>
+                <input type="text" name="zip_code" id="zip_code" value="{{ current_filters.zip_code }}">
+            </div>
+            <hr class="my-2">
+            <div>
+                <label for="school_id">Near Base/School:</label>
+                <select name="school_id" id="school_id">
+                    <option value="">-- Select a Base/School --</option>
+                    {% for school in schools %}
+                        <option value="{{ school.id }}" {% if current_filters.school_id == school.id|stringformat:"s" %}selected{% endif %}>
+                            {{ school.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <hr class="my-2">
+            <div class="actions-row">
+                <button type="submit" class="button">Apply Filters</button>
+                <button type="button" id="find-near-me" class="button gps-button">Find Stores Near Me (GPS)</button>
+                <a href="{% url 'store_list' %}" class="button secondary">Clear Filters</a>
+            </div>
+            <input type="hidden" name="user_lat" id="user_lat" value="{{ current_filters.user_lat }}">
+            <input type="hidden" name="user_lon" id="user_lon" value="{{ current_filters.user_lon }}">
+        </form>
+    </div>
+
+    <h2>{{ filter_description }}</h2>
+    <button id="add-store-btn" class="button" style="margin-bottom:1em;">➕ Add Store</button>
+    <div id="store-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
+      <div id="store-modal-content" style="background:#fff; padding:2em; border-radius:8px; max-width:500px; margin:40px auto; position:relative;">
+        <button id="close-store-modal" style="position:absolute; top:10px; right:10px; font-size:1.2em;">&times;</button>
+        <div id="store-modal-body">
+          <!-- AJAX-loaded form will go here -->
+        </div>
+      </div>
+    </div>
+    {% if stores %}
+        <ul class="store-list">
+            {% for item_data in stores %}
+                <li class="store-item" style="box-shadow:0 2px 8px rgba(27,54,93,0.08);border:2px solid #C3B09122;padding:1.5em 1.5em 1em 1.5em;border-radius:12px;margin-bottom:1.5em;background:#fff;">
+                    <div style="display:flex;align-items:center;gap:1rem;">
+                        <div style="flex:1;">
+                            <h3 style="margin-bottom:0.25em;">🏬 {{ item_data.store.name }}</h3>
+                            <p class="item-notes mb-1">{{ item_data.store.formatted_address }}</p>
+                            {% if item_data.store.url %}
+                                <p><a href="{{ item_data.store.url }}" target="_blank">🌐 Website</a></p>
+                            {% endif %}
+                            {% if item_data.store.address_line1 and item_data.store.city and item_data.store.state %}
+                                {% if item_data.store.google_maps_link %}
+                                    <p><a href="{{ item_data.store.google_maps_link }}" target="_blank">🗺️ Google Maps</a> | <a href="{{ item_data.store.apple_maps_link }}" target="_blank">🍏 Apple Maps</a></p>
+                                {% endif %}
+                            {% endif %}
+                            <div style="margin-top:0.5em;">
+                                {% if item_data.store.is_online and item_data.store.is_in_person %}
+                                    <span class="status-optional" style="background:#007bff22;padding:0.2em 0.7em;border-radius:12px;font-size:0.95em;">🌐 Online</span>
+                                    <span class="status-complete" style="background:#28a74522;padding:0.2em 0.7em;border-radius:12px;font-size:0.95em;">🏪 In Person</span>
+                                {% elif item_data.store.is_online %}
+                                    <span class="status-optional" style="background:#007bff22;padding:0.2em 0.7em;border-radius:12px;font-size:0.95em;">🌐 Online</span>
+                                {% elif item_data.store.is_in_person %}
+                                    <span class="status-complete" style="background:#28a74522;padding:0.2em 0.7em;border-radius:12px;font-size:0.95em;">🏪 In Person</span>
+                                {% endif %}
+                                {% if item_data.distance is not None %}
+                                    <span class="status-optional" style="background:#C3B09122;padding:0.2em 0.7em;border-radius:12px;font-size:0.95em;">📏 {{ item_data.distance|floatformat:2 }} km</span>
+                                {% endif %}
+                            </div>
+                            {% if item_data.store.latitude and item_data.store.longitude %}
+                                <p class="text-small text-muted">Lat: {{ item_data.store.latitude|floatformat:4 }}, Lon: {{ item_data.store.longitude|floatformat:4 }}</p>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'edit_store' item_data.store.id %}" class="button text-small">Edit</a>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="no-stores">No stores found matching your criteria.</p>
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const findNearMeButton = document.getElementById('find-near-me');
+        if (findNearMeButton) {
+            findNearMeButton.addEventListener('click', function() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        document.getElementById('user_lat').value = position.coords.latitude;
+                        document.getElementById('user_lon').value = position.coords.longitude;
+                        // Clear other location-based filters if user clicks "near me"
+                        document.getElementById('school_id').value = '';
+                        // Submit the form
+                        document.querySelector('.filter-form form').submit();
+                    }, function(error) {
+                        let userMessage = 'Error getting location: ';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                userMessage += "User denied the request for Geolocation.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                userMessage += "Location information is unavailable.";
+                                break;
+                            case error.TIMEOUT:
+                                userMessage += "The request to get user location timed out.";
+                                break;
+                            case error.UNKNOWN_ERROR:
+                                userMessage += "An unknown error occurred.";
+                                break;
+                        }
+                        alert(userMessage);
+                    });
+                } else {
+                    alert('Geolocation is not supported by your browser.');
+                }
+            });
+        }
+        // Add Store modal logic
+        document.getElementById('add-store-btn').onclick = function() {
+            var modal = document.getElementById('store-modal');
+            var modalBody = document.getElementById('store-modal-body');
+            modal.style.display = 'flex';
+            modalBody.innerHTML = '<p>Loading...</p>';
+            fetch('{% url 'add_store_modal' %}', {headers: {'x-requested-with': 'XMLHttpRequest'}})
+                .then(response => response.json())
+                .then(data => {
+                    modalBody.innerHTML = data.html;
+                    bindStoreFormAjax();
+                });
+        };
+        document.getElementById('close-store-modal').onclick = function() {
+            document.getElementById('store-modal').style.display = 'none';
+        };
+        document.getElementById('store-modal').onclick = function(e) {
+            if (e.target === this) this.style.display = 'none';
+        };
+        function bindStoreFormAjax() {
+            var storeForm = document.getElementById('store-form');
+            if (storeForm) {
+                storeForm.onsubmit = function(e) {
+                    e.preventDefault();
+                    var formData = new FormData(storeForm);
+                    fetch(storeForm.action || window.location.href, {
+                        method: 'POST',
+                        headers: {'x-requested-with': 'XMLHttpRequest'},
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById('store-modal').style.display = 'none';
+                            window.location.reload();
+                        } else if (data.html) {
+                            document.getElementById('store-modal-body').innerHTML = data.html;
+                            bindStoreFormAjax();
+                        }
+                    });
+                };
+            }
+        }
+    });
+</script>
+{% endblock %}
