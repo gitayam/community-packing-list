@@ -1,0 +1,6 @@
+name = "community-packing-list"
+compatibility_date = "2025-10-03"
+pages_build_output_dir = "dist"
+
+[env.production]
+vars = { ENVIRONMENT = "production" }

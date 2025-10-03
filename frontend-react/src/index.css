@@ -57,34 +57,74 @@ body {
 
 /* Utility classes for consistency with Django version */
 .button {
-  @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
-  @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  font-weight: 500;
+  transition: colors 200ms;
+  outline: none;
+}
+
+.button:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--military-navy);
 }
 
 .button.primary {
-  @apply bg-military-navy text-white hover:bg-military-olive;
+  background-color: var(--military-navy);
+  color: white;
+}
+
+.button.primary:hover {
+  background-color: var(--military-olive);
 }
 
 .button.secondary {
-  @apply bg-military-khaki text-military-dark hover:bg-military-olive hover:text-white;
+  background-color: var(--military-khaki);
+  color: var(--military-dark);
+}
+
+.button.secondary:hover {
+  background-color: var(--military-olive);
+  color: white;
 }
 
 .button.success {
-  @apply bg-status-complete text-white hover:bg-green-700;
+  background-color: var(--status-complete);
+  color: white;
+}
+
+.button.success:hover {
+  background-color: #1e7e34;
 }
 
 .button.danger {
-  @apply bg-status-required text-white hover:bg-red-700;
+  background-color: var(--status-required);
+  color: white;
+}
+
+.button.danger:hover {
+  background-color: #c82333;
 }
 
 .info-box {
-  @apply bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-6;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-xl);
 }
 
 .text-muted {
-  @apply text-gray-600;
+  color: #6c757d;
 }
 
 .school-tag {
-  @apply inline-flex items-center gap-1 px-2 py-1 bg-military-khaki rounded text-sm;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--military-khaki);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
 }
