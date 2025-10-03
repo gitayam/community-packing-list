@@ -3,6 +3,11 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { HomePage } from '@/pages/HomePage';
+import { CreateListPage } from '@/pages/CreateListPage';
+import { UploadListPage } from '@/pages/UploadListPage';
+import { ListDetailPage } from '@/pages/ListDetailPage';
+import { StoreListPage } from '@/pages/StoreListPage';
+import { NotFoundPage } from '@/pages/NotFoundPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,6 +26,26 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: 'list/create',
+        element: <CreateListPage />,
+      },
+      {
+        path: 'list/upload',
+        element: <UploadListPage />,
+      },
+      {
+        path: 'list/:id',
+        element: <ListDetailPage />,
+      },
+      {
+        path: 'stores',
+        element: <StoreListPage />,
+      },
+      {
+        path: '*',
+        element: <NotFoundPage />,
       },
     ],
   },
