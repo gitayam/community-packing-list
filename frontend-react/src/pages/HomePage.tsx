@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { usePackingLists } from '@/hooks/usePackingLists';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { ListSkeleton } from '@/components/ui/Skeleton';
 
@@ -15,38 +14,73 @@ function PackingListsContent() {
 
   if (error) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <Card className="border-2 border-red-100 bg-red-50/50">
-          <div className="text-center py-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
-              <AlertCircle size={32} className="text-red-600" />
+      <div className="max-w-3xl mx-auto">
+        <div className="rounded-2xl shadow-lg overflow-hidden" style={{
+          backgroundColor: 'white',
+          border: '2px solid #fee2e2'
+        }}>
+          <div className="text-center py-12 px-6">
+            {/* Icon */}
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6" style={{
+              backgroundColor: '#fef2f2'
+            }}>
+              <AlertCircle size={40} style={{ color: '#dc2626' }} />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Unable to Load Packing Lists</h3>
-            <p className="text-gray-600 mb-6">
+
+            {/* Title */}
+            <h3 className="text-2xl font-bold mb-3" style={{ color: '#111827' }}>
+              Unable to Load Packing Lists
+            </h3>
+
+            {/* Description */}
+            <p className="text-lg mb-8" style={{ color: '#6b7280', maxWidth: '500px', margin: '0 auto 2rem' }}>
               The backend API is not available. This is expected if the Django backend hasn't been deployed yet.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
               <Link to="/list/create">
-                <Button variant="primary" className="w-full sm:w-auto">
-                  <Plus size={18} className="mr-2" />
+                <button className="inline-flex items-center px-6 py-3 text-base font-semibold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg" style={{
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none'
+                }}>
+                  <Plus size={20} className="mr-2" />
                   Create Your First List
-                </Button>
+                </button>
               </Link>
-              <Button
-                variant="secondary"
+              <button
                 onClick={() => window.location.reload()}
-                className="w-full sm:w-auto"
+                className="inline-flex items-center px-6 py-3 text-base font-semibold rounded-xl transition-all duration-200 border" style={{
+                  backgroundColor: 'white',
+                  color: '#374151',
+                  borderColor: '#d1d5db'
+                }}
               >
                 Try Again
-              </Button>
+              </button>
             </div>
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> To connect to a live backend, deploy the Django API using the instructions in <code className="bg-blue-100 px-1.5 py-0.5 rounded">BACKEND_DEPLOYMENT.md</code>
+
+            {/* Info Box */}
+            <div className="p-4 rounded-xl border" style={{
+              backgroundColor: '#eff6ff',
+              borderColor: '#bfdbfe',
+              maxWidth: '600px',
+              margin: '0 auto'
+            }}>
+              <p className="text-sm" style={{ color: '#1e40af' }}>
+                <strong>Note:</strong> To connect to a live backend, deploy the Django API using the instructions in{' '}
+                <code className="px-2 py-1 rounded" style={{
+                  backgroundColor: '#dbeafe',
+                  fontFamily: 'monospace',
+                  fontSize: '0.875rem'
+                }}>
+                  BACKEND_DEPLOYMENT.md
+                </code>
               </p>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
     );
   }
@@ -184,55 +218,84 @@ function PackingListsContent() {
 
 export function HomePage() {
   return (
-    <div>
-      {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 rounded-2xl mb-8 shadow-2xl border border-white/10">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-        <div className="relative px-6 sm:px-8 py-12 md:py-20">
+    <div className="min-h-screen">
+      {/* Hero Section - Modern Gradient */}
+      <div className="relative overflow-hidden rounded-3xl mb-12 shadow-2xl" style={{
+        background: 'linear-gradient(135deg, #0f172a 0%, #1e40af 50%, #0f172a 100%)'
+      }}>
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+          backgroundSize: '40px 40px'
+        }} />
+        <div className="relative px-6 py-16 md:py-24">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 px-4 py-2 rounded-full text-sm font-semibold mb-6 border border-emerald-500/20 backdrop-blur-sm">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold mb-8 border" style={{
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              borderColor: 'rgba(16, 185, 129, 0.3)',
+              color: '#10b981'
+            }}>
               <CheckCircle2 size={16} />
               <span>Mission-Ready Preparation</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 leading-tight tracking-tight">
+
+            {/* Heading */}
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-black mb-6" style={{
+              color: 'white',
+              lineHeight: '1.1',
+              letterSpacing: '-0.02em'
+            }}>
               Pack Smart,
               <br />
-              <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+              <span style={{
+                background: 'linear-gradient(to right, #60a5fa, #10b981)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}>
                 Deploy Ready
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+
+            {/* Description */}
+            <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">
               Community-driven packing lists for military schools, training courses, and deployments.
               Get the gear you need, when you need it.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/list/create" className="w-full sm:w-auto">
-                <Button
-                  variant="success"
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 text-base font-semibold rounded-xl hover:scale-105"
-                >
+
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <Link to="/list/create">
+                <button className="inline-flex items-center px-8 py-4 text-base font-semibold rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105" style={{
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  border: 'none'
+                }}>
                   <Plus className="mr-2" size={20} />
                   Create New List
-                </Button>
+                </button>
               </Link>
-              <Link to="/list/upload" className="w-full sm:w-auto">
-                <Button
-                  variant="secondary"
-                  className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md transition-all duration-300 px-8 py-3 text-base font-semibold rounded-xl hover:scale-105"
-                >
+              <Link to="/list/upload">
+                <button className="inline-flex items-center px-8 py-4 text-base font-semibold rounded-2xl transition-all duration-200 border hover:scale-105" style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  color: 'white',
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                  backdropFilter: 'blur(10px)'
+                }}>
                   <Upload className="mr-2" size={20} />
                   Upload List
-                </Button>
+                </button>
               </Link>
-              <Link to="/stores" className="w-full sm:w-auto">
-                <Button
-                  variant="secondary"
-                  className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md transition-all duration-300 px-8 py-3 text-base font-semibold rounded-xl hover:scale-105"
-                >
+              <Link to="/stores">
+                <button className="inline-flex items-center px-8 py-4 text-base font-semibold rounded-2xl transition-all duration-200 border hover:scale-105" style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  color: 'white',
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                  backdropFilter: 'blur(10px)'
+                }}>
                   <Store className="mr-2" size={20} />
                   Find Stores
-                </Button>
+                </button>
               </Link>
             </div>
           </div>
