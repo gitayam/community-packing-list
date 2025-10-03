@@ -1,0 +1,44 @@
+# Node modules
+node_modules/
+frontend-react/node_modules/
+
+# Build outputs
+dist/
+build/
+frontend-react/dist/
+
+# Environment files
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist-python/
+build-python/
+
+# Django
+*.log
+db.sqlite3
+staticfiles/
+media/
+
+# Vite
+.vite/
