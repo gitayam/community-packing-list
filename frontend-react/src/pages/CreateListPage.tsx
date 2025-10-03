@@ -30,7 +30,7 @@ export function CreateListPage() {
     register,
     handleSubmit,
     watch,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<CreatePackingListInput>({
     resolver: zodResolver(createPackingListSchema),
     defaultValues: {
