@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Edit, Trash2, Plus, Check, ThumbsUp, ThumbsDown, DollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Card } from '@/components/ui/Card';
@@ -8,6 +8,7 @@ import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@
 import { ItemCard } from '@/components/packing-lists/ItemCard';
 import { ViewToggle } from '@/components/packing-lists/ViewToggle';
 import { ProgressStats } from '@/components/packing-lists/ProgressStats';
+import { FilterBar, type Filters } from '@/components/packing-lists/FilterBar';
 import { useTogglePacked, useDeleteItem } from '@/hooks/usePackingListMutations';
 import { useVotePrice } from '@/hooks/usePrices';
 import type { PackingListDetailResponse } from '@/types';
@@ -22,11 +23,35 @@ export function PackingListDetail({ data }: PackingListDetailProps) {
   const deleteItemMutation = useDeleteItem();
   const voteMutation = useVotePrice();
 
-  const [searchTerm, setSearchTerm] = useState('');
   const [view, setView] = useState<'card' | 'table'>(() => {
     // Restore view preference from localStorage
     const saved = localStorage.getItem('packinglist-view');
     return (saved as 'card' | 'table') || 'card';
+  });
+
+  const [filters, setFilters] = useState<Filters>(() => {
+    // Restore filters from localStorage
+    const saved = localStorage.getItem('packinglist-filters');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return {
+          search: '',
+          sections: [],
+          status: 'all' as const,
+          required: 'all' as const,
+          sortBy: 'section' as const,
+        };
+      }
+    }
+    return {
+      search: '',
+      sections: [],
+      status: 'all' as const,
+      required: 'all' as const,
+      sortBy: 'section' as const,
+    };
   });
 
   // Save view preference
@@ -34,15 +59,89 @@ export function PackingListDetail({ data }: PackingListDetailProps) {
     localStorage.setItem('packinglist-view', view);
   }, [view]);
 
-  // Group items by section
-  const itemsBySection = items_with_prices.reduce((acc, itemData) => {
-    const section = itemData.pli.section || 'Uncategorized';
-    if (!acc[section]) {
-      acc[section] = [];
+  // Save filters
+  useEffect(() => {
+    localStorage.setItem('packinglist-filters', JSON.stringify(filters));
+  }, [filters]);
+
+  // Get all unique sections
+  const allSections = useMemo(() => {
+    const sections = new Set<string>();
+    items_with_prices.forEach(({ pli }) => {
+      sections.add(pli.section || 'Uncategorized');
+    });
+    return Array.from(sections).sort();
+  }, [items_with_prices]);
+
+  // Apply filters and sorting
+  const filteredAndSortedItems = useMemo(() => {
+    let filtered = [...items_with_prices];
+
+    // Apply search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filtered = filtered.filter(({ item, pli }) =>
+        item.name.toLowerCase().includes(searchLower) ||
+        pli.notes?.toLowerCase().includes(searchLower) ||
+        pli.instructions?.toLowerCase().includes(searchLower) ||
+        pli.nsn_lin?.toLowerCase().includes(searchLower)
+      );
     }
-    acc[section].push(itemData);
-    return acc;
-  }, {} as Record<string, typeof items_with_prices>);
+
+    // Apply status filter
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(({ pli }) =>
+        filters.status === 'packed' ? pli.packed : !pli.packed
+      );
+    }
+
+    // Apply required filter
+    if (filters.required !== 'all') {
+      filtered = filtered.filter(({ pli }) =>
+        filters.required === 'required' ? pli.required : !pli.required
+      );
+    }
+
+    // Apply section filter
+    if (filters.sections.length > 0) {
+      filtered = filtered.filter(({ pli }) =>
+        filters.sections.includes(pli.section || 'Uncategorized')
+      );
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      if (filters.sortBy === 'name') {
+        return a.item.name.localeCompare(b.item.name);
+      } else if (filters.sortBy === 'required') {
+        // Required first
+        if (a.pli.required && !b.pli.required) return -1;
+        if (!a.pli.required && b.pli.required) return 1;
+        return a.item.name.localeCompare(b.item.name);
+      } else {
+        // Sort by section (default)
+        const sectionCompare = (a.pli.section || 'Uncategorized').localeCompare(
+          b.pli.section || 'Uncategorized'
+        );
+        if (sectionCompare !== 0) return sectionCompare;
+        return a.item.name.localeCompare(b.item.name);
+      }
+    });
+
+    return filtered;
+  }, [items_with_prices, filters]);
+
+  // Group filtered items by section
+  const itemsBySection = useMemo(() => {
+    return filteredAndSortedItems.reduce((acc, itemData) => {
+      const section = itemData.pli.section || 'Uncategorized';
+      if (!acc[section]) {
+        acc[section] = [];
+      }
+      acc[section].push(itemData);
+      return acc;
+    }, {} as Record<string, typeof items_with_prices>);
+  }, [filteredAndSortedItems]);
 
   const handleTogglePacked = async (itemId: number) => {
     try {
@@ -86,11 +185,7 @@ export function PackingListDetail({ data }: PackingListDetailProps) {
   const requiredItems = items_with_prices.filter(i => i.pli.required).length;
   const packedRequired = items_with_prices.filter(i => i.pli.required && i.pli.packed).length;
 
-  const filteredSections = Object.entries(itemsBySection).filter(([_, items]) =>
-    items.some(({ item }) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  const filteredSections = Object.entries(itemsBySection);
 
   return (
     <div>
@@ -141,16 +236,18 @@ export function PackingListDetail({ data }: PackingListDetailProps) {
         />
       </div>
 
-      {/* Search and View Toggle */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <input
-          type="text"
-          placeholder="Search items..."
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-military-navy"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <ViewToggle view={view} onChange={setView} />
+      {/* FilterBar and View Toggle */}
+      <div className="space-y-3 mb-6">
+        <div className="flex items-start gap-3">
+          <div className="flex-1">
+            <FilterBar
+              sections={allSections}
+              filters={filters}
+              onFilterChange={setFilters}
+            />
+          </div>
+          <ViewToggle view={view} onChange={setView} />
+        </div>
       </div>
 
       {filteredSections.length === 0 ? (
