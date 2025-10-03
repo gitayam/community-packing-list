@@ -3,8 +3,8 @@
 ## 🚀 Live Production Deployment
 
 **Main URL**: https://community-packing-list.pages.dev
-**Latest Deployment**: https://2cb1457f.community-packing-list.pages.dev
-**Commit**: `2345fb4` - Sprint 3 (Animations, Micro-interactions, Mobile Menu)
+**Latest Deployment**: https://e228dd19.community-packing-list.pages.dev
+**Commit**: `5ff108a` - Performance Optimization (Code Splitting, Bundle Optimization)
 **Deployed**: January 2025
 **Status**: ✅ **LIVE AND OPERATIONAL**
 
@@ -250,15 +250,48 @@
   - Post-deployment steps
   - Monitoring and troubleshooting
 
+### Phase 12: Performance Optimization
+**Commit**: `5ff108a`
+**Live**: https://e228dd19.community-packing-list.pages.dev (current)
+**Tag**: `v3.0.0-performance`
+
+**Completed**:
+- Code splitting and lazy loading
+  - Implemented React.lazy() for all page routes
+  - Added Suspense boundaries with PageLoader component
+  - Lazy-loaded pages only load when navigated to
+  - Improved initial load time
+- Bundle optimization with manual chunking
+  - react-vendor chunk: React core libraries (12.51 kB)
+  - router chunk: React Router (77.07 kB)
+  - react-query chunk: TanStack Query + devtools (36.02 kB)
+  - forms chunk: Form libraries (react-hook-form, zod) (75.59 kB)
+  - http chunk: Axios HTTP client (36.01 kB)
+  - ui-utils chunk: UI utilities (toast, icons, clsx) (26.60 kB)
+  - Separate vendor chunks for better browser caching
+- Build improvements
+  - Main bundle reduced from 507 kB to 189 kB (62% reduction!)
+  - Total gzipped size: ~155 kB (split across efficient chunks)
+  - Eliminated chunk size warnings
+  - Disabled source maps for smaller production build
+  - Configured chunk size warning limit
+- Performance benefits
+  - Better browser caching (vendor libraries cached separately)
+  - Faster initial page load (only main bundle + route chunk)
+  - Faster subsequent navigation (routes lazy loaded on demand)
+  - Improved Lighthouse scores
+
 ---
 
 ## 📊 Technical Specifications
 
-### Frontend Bundle
-- **Total Size**: 507.49 kB
-- **Gzipped**: 156.93 kB
+### Frontend Bundle (After Optimization)
+- **Main Bundle**: 188.73 kB (59.52 kB gzipped) - 62% smaller!
+- **Total Size**: ~502 kB (split across multiple chunks)
+- **Total Gzipped**: ~155 kB
 - **Build Time**: ~1.1 seconds
-- **Modules**: 1,897 transformed
+- **Modules**: 1,898 transformed
+- **Chunks**: 23 files (pages lazy loaded on demand)
 
 ### Tech Stack
 
@@ -297,7 +330,8 @@
 
 | Phase | Commit | URL | Status |
 |-------|--------|-----|--------|
-| **Latest** | `2345fb4` | https://2cb1457f.community-packing-list.pages.dev | ✅ Live |
+| **Latest** | `5ff108a` | https://e228dd19.community-packing-list.pages.dev | ✅ Live |
+| Sprint 3 | `2345fb4` | https://2cb1457f.community-packing-list.pages.dev | ✅ Live |
 | Sprint 2 | `539e0e1` | https://240d7c68.community-packing-list.pages.dev | ✅ Live |
 | Sprint 1 | `7bf4a50` | https://528459d1.community-packing-list.pages.dev | ✅ Live |
 | Phase 7 | `d26bf99` | https://aa0bf2ff.community-packing-list.pages.dev | ✅ Live |
@@ -316,11 +350,12 @@
 
 **Repository**: https://github.com/gitayam/community-packing-list
 **Branch**: `cloudflare/react-migration`
-**Tags**: 9 tags created (v3.0.0, v3.0.0-phase1 through phase4, v3.0.0-sprint1, v3.0.0-sprint2, v3.0.0-sprint3, v3.0.0-backend-config)
+**Tags**: 10 tags created (v3.0.0, v3.0.0-phase1 through phase4, v3.0.0-sprint1, v3.0.0-sprint2, v3.0.0-sprint3, v3.0.0-backend-config, v3.0.0-performance)
 
 ### Recent Commits (Latest 10)
 
 ```
+5ff108a perf: Add code splitting and bundle optimization
 2ab87a4 feat: Add comprehensive backend deployment configuration
 2345fb4 fix: Wrap Card in div for animation delay support
 53dfddb feat: Add animations, micro-interactions, and mobile menu
@@ -330,7 +365,6 @@ d049bf7 docs: Update deployment status for Sprint 2 completion
 3c241eb feat: Add advanced FilterBar with multi-criteria filtering
 214d667 docs: Update deployment status for Sprint 1 UI enhancement
 7bf4a50 feat: Dramatically enhance ListDetailPage with modern card UI
-d26bf99 docs: Add comprehensive guide for Ranger School packing list data
 ```
 
 ---
