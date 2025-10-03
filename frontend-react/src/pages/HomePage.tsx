@@ -1,52 +1,27 @@
+import { Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Upload, Eye } from 'lucide-react';
+import { Plus, Upload, Eye, AlertCircle } from 'lucide-react';
 import { usePackingLists } from '@/hooks/usePackingLists';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 
-export function HomePage() {
-  const { data: packingLists, isLoading, error } = usePackingLists();
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="text-lg text-military-dark">Loading...</div>
-      </div>
-    );
-  }
+function PackingListsContent() {
+  const { data: packingLists, error } = usePackingLists();
 
   if (error) {
     return (
       <Card>
-        <div className="text-status-required">Error loading packing lists. Please try again.</div>
+        <div className="flex items-center gap-3 text-status-required">
+          <AlertCircle size={20} />
+          <span>Error loading packing lists. Please try again.</span>
+        </div>
       </Card>
     );
   }
 
   return (
-    <div>
-      <Card className="mb-8">
-        <h2 className="text-3xl font-bold text-military-dark mb-4">Mission-Ready Packing, Simplified.</h2>
-        <p className="text-lg text-gray-600 mb-6">
-          Find, create, or upload packing lists for your next military school,
-          assessment, or deployment.
-        </p>
-        <div className="flex flex-wrap gap-4">
-          <Link to="/list/create">
-            <Button variant="success">
-              <Plus className="inline mr-2" size={18} />
-              Create New List
-            </Button>
-          </Link>
-          <Link to="/list/upload">
-            <Button variant="secondary">
-              <Upload className="inline mr-2" size={18} />
-              Upload List
-            </Button>
-          </Link>
-        </div>
-      </Card>
-
+    <>
       <h2 className="text-2xl font-semibold text-military-dark mb-4">Existing Packing Lists</h2>
 
       {packingLists && packingLists.length > 0 ? (
@@ -91,6 +66,38 @@ export function HomePage() {
           </p>
         </Card>
       )}
+    </>
+  );
+}
+
+export function HomePage() {
+  return (
+    <div>
+      <Card className="mb-8">
+        <h2 className="text-3xl font-bold text-military-dark mb-4">Mission-Ready Packing, Simplified.</h2>
+        <p className="text-lg text-gray-600 mb-6">
+          Find, create, or upload packing lists for your next military school,
+          assessment, or deployment.
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <Link to="/list/create">
+            <Button variant="success">
+              <Plus className="inline mr-2" size={18} />
+              Create New List
+            </Button>
+          </Link>
+          <Link to="/list/upload">
+            <Button variant="secondary">
+              <Upload className="inline mr-2" size={18} />
+              Upload List
+            </Button>
+          </Link>
+        </div>
+      </Card>
+
+      <Suspense fallback={<ListSkeleton items={5} />}>
+        <PackingListsContent />
+      </Suspense>
     </div>
   );
 }

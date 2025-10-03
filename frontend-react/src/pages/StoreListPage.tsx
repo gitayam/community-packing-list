@@ -1,19 +1,114 @@
-import { useState } from 'react';
-import { Plus, MapPin, ExternalLink, Trash2 } from 'lucide-react';
+import { useState, Suspense } from 'react';
+import { Plus, MapPin, ExternalLink, Trash2, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import { useStores, useCreateStore, useDeleteStore } from '@/hooks/useStores';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createStoreSchema } from '@/lib/schemas';
 import type { CreateStoreInput } from '@/lib/schemas';
 
-export function StoreListPage() {
-  const { data: stores, isLoading, error } = useStores();
-  const createMutation = useCreateStore();
+function StoresContent() {
+  const { data: stores, error } = useStores();
   const deleteMutation = useDeleteStore();
+
+  const handleDelete = async (id: number) => {
+    if (confirm('Are you sure you want to delete this store?')) {
+      try {
+        await deleteMutation.mutateAsync(id);
+      } catch (error) {
+        console.error('Failed to delete store:', error);
+      }
+    }
+  };
+
+  if (error) {
+    return (
+      <Card>
+        <div className="flex items-center gap-3 text-status-required">
+          <AlertCircle size={20} />
+          <span>Error loading stores. Please try again.</span>
+        </div>
+      </Card>
+    );
+  }
+
+  return stores && stores.length > 0 ? (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {stores.map((store) => (
+        <Card key={store.id}>
+          <div className="flex items-start justify-between mb-3">
+            <h3 className="text-xl font-semibold text-military-navy">{store.name}</h3>
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => handleDelete(store.id)}
+              disabled={deleteMutation.isPending}
+            >
+              <Trash2 size={16} />
+            </Button>
+          </div>
+
+          <div className="space-y-2 text-sm">
+            {(store.address_line1 || store.city) && (
+              <div className="flex items-start gap-2">
+                <MapPin size={16} className="text-gray-500 mt-0.5 flex-shrink-0" />
+                <div className="text-gray-600">
+                  {store.address_line1 && <div>{store.address_line1}</div>}
+                  {store.address_line2 && <div>{store.address_line2}</div>}
+                  {(store.city || store.state) && (
+                    <div>
+                      {store.city}{store.city && store.state ? ', ' : ''}{store.state} {store.zip_code}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {store.url && (
+              <div className="flex items-center gap-2">
+                <ExternalLink size={16} className="text-gray-500" />
+                <a
+                  href={store.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-military-navy hover:underline truncate"
+                >
+                  Visit Website
+                </a>
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2 mt-3">
+              {store.is_online && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+                  Online
+                </span>
+              )}
+              {store.is_in_person && (
+                <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
+                  In-Person
+                </span>
+              )}
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  ) : (
+    <Card>
+      <p className="text-gray-600 text-center py-8">
+        No stores found. Add your first store to get started!
+      </p>
+    </Card>
+  );
+}
+
+export function StoreListPage() {
+  const createMutation = useCreateStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const {
@@ -39,32 +134,6 @@ export function StoreListPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this store?')) {
-      try {
-        await deleteMutation.mutateAsync(id);
-      } catch (error) {
-        console.error('Failed to delete store:', error);
-      }
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="text-lg text-military-dark">Loading stores...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <div className="text-status-required">Error loading stores. Please try again.</div>
-      </Card>
-    );
-  }
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -78,75 +147,9 @@ export function StoreListPage() {
         </Button>
       </div>
 
-      {stores && stores.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {stores.map((store) => (
-            <Card key={store.id}>
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="text-xl font-semibold text-military-navy">{store.name}</h3>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  onClick={() => handleDelete(store.id)}
-                  disabled={deleteMutation.isPending}
-                >
-                  <Trash2 size={16} />
-                </Button>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                {(store.address_line1 || store.city) && (
-                  <div className="flex items-start gap-2">
-                    <MapPin size={16} className="text-gray-500 mt-0.5 flex-shrink-0" />
-                    <div className="text-gray-600">
-                      {store.address_line1 && <div>{store.address_line1}</div>}
-                      {store.address_line2 && <div>{store.address_line2}</div>}
-                      {(store.city || store.state) && (
-                        <div>
-                          {store.city}{store.city && store.state ? ', ' : ''}{store.state} {store.zip_code}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {store.url && (
-                  <div className="flex items-center gap-2">
-                    <ExternalLink size={16} className="text-gray-500" />
-                    <a
-                      href={store.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-military-navy hover:underline truncate"
-                    >
-                      Visit Website
-                    </a>
-                  </div>
-                )}
-
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {store.is_online && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
-                      Online
-                    </span>
-                  )}
-                  {store.is_in_person && (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
-                      In-Person
-                    </span>
-                  )}
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <p className="text-gray-600 text-center py-8">
-            No stores found. Add your first store to get started!
-          </p>
-        </Card>
-      )}
+      <Suspense fallback={<ListSkeleton items={6} />}>
+        <StoresContent />
+      </Suspense>
 
       <Modal
         isOpen={isModalOpen}

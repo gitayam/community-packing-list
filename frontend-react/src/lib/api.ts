@@ -34,15 +34,15 @@ export const packingListsApi = {
 export const itemsApi = {
   create: (listId: number, data: Partial<PackingListItem>) =>
     api.post<PackingListItem>('/packing-list-items/', { ...data, packing_list: listId }),
-  update: (listId: number, itemId: number, data: Partial<PackingListItem>) =>
+  update: (_listId: number, itemId: number, data: Partial<PackingListItem>) =>
     api.put<PackingListItem>(`/packing-list-items/${itemId}/`, data),
-  delete: (listId: number, itemId: number) =>
+  delete: (_listId: number, itemId: number) =>
     api.delete(`/packing-list-items/${itemId}/`),
 };
 
 // Prices
 export const pricesApi = {
-  create: (itemId: number, listId: number, data: Partial<Price>) =>
+  create: (itemId: number, _listId: number, data: Partial<Price>) =>
     api.post<Price>('/prices/', { ...data, item: itemId }),
   vote: (priceId: number, isUpvote: boolean) =>
     api.post('/votes/', {

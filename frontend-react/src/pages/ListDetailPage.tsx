@@ -1,52 +1,40 @@
+import { Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { CardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
 import { usePackingList } from '@/hooks/usePackingList';
 import { PackingListDetail } from '@/components/packing-lists/PackingListDetail';
 
-export function ListDetailPage() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { data, isLoading, error } = usePackingList(Number(id));
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="text-lg text-military-dark">Loading packing list...</div>
-      </div>
-    );
-  }
+function DetailContent({ id }: { id: number }) {
+  const { data, error } = usePackingList(id);
 
   if (error) {
     return (
-      <div>
-        <Button variant="secondary" onClick={() => navigate('/')} className="mb-4">
-          <ArrowLeft className="inline mr-2" size={16} />
-          Back to Lists
-        </Button>
-        <Card>
-          <div className="text-status-required">
-            Error loading packing list. Please try again.
-          </div>
-        </Card>
-      </div>
+      <Card>
+        <div className="flex items-center gap-3 text-status-required">
+          <AlertCircle size={20} />
+          <span>Error loading packing list. Please try again.</span>
+        </div>
+      </Card>
     );
   }
 
   if (!data) {
     return (
-      <div>
-        <Button variant="secondary" onClick={() => navigate('/')} className="mb-4">
-          <ArrowLeft className="inline mr-2" size={16} />
-          Back to Lists
-        </Button>
-        <Card>
-          <div className="text-gray-600">Packing list not found.</div>
-        </Card>
-      </div>
+      <Card>
+        <div className="text-gray-600">Packing list not found.</div>
+      </Card>
     );
   }
+
+  return <PackingListDetail data={data} />;
+}
+
+export function ListDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   return (
     <div>
@@ -54,7 +42,17 @@ export function ListDetailPage() {
         <ArrowLeft className="inline mr-2" size={16} />
         Back to Lists
       </Button>
-      <PackingListDetail data={data} />
+
+      <Suspense
+        fallback={
+          <div className="space-y-6">
+            <CardSkeleton />
+            <TableSkeleton rows={8} />
+          </div>
+        }
+      >
+        <DetailContent id={Number(id)} />
+      </Suspense>
     </div>
   );
 }
