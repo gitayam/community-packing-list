@@ -10,5 +10,6 @@ gunicorn~=22.0.0 # Added gunicorn
 python-dotenv~=1.0.0 # For managing environment variables locally, useful with Docker
 pillow~=10.2.0 # pdfplumber dependency, good to make explicit
 numpy~=1.26.4 # pandas dependency
+whitenoise~=6.6.0 # Static file serving for production
 # Ensure other transitive dependencies like pytz, sqlparse, etc., are covered or add if needed.
 # For now, relying on pip to resolve them based on the above.

@@ -1,0 +1,52 @@
+# Render.com deployment configuration
+services:
+  # Django Backend Service
+  - type: web
+    name: community-packing-list-api
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt && python3 manage.py collectstatic --noinput
+    startCommand: gunicorn community_packing_list.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --threads 2 --timeout 60
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DB_ENGINE
+        value: "django.db.backends.postgresql"
+      - key: DB_NAME
+        fromDatabase:
+          name: community-packing-list-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: community-packing-list-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: community-packing-list-db
+          property: password
+      - key: DB_HOST
+        fromDatabase:
+          name: community-packing-list-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: community-packing-list-db
+          property: port
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://community-packing-list.pages.dev https://*.community-packing-list.pages.dev"
+      - key: PYTHON_VERSION
+        value: "3.13.7"
+
+# PostgreSQL Database
+databases:
+  - name: community-packing-list-db
+    databaseName: community_packing_list
+    user: cpl_user
+    region: oregon
+    plan: free

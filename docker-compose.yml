@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: cpl_postgres
+    environment:
+      POSTGRES_DB: community_packing_list
+      POSTGRES_USER: cpl_user
+      POSTGRES_PASSWORD: dev_password_change_in_production
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cpl_user -d community_packing_list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Django Backend
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cpl_django
+    command: >
+      sh -c "python3 manage.py migrate &&
+             python3 manage.py create_example_data &&
+             gunicorn --bind 0.0.0.0:8000 --workers 2 --reload --access-logfile - --error-logfile - community_packing_list.wsgi:application"
+    environment:
+      # Django settings
+      DJANGO_DEBUG: "True"
+      DJANGO_SECRET_KEY: "django-insecure-dev-only-key-for-docker"
+      DJANGO_ALLOWED_HOSTS: "localhost 127.0.0.1 [::1] web"
+
+      # Database settings
+      DB_ENGINE: "django.db.backends.postgresql"
+      DB_NAME: "community_packing_list"
+      DB_USER: "cpl_user"
+      DB_PASS: "dev_password_change_in_production"
+      DB_HOST: "db"
+      DB_PORT: "5432"
+
+      # CORS settings
+      CSRF_TRUSTED_ORIGINS: "http://localhost:8000 http://127.0.0.1:8000 http://localhost:5173 http://127.0.0.1:5173"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    name: cpl_postgres_data
+  static_volume:
+    name: cpl_static
+  media_volume:
+    name: cpl_media
