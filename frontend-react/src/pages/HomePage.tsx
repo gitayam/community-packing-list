@@ -63,9 +63,14 @@ function PackingListsContent() {
 
       {packingLists && packingLists.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {packingLists.map((plist) => (
-            <Link key={plist.id} to={`/list/${plist.id}`} className="group">
-              <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-military-olive/40 cursor-pointer">
+          {packingLists.map((plist, index) => (
+            <Link
+              key={plist.id}
+              to={`/list/${plist.id}`}
+              className="group animate-fadeIn"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <Card className="h-full hover:shadow-lg transition-all duration-300 hover:border-military-olive/40 hover:-translate-y-1 cursor-pointer">
                 <div className="flex flex-col h-full">
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">

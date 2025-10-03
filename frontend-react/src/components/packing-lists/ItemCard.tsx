@@ -47,15 +47,15 @@ export function ItemCard({
             onClick={onTogglePacked}
             disabled={isPending}
             className={`
-              flex-shrink-0 w-12 h-12 rounded-lg border-2 flex items-center justify-center transition-all
+              flex-shrink-0 w-12 h-12 rounded-lg border-2 flex items-center justify-center transition-all duration-200
               ${pli.packed
-                ? 'bg-status-complete border-status-complete text-white'
-                : 'bg-white border-gray-300 hover:border-status-complete'
+                ? 'bg-status-complete border-status-complete text-white scale-105'
+                : 'bg-white border-gray-300 hover:border-status-complete hover:scale-105'
               }
               ${isPending ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
             `}
           >
-            {pli.packed && <Check size={24} strokeWidth={3} />}
+            {pli.packed && <Check size={24} strokeWidth={3} className="animate-checkmark" />}
           </button>
 
           {/* Item Info */}

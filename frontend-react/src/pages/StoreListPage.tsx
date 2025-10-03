@@ -43,8 +43,12 @@ function StoresContent() {
 
   return stores && stores.length > 0 ? (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {stores.map((store) => (
-        <Card key={store.id} className="hover:shadow-lg transition-all duration-300 hover:border-military-olive/40">
+      {stores.map((store, index) => (
+        <Card
+          key={store.id}
+          className="hover:shadow-lg transition-all duration-300 hover:border-military-olive/40 hover:-translate-y-1 animate-fadeIn"
+          style={{ animationDelay: `${index * 50}ms` }}
+        >
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-start gap-3 flex-1">

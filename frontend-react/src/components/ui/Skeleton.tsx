@@ -8,7 +8,7 @@ export function Skeleton({ className }: SkeletonProps) {
   return (
     <div
       className={clsx(
-        'animate-pulse bg-gray-200 rounded',
+        'bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded',
         className
       )}
     />
@@ -44,7 +44,9 @@ export function ListSkeleton({ items = 3 }: { items?: number }) {
   return (
     <div className="space-y-4">
       {Array.from({ length: items }).map((_, i) => (
-        <CardSkeleton key={i} />
+        <div key={i} style={{ animationDelay: `${i * 100}ms` }} className="animate-fadeIn">
+          <CardSkeleton />
+        </div>
       ))}
     </div>
   );
