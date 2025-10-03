@@ -1,15 +1,19 @@
+import { lazy, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Layout } from '@/components/layout/Layout';
-import { HomePage } from '@/pages/HomePage';
-import { CreateListPage } from '@/pages/CreateListPage';
-import { UploadListPage } from '@/pages/UploadListPage';
-import { ListDetailPage } from '@/pages/ListDetailPage';
-import { StoreListPage } from '@/pages/StoreListPage';
-import { NotFoundPage } from '@/pages/NotFoundPage';
+import { PageLoader } from '@/components/ui/PageLoader';
+
+// Lazy load all pages for code splitting
+const HomePage = lazy(() => import('@/pages/HomePage').then(m => ({ default: m.HomePage })));
+const CreateListPage = lazy(() => import('@/pages/CreateListPage').then(m => ({ default: m.CreateListPage })));
+const UploadListPage = lazy(() => import('@/pages/UploadListPage').then(m => ({ default: m.UploadListPage })));
+const ListDetailPage = lazy(() => import('@/pages/ListDetailPage').then(m => ({ default: m.ListDetailPage })));
+const StoreListPage = lazy(() => import('@/pages/StoreListPage').then(m => ({ default: m.StoreListPage })));
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,27 +36,51 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage />,
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <HomePage />
+          </Suspense>
+        ),
       },
       {
         path: 'list/create',
-        element: <CreateListPage />,
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <CreateListPage />
+          </Suspense>
+        ),
       },
       {
         path: 'list/upload',
-        element: <UploadListPage />,
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <UploadListPage />
+          </Suspense>
+        ),
       },
       {
         path: 'list/:id',
-        element: <ListDetailPage />,
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ListDetailPage />
+          </Suspense>
+        ),
       },
       {
         path: 'stores',
-        element: <StoreListPage />,
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <StoreListPage />
+          </Suspense>
+        ),
       },
       {
         path: '*',
-        element: <NotFoundPage />,
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <NotFoundPage />
+          </Suspense>
+        ),
       },
     ],
   },
