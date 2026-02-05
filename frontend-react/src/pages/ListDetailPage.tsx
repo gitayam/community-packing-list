@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { CardSkeleton, TableSkeleton } from '@/components/ui/Skeleton';
+import { CardSkeleton, ItemSkeleton } from '@/components/ui/Skeleton';
 import { usePackingList } from '@/hooks/usePackingList';
 import { PackingListDetail } from '@/components/packing-lists/PackingListDetail';
 
@@ -45,9 +45,11 @@ export function ListDetailPage() {
 
       <Suspense
         fallback={
-          <div className="space-y-6">
+          <div className="space-y-4">
             <CardSkeleton />
-            <TableSkeleton rows={8} />
+            {Array.from({ length: 6 }).map((_, i) => (
+              <ItemSkeleton key={i} />
+            ))}
           </div>
         }
       >
