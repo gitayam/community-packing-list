@@ -215,7 +215,7 @@ export function PackingListDetail({ data }: PackingListDetailProps) {
         {/* Badges */}
         <div className="flex flex-wrap gap-2">
           {packing_list.school && (
-            <Badge variant="military">{packing_list.school.name}</Badge>
+            <Badge variant="info">{packing_list.school.name}</Badge>
           )}
           {packing_list.base && (
             <Badge variant="info">{packing_list.base.name}</Badge>

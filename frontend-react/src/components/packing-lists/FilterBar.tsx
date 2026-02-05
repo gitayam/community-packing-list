@@ -255,7 +255,7 @@ export function FilterBar({ sections, filters, onFilterChange }: FilterBarProps)
             </Badge>
           )}
           {filters.sections.length > 0 && (
-            <Badge variant="military" size="sm">
+            <Badge variant="info" size="sm">
               {filters.sections.length} section{filters.sections.length > 1 ? 's' : ''}
               <button
                 onClick={() => updateFilter({ sections: [] })}
