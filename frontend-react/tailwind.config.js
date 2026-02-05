@@ -18,6 +18,11 @@ export default {
           glow: '#60A5FA',
           muted: '#1E3A5F',
         },
+        text: {
+          primary: '#F8FAFC',
+          secondary: '#94A3B8',
+          muted: '#64748B',
+        },
         status: {
           success: '#10B981',
           danger: '#EF4444',
