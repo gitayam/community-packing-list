@@ -1,12 +1,13 @@
 import { Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Plus, Upload, Eye, AlertCircle, Package, CheckCircle2,
-  TrendingUp, Store, GraduationCap, MapPin
+  Plus, Upload, Eye, AlertCircle, Package, Activity,
+  Store, GraduationCap, MapPin, Target, Radio, Radar
 } from 'lucide-react';
 import { usePackingLists } from '@/hooks/usePackingLists';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
 import { ListSkeleton } from '@/components/ui/Skeleton';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,48 +23,43 @@ function PackingListsContent() {
 
   if (error) {
     return (
-      <div className="max-w-3xl mx-auto">
-        <div className="glass rounded-2xl overflow-hidden border border-status-danger/30">
-          <div className="text-center py-12 px-6">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6 bg-status-danger/20">
-              <AlertCircle size={40} className="text-status-danger" />
-            </div>
-
-            <h3 className="text-2xl font-bold text-text-primary mb-3">
-              Unable to Load Packing Lists
-            </h3>
-
-            <p className="text-lg text-text-secondary mb-8 max-w-md mx-auto">
-              The backend API is not available. This is expected if the Django backend hasn't been deployed yet.
-            </p>
-
-            <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
-              <Link to="/list/create">
-                <Button className="bg-accent-blue hover:bg-accent-glow glow-blue text-white">
-                  <Plus size={20} className="mr-2" />
-                  Create Your First List
-                </Button>
-              </Link>
-              <Button
-                variant="secondary"
-                onClick={() => window.location.reload()}
-                className="glass"
-              >
-                Try Again
-              </Button>
-            </div>
-
-            <div className="glass p-4 rounded-xl max-w-lg mx-auto">
-              <p className="text-sm text-accent-glow">
-                <strong>Note:</strong> To connect to a live backend, deploy the Django API using the instructions in{' '}
-                <code className="px-2 py-1 rounded bg-dark-elevated font-mono text-sm">
-                  BACKEND_DEPLOYMENT.md
-                </code>
-              </p>
+      <Card variant="tactical" className="max-w-2xl mx-auto">
+        <div className="text-center py-12 px-6">
+          {/* Alert icon with glow */}
+          <div className="relative inline-flex items-center justify-center w-20 h-20 mb-6">
+            <div className="absolute inset-0 rounded-full bg-status-danger/20 animate-pulse" />
+            <div className="relative w-16 h-16 rounded-full bg-tactical-elevated border-2 border-status-danger flex items-center justify-center glow-danger">
+              <AlertCircle size={32} className="text-status-danger" />
             </div>
           </div>
+
+          <h3 className="font-display text-xl font-bold text-text-primary mb-3 tracking-wider">
+            CONNECTION FAILED
+          </h3>
+          <p className="font-tactical text-xs text-text-secondary mb-8 max-w-md mx-auto uppercase tracking-wide leading-relaxed">
+            Unable to establish link with backend systems. Verify API deployment status.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+            <Link to="/list/create">
+              <Button variant="primary" size="md">
+                <Plus size={16} className="mr-2" />
+                Initialize New List
+              </Button>
+            </Link>
+            <Button variant="secondary" size="md" onClick={() => window.location.reload()}>
+              <Radio size={16} className="mr-2" />
+              Retry Connection
+            </Button>
+          </div>
+
+          <div className="p-4 rounded bg-tactical-surface border border-accent-amber/30">
+            <p className="font-tactical text-[10px] text-accent-amber uppercase tracking-wider">
+              <strong>// SYSTEM NOTE:</strong> Deploy backend API via BACKEND_DEPLOYMENT.md
+            </p>
+          </div>
         </div>
-      </div>
+      </Card>
     );
   }
 
@@ -71,106 +67,141 @@ function PackingListsContent() {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-      {/* Stats Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="glass rounded-xl p-5 border border-dark-border hover:border-accent-blue/50 transition-all group">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-12 h-12 rounded-xl bg-accent-blue/20 flex items-center justify-center group-hover:glow-blue-sm transition-all">
-              <Package className="text-accent-blue" size={24} />
+      {/* Mission Status Dashboard */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        {/* Total Lists */}
+        <div className="col-span-1 rounded-lg bg-tactical-elevated border border-tactical-border p-4 relative overflow-hidden group hover:border-accent-cyan/50 transition-all">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-accent-cyan/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative">
+            <div className="data-label mb-2">TOTAL LISTS</div>
+            <div className="flex items-end justify-between">
+              <span className="font-display text-2xl md:text-3xl font-bold text-text-primary">{totalLists}</span>
+              <Package className="text-accent-cyan opacity-50 group-hover:opacity-100 transition-opacity" size={20} />
             </div>
-            <Badge className="bg-accent-muted text-accent-glow border-accent-blue/30">Active</Badge>
+            <Badge variant="info" size="sm" pulse className="mt-2">ACTIVE</Badge>
           </div>
-          <div className="text-3xl font-black text-text-primary mb-1">{totalLists}</div>
-          <div className="text-sm font-medium text-text-secondary">Total Lists</div>
         </div>
 
-        <div className="glass rounded-xl p-5 border border-dark-border hover:border-status-success/50 transition-all group">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-12 h-12 rounded-xl bg-status-success/20 flex items-center justify-center group-hover:glow-success transition-all">
-              <TrendingUp className="text-status-success" size={24} />
+        {/* Recent Activity */}
+        <div className="col-span-1 rounded-lg bg-tactical-elevated border border-tactical-border p-4 relative overflow-hidden group hover:border-status-success/50 transition-all">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-status-success/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative">
+            <div className="data-label mb-2">RECENT OPS</div>
+            <div className="flex items-end justify-between">
+              <span className="font-display text-2xl md:text-3xl font-bold text-text-primary">3</span>
+              <Activity className="text-status-success opacity-50 group-hover:opacity-100 transition-opacity" size={20} />
             </div>
-            <Badge className="bg-status-success/20 text-status-success border-status-success/30">Updated</Badge>
+            <Badge variant="success" size="sm" pulse className="mt-2">UPDATED</Badge>
           </div>
-          <div className="text-3xl font-black text-text-primary mb-1">3</div>
-          <div className="text-sm font-medium text-text-secondary">Recent Lists</div>
         </div>
 
-        <div className="glass rounded-xl p-5 border border-dark-border hover:border-purple-500/50 transition-all group">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-              <Store className="text-purple-400" size={24} />
+        {/* Supply Points */}
+        <div className="col-span-1 rounded-lg bg-tactical-elevated border border-tactical-border p-4 relative overflow-hidden group hover:border-accent-amber/50 transition-all">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-accent-amber/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative">
+            <div className="data-label mb-2">SUPPLY POINTS</div>
+            <div className="flex items-end justify-between">
+              <span className="font-display text-2xl md:text-3xl font-bold text-text-primary">12</span>
+              <Store className="text-accent-amber opacity-50 group-hover:opacity-100 transition-opacity" size={20} />
             </div>
-            <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">Nearby</Badge>
+            <Badge variant="warning" size="sm" className="mt-2">NEARBY</Badge>
           </div>
-          <div className="text-3xl font-black text-text-primary mb-1">12</div>
-          <div className="text-sm font-medium text-text-secondary">Stores Found</div>
+        </div>
+
+        {/* Readiness */}
+        <div className="col-span-1 rounded-lg bg-tactical-elevated border border-tactical-border p-4 relative overflow-hidden group hover:border-accent-cyan/50 transition-all">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-accent-cyan/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative">
+            <div className="data-label mb-2">READINESS</div>
+            <div className="flex items-end justify-between">
+              <span className="font-display text-2xl md:text-3xl font-bold text-status-success">98%</span>
+              <Target className="text-accent-cyan opacity-50 group-hover:opacity-100 transition-opacity" size={20} />
+            </div>
+            <Badge variant="tactical" size="sm" className="mt-2">OPTIMAL</Badge>
+          </div>
         </div>
       </div>
 
+      {/* Section Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-text-primary">Your Packing Lists</h2>
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-6 bg-accent-cyan rounded-full" />
+          <h2 className="font-display text-lg md:text-xl font-bold text-text-primary tracking-wider">
+            MISSION INVENTORY
+          </h2>
+        </div>
         {totalLists > 0 && (
-          <Badge className="bg-dark-elevated text-text-secondary border-dark-border px-3 py-1.5">
-            {totalLists} {totalLists === 1 ? 'List' : 'Lists'}
+          <Badge variant="default" size="md">
+            {totalLists} {totalLists === 1 ? 'LIST' : 'LISTS'}
           </Badge>
         )}
       </div>
 
       {packingLists && packingLists.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {packingLists.map((plist, index) => (
             <Link
               key={plist.id}
               to={`/list/${plist.id}`}
-              className="group animate-fadeIn"
-              style={{ animationDelay: `${index * 50}ms` }}
+              className="group opacity-0 animate-fadeInUp"
+              style={{ animationDelay: `${index * 0.08}s`, animationFillMode: 'forwards' }}
             >
-              <div className="h-full glass rounded-xl border border-dark-border hover:border-accent-blue/50 hover:glow-blue-sm transition-all duration-300 cursor-pointer overflow-hidden">
-                <div className="flex flex-col h-full p-5">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-text-primary group-hover:text-accent-glow transition-colors mb-3 truncate">
-                        {plist.name}
+              <div className="h-full rounded-lg bg-tactical-elevated border border-tactical-border hover:border-accent-cyan/50 transition-all duration-300 cursor-pointer overflow-hidden relative">
+                {/* Hover glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-accent-cyan/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                {/* Corner brackets */}
+                <div className="absolute top-2 left-2 w-2.5 h-2.5 border-l border-t border-accent-cyan/30 group-hover:border-accent-cyan transition-colors" />
+                <div className="absolute top-2 right-2 w-2.5 h-2.5 border-r border-t border-accent-cyan/30 group-hover:border-accent-cyan transition-colors" />
+                <div className="absolute bottom-2 left-2 w-2.5 h-2.5 border-l border-b border-accent-cyan/30 group-hover:border-accent-cyan transition-colors" />
+                <div className="absolute bottom-2 right-2 w-2.5 h-2.5 border-r border-b border-accent-cyan/30 group-hover:border-accent-cyan transition-colors" />
+
+                <div className="flex flex-col h-full p-4 relative">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0 pr-3">
+                      <h3 className="font-display text-sm font-bold text-text-primary group-hover:text-accent-cyan transition-colors mb-2 truncate tracking-wide">
+                        {plist.name.toUpperCase()}
                       </h3>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1">
                         {plist.type && (
-                          <Badge className="bg-accent-muted text-accent-glow border-accent-blue/30 text-xs">
-                            {plist.type}
-                          </Badge>
+                          <Badge variant="info" size="sm">{plist.type}</Badge>
                         )}
                         {plist.school && (
-                          <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs">
-                            <GraduationCap size={12} className="mr-1" />
+                          <Badge variant="default" size="sm">
+                            <GraduationCap size={9} className="mr-1" />
                             {plist.school.name}
                           </Badge>
                         )}
                         {plist.base && (
-                          <Badge className="bg-status-success/20 text-status-success border-status-success/30 text-xs">
-                            <MapPin size={12} className="mr-1" />
+                          <Badge variant="success" size="sm">
+                            <MapPin size={9} className="mr-1" />
                             {plist.base.name}
                           </Badge>
                         )}
                       </div>
                     </div>
-                    <div className="flex-shrink-0 ml-4 w-12 h-12 rounded-xl bg-accent-blue/20 flex items-center justify-center group-hover:glow-blue-sm transition-all">
-                      <Package className="text-accent-blue" size={22} />
+                    <div className="flex-shrink-0 w-10 h-10 rounded bg-accent-cyan/10 border border-accent-cyan/30 flex items-center justify-center group-hover:glow-cyan transition-all">
+                      <Package className="text-accent-cyan" size={18} />
                     </div>
                   </div>
 
+                  {/* Description */}
                   {plist.description && (
-                    <p className="text-text-secondary mb-4 line-clamp-2 flex-1 text-sm leading-relaxed">
+                    <p className="text-text-secondary text-xs mb-3 line-clamp-2 flex-1 leading-relaxed">
                       {plist.description}
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between pt-4 border-t border-dark-border">
-                    <div className="flex items-center gap-2 text-sm text-text-muted font-medium">
-                      <CheckCircle2 size={16} className="text-status-success" />
-                      <span>Ready</span>
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-3 border-t border-tactical-border">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse" />
+                      <span className="font-tactical text-[9px] text-status-success uppercase tracking-wider">READY</span>
                     </div>
-                    <div className="flex items-center gap-1 text-accent-blue font-semibold text-sm group-hover:gap-2 transition-all">
-                      <span>View</span>
-                      <Eye size={16} />
+                    <div className="flex items-center gap-1.5 text-accent-cyan font-tactical text-[9px] uppercase tracking-wider group-hover:gap-2.5 transition-all">
+                      <span>ACCESS</span>
+                      <Eye size={12} />
                     </div>
                   </div>
                 </div>
@@ -179,23 +210,28 @@ function PackingListsContent() {
           ))}
         </div>
       ) : (
-        <div className="glass rounded-xl p-12 border border-dark-border text-center">
+        <Card variant="tactical" className="text-center py-12">
           <div className="max-w-md mx-auto">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-accent-blue/20 mb-6">
-              <Package className="text-accent-blue" size={40} />
+            <div className="relative inline-flex items-center justify-center w-20 h-20 mb-6">
+              <div className="absolute inset-0 rounded-full border border-dashed border-accent-cyan/30 animate-spin-slow" />
+              <div className="relative w-14 h-14 rounded-full bg-tactical-elevated border border-accent-cyan/50 flex items-center justify-center">
+                <Radar className="text-accent-cyan" size={28} />
+              </div>
             </div>
-            <h3 className="text-2xl font-bold text-text-primary mb-3">No Packing Lists Yet</h3>
-            <p className="text-text-secondary mb-8 leading-relaxed">
-              Get started by creating your first packing list or uploading an existing one.
+            <h3 className="font-display text-xl font-bold text-text-primary mb-3 tracking-wider">
+              NO ACTIVE MISSIONS
+            </h3>
+            <p className="text-text-secondary text-sm mb-8 leading-relaxed">
+              Initialize your first packing list to begin mission planning. Upload existing lists or create new from scratch.
             </p>
             <Link to="/list/create">
-              <Button className="bg-accent-blue hover:bg-accent-glow glow-blue text-white px-8 py-3 rounded-xl font-semibold">
-                <Plus size={20} className="mr-2" />
-                Create Your First List
+              <Button variant="primary" size="lg">
+                <Plus size={18} className="mr-2" />
+                Initialize First List
               </Button>
             </Link>
           </div>
-        </div>
+        </Card>
       )}
     </PullToRefresh>
   );
@@ -205,58 +241,76 @@ export function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-2xl mb-8 border border-dark-border">
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 50%, #0F172A 100%)'
-          }}
-        />
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(59, 130, 246, 0.5) 1px, transparent 0)',
-            backgroundSize: '32px 32px'
-          }}
-        />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent-blue/20 rounded-full blur-3xl" />
+      <div className="relative overflow-hidden rounded-lg mb-8 border border-tactical-border">
+        {/* Background layers */}
+        <div className="absolute inset-0 bg-gradient-to-br from-tactical-surface via-tactical-elevated to-tactical-surface" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent-cyan/8 via-transparent to-transparent" />
 
-        <div className="relative px-6 py-16 md:py-20">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold mb-6 glass border border-status-success/30">
-              <CheckCircle2 size={16} className="text-status-success" />
-              <span className="text-status-success">Mission-Ready Preparation</span>
+        {/* Grid pattern */}
+        <div
+          className="absolute inset-0 opacity-40"
+          style={{
+            backgroundImage: `
+              linear-gradient(#00F0FF08 1px, transparent 1px),
+              linear-gradient(90deg, #00F0FF08 1px, transparent 1px)
+            `,
+            backgroundSize: '30px 30px'
+          }}
+        />
+
+        {/* Animated scan line */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-accent-cyan/60 to-transparent animate-scan" />
+        </div>
+
+        {/* Corner decorations */}
+        <div className="absolute top-3 left-3 w-6 h-6 border-l-2 border-t-2 border-accent-cyan/40" />
+        <div className="absolute top-3 right-3 w-6 h-6 border-r-2 border-t-2 border-accent-cyan/40" />
+        <div className="absolute bottom-3 left-3 w-6 h-6 border-l-2 border-b-2 border-accent-cyan/40" />
+        <div className="absolute bottom-3 right-3 w-6 h-6 border-r-2 border-b-2 border-accent-cyan/40" />
+
+        <div className="relative px-5 py-10 md:py-14">
+          <div className="max-w-2xl mx-auto text-center">
+            {/* Status badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-tactical-elevated/80 border border-status-success/30 mb-5">
+              <div className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse" />
+              <span className="font-tactical text-[9px] text-status-success uppercase tracking-[0.2em]">
+                All Systems Operational
+              </span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-text-primary mb-4 leading-tight">
-              Pack Smart,
+            {/* Heading */}
+            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-black text-text-primary mb-3 tracking-wider leading-tight">
+              MISSION
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-blue to-status-success text-glow">
-                Deploy Ready
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-cyan via-status-success to-accent-cyan text-glow-cyan">
+                READY
               </span>
             </h1>
 
-            <p className="text-lg text-text-secondary mb-10 max-w-xl mx-auto leading-relaxed">
-              Community-driven packing lists for military schools, training courses, and deployments.
+            {/* Subtitle */}
+            <p className="font-tactical text-[10px] md:text-xs text-text-secondary mb-8 max-w-lg mx-auto tracking-wide uppercase leading-relaxed">
+              Community-driven packing lists for military schools, training courses, and deployments
             </p>
 
-            <div className="hidden md:flex flex-wrap items-center justify-center gap-4">
+            {/* CTA Buttons - Desktop */}
+            <div className="hidden md:flex flex-wrap items-center justify-center gap-3">
               <Link to="/list/create">
-                <Button className="bg-accent-blue hover:bg-accent-glow glow-blue text-white px-8 py-4 text-base font-semibold rounded-xl">
-                  <Plus size={20} className="mr-2" />
-                  Create New List
+                <Button variant="primary" size="lg">
+                  <Plus size={18} className="mr-2" />
+                  New Mission
                 </Button>
               </Link>
               <Link to="/list/upload">
-                <Button variant="secondary" className="glass px-8 py-4 text-base font-semibold rounded-xl">
-                  <Upload size={20} className="mr-2" />
-                  Upload List
+                <Button variant="secondary" size="lg">
+                  <Upload size={18} className="mr-2" />
+                  Import List
                 </Button>
               </Link>
               <Link to="/stores">
-                <Button variant="secondary" className="glass px-8 py-4 text-base font-semibold rounded-xl">
-                  <Store size={20} className="mr-2" />
-                  Find Stores
+                <Button variant="secondary" size="lg">
+                  <Store size={18} className="mr-2" />
+                  Supply Points
                 </Button>
               </Link>
             </div>
@@ -264,6 +318,7 @@ export function HomePage() {
         </div>
       </div>
 
+      {/* Main Content */}
       <Suspense fallback={<ListSkeleton items={5} />}>
         <PackingListsContent />
       </Suspense>

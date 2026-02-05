@@ -68,29 +68,29 @@ export function PullToRefresh({ children, onRefresh, disabled = false }: PullToR
       case 'pulling':
         return (
           <div className="flex items-center gap-2 text-text-secondary">
-            <ArrowDown size={20} className="transition-transform" style={{ transform: `rotate(${Math.min(pullDistance / PULL_THRESHOLD * 180, 180)}deg)` }} />
-            <span className="text-sm">Pull to refresh</span>
+            <ArrowDown size={18} className="transition-transform" style={{ transform: `rotate(${Math.min(pullDistance / PULL_THRESHOLD * 180, 180)}deg)` }} />
+            <span className="font-tactical text-[10px] uppercase tracking-wider">Pull to refresh</span>
           </div>
         );
       case 'ready':
         return (
-          <div className="flex items-center gap-2 text-accent-blue">
-            <ArrowDown size={20} className="rotate-180" />
-            <span className="text-sm font-medium">Release to refresh</span>
+          <div className="flex items-center gap-2 text-accent-cyan">
+            <ArrowDown size={18} className="rotate-180" />
+            <span className="font-tactical text-[10px] uppercase tracking-wider font-medium">Release to sync</span>
           </div>
         );
       case 'refreshing':
         return (
-          <div className="flex items-center gap-2 text-accent-blue">
-            <Loader2 size={20} className="animate-spin" />
-            <span className="text-sm">Refreshing...</span>
+          <div className="flex items-center gap-2 text-accent-cyan">
+            <Loader2 size={18} className="animate-spin" />
+            <span className="font-tactical text-[10px] uppercase tracking-wider">Syncing...</span>
           </div>
         );
       case 'complete':
         return (
           <div className="flex items-center gap-2 text-status-success">
-            <Check size={20} />
-            <span className="text-sm font-medium">Updated!</span>
+            <Check size={18} />
+            <span className="font-tactical text-[10px] uppercase tracking-wider font-medium">Synced!</span>
           </div>
         );
       default:
